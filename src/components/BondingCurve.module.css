@@ -1,0 +1,83 @@
+.wrap {
+  padding: 14px 14px 10px;
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.title {
+  color: var(--ton-blue);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.progress {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.raised {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ton-blue);
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
+.chartWrap {
+  position: relative;
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.axis {
+  position: relative;
+  height: 18px;
+  margin: 0 6px 2px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.axisEdge {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.axisMid {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+}
+
+.axisEdgeRight {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.axisActive {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  color: var(--ton-blue);
+  font-weight: 700;
+}
