@@ -7,8 +7,8 @@ on:
       - clawdbot-permanent
 
 jobs:
-  build:
-    name: Build & Test
+  build-and-deploy:
+    name: Build, Test & Deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,34 +31,18 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-  deploy:
-    name: Deploy to Vercel (Production)
-    needs: build
-    runs-on: ubuntu-latest
-    if: ${{ secrets.VERCEL_TOKEN != '' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - run: npm ci
-
-      - name: Build contracts
+      - name: Deploy to Vercel (Production)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          cd contracts
-          npm ci --legacy-peer-deps
-          npm run build
-
-      - run: npm run build
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          vercel-args: '--prod'
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::notice::Skipping Vercel deploy — add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID to repo secrets."
+            echo "Vercel Git integration may still auto-deploy on push to main."
+            exit 0
+          fi
+          npx vercel@25 deploy --prod \
+            --token "$VERCEL_TOKEN" \
+            --scope "$VERCEL_ORG_ID" \
+            --yes
