@@ -1,0 +1,26 @@
+{
+  "name": "ton-launchpad-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node node_modules/@tact-lang/compiler/bin/tact.js --config tact.config.json",
+    "test": "jest --runInBand",
+    "deploy:mainnet": "npx ts-node scripts/deploy.ts mainnet",
+    "deploy:testnet": "npx ts-node scripts/deploy.ts testnet"
+  },
+  "devDependencies": {
+    "@tact-lang/compiler": "^1.6.13",
+    "@ton/blueprint": "^0.38.0",
+    "@ton/core": "^0.61.0",
+    "@ton/crypto": "^3.3.0",
+    "@ton/sandbox": "^0.31.0",
+    "@ton/test-utils": "^0.6.0",
+    "@ton/ton": "^15.2.1",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^24.13.3",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}

@@ -44,3 +44,14 @@ input { font: inherit; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+@keyframes tonPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1); }
+}
+.loading-pulse {
+  animation: tonPulse 1.2s ease-in-out infinite;
+  color: var(--ton-blue);
+  text-align: center;
+  padding: 48px 0;
+}

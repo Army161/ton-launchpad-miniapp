@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import { ConnectButton } from '../components/ConnectButton';
 import { Sparkline } from '../components/Sparkline';
 import { TokenAvatar } from '../components/TokenAvatar';
-import { DEMO_TOKENS, registerLiveTokens, liveTokenFromCard } from '../data/tokens';
+import { liveTokenFromCard, registerLiveTokens, launchpadToToken } from '../data/tokens';
 import { fetchChange24hMap } from '../lib/dexscreener';
+import { fetchTonPrice } from '../lib/coingecko';
+import { fetchLaunchpadTokens } from '../lib/tonapi';
+import { CONFIG } from '../lib/config';
 
 const STON_ASSETS = 'https://api.ston.fi/v1/assets';
 
@@ -25,6 +28,9 @@ type Card = {
   change24h: number | null;
   imageUrl: string;
   color: string;
+  source: 'launchpad' | 'stonfi';
+  curveProgress?: number;
+  graduated?: boolean;
 };
 
 const COLORS = ['#30A1F5', '#F5A623', '#3DDC84', '#FF8C42', '#8B95A5', '#E05CFF', '#FF5C72', '#50E3C2'];
@@ -33,14 +39,47 @@ function pickColor(i: number) {
   return COLORS[i % COLORS.length];
 }
 
+type Tab = 'launchpad' | 'graduated';
+
 export function Home() {
+  const [tab, setTab] = useState<Tab>('launchpad');
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tonPrice, setTonPrice] = useState<{ usd: number; change24h: number | null } | null>(null);
+
+  useEffect(() => {
+    fetchTonPrice().then(setTonPrice);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function loadLaunchpad() {
+      setLoading(true);
+      const lpTokens = await fetchLaunchpadTokens();
+      if (cancelled) return;
+
+      registerLiveTokens(lpTokens.map(launchpadToToken));
+
+      const lpCards: Card[] = lpTokens.map((t, i) => ({
+        id: t.jettonAddress,
+        name: t.name,
+        ticker: t.symbol,
+        priceUsd: 0,
+        change24h: null,
+        imageUrl: '',
+        color: pickColor(i),
+        source: 'launchpad' as const,
+        curveProgress: Math.min(100, t.progressBps / 100),
+        graduated: t.graduated,
+      }));
+
+      setCards(lpCards);
+      setLoading(false);
+    }
+
+    async function loadGraduated() {
+      setLoading(true);
       try {
         const res = await fetch(STON_ASSETS);
         if (!res.ok) throw new Error('ston fetch failed');
@@ -63,6 +102,8 @@ export function Home() {
           change24h: changeMap.get(a.contract_address) ?? null,
           imageUrl: a.image_url ?? '',
           color: pickColor(i),
+          source: 'stonfi' as const,
+          graduated: true,
         }));
 
         if (!cancelled) {
@@ -72,50 +113,94 @@ export function Home() {
         }
       } catch {
         if (!cancelled) {
-          setCards(
-            DEMO_TOKENS.map((t) => ({
-              id: t.id,
-              name: t.name,
-              ticker: t.ticker,
-              priceUsd: t.priceUsd,
-              change24h: t.change24h,
-              imageUrl: t.imageUrl ?? '',
-              color: t.color,
-            })),
-          );
+          setCards([]);
           setLoading(false);
         }
       }
     }
 
-    load();
+    if (tab === 'launchpad') loadLaunchpad();
+    else loadGraduated();
+
     return () => { cancelled = true; };
-  }, []);
+  }, [tab]);
 
   return (
     <div className="page">
       <header className="home-header">
-        <h1 className="home-title">TON Launchpad</h1>
+        <div>
+          <h1 className="home-title">TON Launchpad</h1>
+          {tonPrice && (
+            <p className="muted" style={{ fontSize: 12, marginTop: 2 }}>
+              TON ${tonPrice.usd.toFixed(2)}
+              {tonPrice.change24h != null && (
+                <span className={tonPrice.change24h >= 0 ? ' positive' : ' negative'}>
+                  {' '}{tonPrice.change24h >= 0 ? '+' : ''}{tonPrice.change24h.toFixed(2)}%
+                </span>
+              )}
+            </p>
+          )}
+        </div>
         <ConnectButton compact />
       </header>
 
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          type="button"
+          className={tab === 'launchpad' ? 'btn-primary' : 'btn-secondary'}
+          style={{ flex: 1, padding: '10px 12px', fontSize: 13 }}
+          onClick={() => setTab('launchpad')}
+        >
+          Launchpad
+        </button>
+        <button
+          type="button"
+          className={tab === 'graduated' ? 'btn-primary' : 'btn-secondary'}
+          style={{ flex: 1, padding: '10px 12px', fontSize: 13 }}
+          onClick={() => setTab('graduated')}
+        >
+          Graduated
+        </button>
+      </div>
+
+      {tab === 'launchpad' && (
+        <Link to="/create" className="btn-primary" style={{ textAlign: 'center', fontSize: 14 }}>
+          + Launch Token ({CONFIG.launchFee} TON)
+        </Link>
+      )}
+
       {loading ? (
         <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>Loading tokens...</p>
+      ) : cards.length === 0 ? (
+        <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>
+          {tab === 'launchpad' ? 'No launchpad tokens yet. Be the first to launch!' : 'No graduated tokens found.'}
+        </p>
       ) : (
         <div className="token-grid">
           {cards.map((card) => (
             <Link key={card.id} to={`/token/${card.id}`} className="token-card card">
               <div className="token-card-top">
-                <TokenAvatar emoji="\ud83e\ude99" color={card.color} size={36} imageUrl={card.imageUrl || undefined} />
+                <TokenAvatar emoji={card.source === 'launchpad' ? '🚀' : '🪙'} color={card.color} size={36} imageUrl={card.imageUrl || undefined} />
                 <div className="token-card-names">
                   <strong>{card.name}</strong>
                   <span className="muted">${card.ticker}</span>
                 </div>
               </div>
-              <Sparkline color={card.color} />
+              {card.source === 'launchpad' && card.curveProgress != null && !card.graduated && (
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                  Curve {card.curveProgress.toFixed(0)}% · {CONFIG.graduationTarget} TON
+                </div>
+              )}
+              {card.source === 'stonfi' && <Sparkline color={card.color} />}
               <div className="token-card-bottom">
                 <span className="token-card-price">
-                  ${card.priceUsd < 0.01 ? card.priceUsd.toExponential(2) : card.priceUsd.toFixed(4)}
+                  {card.priceUsd > 0
+                    ? card.priceUsd < 0.01
+                      ? `$${card.priceUsd.toExponential(2)}`
+                      : `$${card.priceUsd.toFixed(4)}`
+                    : card.graduated
+                      ? 'Graduated'
+                      : 'Bonding curve'}
                 </span>
                 <span className={`token-card-change${card.change24h == null ? '' : card.change24h >= 0 ? ' positive' : ' negative'}`}>
                   {card.change24h == null ? '\u2014' : `${card.change24h >= 0 ? '+' : ''}${card.change24h.toFixed(2)}%`}

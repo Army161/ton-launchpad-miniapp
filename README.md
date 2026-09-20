@@ -1,82 +1,67 @@
 # TON Launchpad Mini App
 
-TON-native meme coin launchpad as a **Telegram Mini App**: create a Jetton on a bonding curve, trade, then graduate liquidity to **STON.fi**. Built for Telegram Web App (HTTPS + BotFather menu URL) — domain purchase deferred.
+TON-native meme coin launchpad as a **Telegram Mini App**: create a Jetton on a bonding curve, trade with TON Connect, graduate liquidity to **STON.fi**.
 
-**Repo:** [Army161/ton-launchpad-miniapp](https://github.com/Army161/ton-launchpad-miniapp)  
-**Local monorepo sibling:** contracts / indexer live under the private `ton-launchpad` workspace (not this public Mini App surface).
+**Repo:** [Army161/ton-launchpad-miniapp](https://github.com/Army161/ton-launchpad-miniapp)
 
-## What this is
+## Features (V1)
 
-| Surface | Route | Status |
-|---------|-------|--------|
-| Home (live STON.fi Featured + Trending cards) | `/` | Green |
-| Creator Studio | `/create` | Green vs mockup |
-| Token detail | `/token/:id` | Green vs mockup |
-| Buy / Sell | `/buy/:id`, Sell mirror | Green vs mockup |
-| Bottom nav | Home · Explore · My Tokens · Profile | Official kit icons (Profile interim) |
+| Feature | Status |
+|---------|--------|
+| Telegram Mini App + initData auth | Ready |
+| TON Connect wallet (Wallet, Tonkeeper) | Ready |
+| Tact smart contracts (Factory, Curve, Jetton) | Ready — deploy required |
+| 2% trading fee (60% creator / 40% platform) | On-chain |
+| Live STON.fi + DexScreener + CoinGecko feeds | Ready |
+| Launchpad / Graduated home tabs | Ready |
+| Creator Studio (`/create`) | Ready |
+| Buy / Sell with on-chain quotes | Ready |
+| Vercel API routes (auth, tokens, metadata) | Ready |
 
-**Product locks**
+## Quick start
 
-- Launch fee Assumed **0.05 TON** (protocol factory; see monorepo `LAUNCH_FEE_LOCK.md`)
-- DEX graduation target: **STON.fi**
-- Brand: official TON blue `#30A1F5`, Gram diamond mark, SF Pro Text system stack (legacy `#0098EA` cleared)
-- Nav icons: official **Home / Discover / Holdings** from `ton-org/kit-ios` Tabbar; Profile remains interim until founder GO
-- Home feed: live `api.ston.fi/v1/assets` (no demo tokens); 24h % from DexScreener `priceChange.h24` (dash when missing — never invented)
-- Connect / on-chain buy: stub until testnet + TON Connect
+```bash
+# Frontend
+npm install
+cp .env.example .env.local   # fill vars
+npm run dev
 
-## Current build status (2026-09-19)
+# Contracts
+cd contracts
+npm install --legacy-peer-deps
+npm run build
+npm test
+```
 
-| Gate | Result |
-|------|--------|
-| Brand lock | Green — `BRAND_LOCK_REPORT.md` |
-| TON crystal mark | Green — `IconTon` = official diamond paths |
-| Nav icons | Green — kit-ios Home / Discover / Holdings |
-| Buy / Sell pixel match | Green — `BUY_SELL_MATCH_REPORT.md` |
-| Home live cards | Green — `HOME_CARD_MATCH_REPORT.md` |
-| Home 24h % | Green — DexScreener — `HOME_24H_REPORT.md` |
-| `npm run build` | Exit 0 |
-| Vercel / Telegram bot | **Not in this sync** — blocked on deploy tokens / BotFather |
+For full API locally: `npx vercel dev`
 
-## Screenshots
+## Deploy
 
-Staged under [`screenshots/`](./screenshots/) for angel / grant forms:
+See [docs/DEPLOY.md](docs/DEPLOY.md) for Vercel + Cloudflare + BotFather setup.
 
-| File | Screen |
-|------|--------|
-| `01_home_live_cards.png` | Home Featured / Trending live cards |
-| `01b_home_24h.webp` | Home with live 24h % |
-| `02_buy.png` | Buy flow |
-| `03_sell.png` | Sell flow |
-| `04_create.png` | Creator Studio |
-| `05_token_detail.png` | Token detail |
+```bash
+# Mainnet contract deploy (founder wallet required)
+cd contracts
+DEPLOY_MNEMONIC="..." PLATFORM_TREASURY_ADDRESS=UQ... npm run deploy:mainnet
+```
+
+## Documentation
+
+All project docs live in [`docs/`](docs/):
+
+- [PLAN.md](docs/PLAN.md) — roadmap V1/V2/V3
+- [SMARTCONTRACT.md](docs/SMARTCONTRACT.md) — contracts + fee math
+- [MINIAPP.md](docs/MINIAPP.md) — Telegram setup
+- [DEPLOY.md](docs/DEPLOY.md) — Vercel + Cloudflare
+- [BUILDV1.md](docs/BUILDV1.md) — acceptance criteria
 
 ## Tech stack
 
-- **Vite** + **React** + **TypeScript**
-- CSS modules; TON brand tokens in `src/index.css`
-- Live data: STON.fi assets API + DexScreener token-pairs (CORS `*`, no keys)
-- Telegram Web App script ready in `index.html` (`Telegram.WebApp.ready()`)
-
-## Run locally
-
-```bash
-npm install
-npm run dev
-```
-
-Production build:
-
-```bash
-npm run build
-npm run preview
-```
-
-Requires Node 20+. No API keys for Home live feed.
-
-## Hard bans
-
-No private keys, no mainnet money, no fake audits, no invented market data.
+- **Frontend:** Vite + React 19 + TypeScript + TON Connect UI
+- **Contracts:** Tact + Blueprint (`contracts/`)
+- **API:** Vercel serverless (`api/`)
+- **Data:** STON.fi, DexScreener, CoinGecko, TonAPI
 
 ## License
 
-Private / all rights reserved unless founder states otherwise.
+Private / all rights reserved.

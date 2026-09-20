@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tact-lang/tact/main/tact.config.schema.json",
+  "projects": [
+    {
+      "name": "Launchpad",
+      "path": "contracts/launchpad.tact",
+      "output": "build",
+      "options": {
+        "debug": false,
+        "external": false
+      }
+    }
+  ]
+}
