@@ -1,20 +1,35 @@
 # TODOLIST.md — Founder Action Items
 
-## Before mainnet launch
+## Automated (done in repo)
 
-- [ ] Provide platform treasury TON wallet address
-- [ ] Provide Telegram bot username + Mini App short name
-- [ ] Upload design mockups / Figma
-- [ ] Purchase custom domain (optional — Vercel URL works interim)
-- [ ] Set Cloudflare DNS when domain ready
-- [ ] Fund deploy wallet with TON for contract deploy + gas
+- [x] Launch script: `scripts/launch-production.sh`
+- [x] Launch guide: `docs/LAUNCH.md`
+- [x] Cloudflare guide: `docs/CLOUDFLARE.md`
+- [x] Terms + Privacy pages for TON Connect manifest
+- [x] CI build/test on every push
+- [x] Buffer polyfill fix for TON Connect
 
-## After launch
+## You must do (requires your secrets)
 
-- [ ] Set BotFather menu URL to production
+- [ ] **Provide `PLATFORM_TREASURY_ADDRESS`** — your TON wallet for 40% fees
+- [ ] **Provide `DEPLOY_MNEMONIC`** — fund wallet with ~1 TON, run deploy locally
+- [ ] **Provide `TELEGRAM_BOT_TOKEN`** — from @BotFather
+- [ ] **Generate `JWT_SECRET`** — `openssl rand -hex 32`
+- [ ] **Set Vercel env vars** — or run `./scripts/launch-production.sh`
+- [ ] **BotFather menu URL** — point to production HTTPS URL
+- [ ] **GitHub secrets** (optional) — `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`
+
+## Optional (later)
+
+- [ ] Upload design mockups / Figma → pixel UI pass
+- [ ] Purchase custom domain + Cloudflare DNS (`docs/CLOUDFLARE.md`)
 - [ ] Smoke test create → buy → sell on mainnet
-- [ ] Share launch link in Telegram channels
 
-## TODO
+## Quick start
 
-- [ ] Check off items as founder completes them
+```bash
+cp .env.example .env.production
+# fill in your values
+set -a && source .env.production && set +a
+./scripts/launch-production.sh
+```

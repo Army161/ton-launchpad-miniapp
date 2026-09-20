@@ -7,21 +7,18 @@ on:
       - clawdbot-permanent
 
 jobs:
-  deploy:
-    name: Build & Deploy to Vercel
+  build:
+    name: Build & Test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install frontend deps
         run: npm ci
 
       - name: Build contracts
@@ -34,7 +31,30 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Deploy to Vercel (Production)
+  deploy:
+    name: Deploy to Vercel (Production)
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ secrets.VERCEL_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build contracts
+        run: |
+          cd contracts
+          npm ci --legacy-peer-deps
+          npm run build
+
+      - run: npm run build
+
+      - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
