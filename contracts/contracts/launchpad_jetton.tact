@@ -353,6 +353,7 @@ contract LaunchpadJetton {
         return CurveState{
             factory: self.factory,
             creator: self.creator,
+            salt: self.salt,
             treasury: self.treasury,
             liquidityManager: self.liquidityManager,
             initialized: self.initialized,

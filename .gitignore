@@ -20,7 +20,7 @@ dist-ssr
 *.key
 mnemonic*.txt
 api/data/store.json
-contracts/deployed.json
+contracts/deployed*.json
 
 # Editor directories and files
 .vscode/*

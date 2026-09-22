@@ -78,7 +78,7 @@ _ $StdAddress$_get_workchain((int, int) v) inline;
 (int, int, slice, cell, cell) $JettonData$_to_external(((int, int, slice, cell, cell)) v) inline;
 
 ;; $CurveState$_to_external
-(slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int) $CurveState$_to_external(((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline;
+(slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int) $CurveState$_to_external(((slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline;
 
 ;; $QuoteBuy$_to_external
 (int, int, int, int) $QuoteBuy$_to_external(((int, int, int, int)) v) inline;
@@ -173,11 +173,11 @@ slice $Builder$_fun_asSlice(builder $self) impure inline;
 ;; $LaunchpadJetton$_fun_get_wallet_address
 ((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), slice) $LaunchpadJetton$_fun_get_wallet_address((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, slice $owner) impure inline_ref;
 
-;; $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps
-((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps(slice $factory, slice $creator, slice $treasury, slice $liquidityManager, int $initialized, int $virtualTon, int $virtualTokens, int $realTonRaised, int $totalSupply, int $graduated, int $migrated, int $graduationTarget, int $totalCreatorFees, int $totalPlatformFees, int $tradeCount, int $progressBps) inline;
+;; $CurveState$_constructor_factory_creator_salt_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps
+((slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $CurveState$_constructor_factory_creator_salt_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps(slice $factory, slice $creator, int $salt, slice $treasury, slice $liquidityManager, int $initialized, int $virtualTon, int $virtualTokens, int $realTonRaised, int $totalSupply, int $graduated, int $migrated, int $graduationTarget, int $totalCreatorFees, int $totalPlatformFees, int $tradeCount, int $progressBps) inline;
 
 ;; $LaunchpadJetton$_fun_get_curve_state
-((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $LaunchpadJetton$_fun_get_curve_state((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $LaunchpadJetton$_fun_get_curve_state((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
 
 ;; $LaunchpadJetton$_fun_quote_buy
 ((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quote_buy((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tonAmount) impure inline_ref;
@@ -672,16 +672,16 @@ cell $MigratedEvent$_store_cell((int, slice, int, int) v, builder b) inline {
 
 ;;
 ;; Type: CurveState
-;; TLB: _ factory:address creator:address treasury:address liquidityManager:address initialized:bool virtualTon:coins virtualTokens:coins realTonRaised:coins totalSupply:coins graduated:bool migrated:bool graduationTarget:coins totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 progressBps:int257 = CurveState
+;; TLB: _ factory:address creator:address salt:uint64 treasury:address liquidityManager:address initialized:bool virtualTon:coins virtualTokens:coins realTonRaised:coins totalSupply:coins graduated:bool migrated:bool graduationTarget:coins totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 progressBps:int257 = CurveState
 ;;
 
-(slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int) $CurveState$_to_external(((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline {
-    var (v'factory, v'creator, v'treasury, v'liquidityManager, v'initialized, v'virtualTon, v'virtualTokens, v'realTonRaised, v'totalSupply, v'graduated, v'migrated, v'graduationTarget, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount, v'progressBps) = v; 
-    return (v'factory, v'creator, v'treasury, v'liquidityManager, v'initialized, v'virtualTon, v'virtualTokens, v'realTonRaised, v'totalSupply, v'graduated, v'migrated, v'graduationTarget, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount, v'progressBps);
+(slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int) $CurveState$_to_external(((slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline {
+    var (v'factory, v'creator, v'salt, v'treasury, v'liquidityManager, v'initialized, v'virtualTon, v'virtualTokens, v'realTonRaised, v'totalSupply, v'graduated, v'migrated, v'graduationTarget, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount, v'progressBps) = v; 
+    return (v'factory, v'creator, v'salt, v'treasury, v'liquidityManager, v'initialized, v'virtualTon, v'virtualTokens, v'realTonRaised, v'totalSupply, v'graduated, v'migrated, v'graduationTarget, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount, v'progressBps);
 }
 
-((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps(slice $factory, slice $creator, slice $treasury, slice $liquidityManager, int $initialized, int $virtualTon, int $virtualTokens, int $realTonRaised, int $totalSupply, int $graduated, int $migrated, int $graduationTarget, int $totalCreatorFees, int $totalPlatformFees, int $tradeCount, int $progressBps) inline {
-    return ($factory, $creator, $treasury, $liquidityManager, $initialized, $virtualTon, $virtualTokens, $realTonRaised, $totalSupply, $graduated, $migrated, $graduationTarget, $totalCreatorFees, $totalPlatformFees, $tradeCount, $progressBps);
+((slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $CurveState$_constructor_factory_creator_salt_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps(slice $factory, slice $creator, int $salt, slice $treasury, slice $liquidityManager, int $initialized, int $virtualTon, int $virtualTokens, int $realTonRaised, int $totalSupply, int $graduated, int $migrated, int $graduationTarget, int $totalCreatorFees, int $totalPlatformFees, int $tradeCount, int $progressBps) inline {
+    return ($factory, $creator, $salt, $treasury, $liquidityManager, $initialized, $virtualTon, $virtualTokens, $realTonRaised, $totalSupply, $graduated, $migrated, $graduationTarget, $totalCreatorFees, $totalPlatformFees, $tradeCount, $progressBps);
 }
 
 ;;
@@ -929,9 +929,9 @@ int $global_creatorShare(int $fee) impure inline {
     return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_14);
 }
 
-((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $LaunchpadJetton$_fun_get_curve_state((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (slice, slice, int, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $LaunchpadJetton$_fun_get_curve_state((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
     var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
-    var $fresh$ret_15 = $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps($self'factory, $self'creator, $self'treasury, $self'liquidityManager, $self'initialized, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'totalSupply, $self'graduated, $self'migrated, 1500000000000, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount, $global_min(10000, (($self'realTonRaised * 10000) / 1500000000000)));
+    var $fresh$ret_15 = $CurveState$_constructor_factory_creator_salt_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps($self'factory, $self'creator, $self'salt, $self'treasury, $self'liquidityManager, $self'initialized, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'totalSupply, $self'graduated, $self'migrated, 1500000000000, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount, $global_min(10000, (($self'realTonRaised * 10000) / 1500000000000)));
     return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_15);
 }
 

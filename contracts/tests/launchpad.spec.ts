@@ -149,6 +149,7 @@ describe('Launchpad', () => {
             expect(s.initialized).toBe(true);
             expect(s.creator).toEqualAddress(creator.address);
             expect(s.factory).toEqualAddress(factory.address);
+            expect(s.salt).toBe(42n);
             expect(s.treasury).toEqualAddress(treasury.address);
             expect(s.liquidityManager).toEqualAddress(liquidityManager.address);
             expect(s.totalSupply).toBe(0n);

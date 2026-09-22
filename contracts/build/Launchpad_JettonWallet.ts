@@ -1838,6 +1838,7 @@ export type CurveState = {
     $$type: 'CurveState';
     factory: Address;
     creator: Address;
+    salt: bigint;
     treasury: Address;
     liquidityManager: Address;
     initialized: boolean;
@@ -1859,6 +1860,7 @@ export function storeCurveState(src: CurveState) {
         const b_0 = builder;
         b_0.storeAddress(src.factory);
         b_0.storeAddress(src.creator);
+        b_0.storeUint(src.salt, 64);
         b_0.storeAddress(src.treasury);
         const b_1 = new Builder();
         b_1.storeAddress(src.liquidityManager);
@@ -1884,6 +1886,7 @@ export function loadCurveState(slice: Slice) {
     const sc_0 = slice;
     const _factory = sc_0.loadAddress();
     const _creator = sc_0.loadAddress();
+    const _salt = sc_0.loadUintBig(64);
     const _treasury = sc_0.loadAddress();
     const sc_1 = sc_0.loadRef().beginParse();
     const _liquidityManager = sc_1.loadAddress();
@@ -1900,12 +1903,13 @@ export function loadCurveState(slice: Slice) {
     const _totalPlatformFees = sc_2.loadCoins();
     const _tradeCount = sc_2.loadUintBig(32);
     const _progressBps = sc_2.loadIntBig(257);
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
 }
 
 export function loadTupleCurveState(source: TupleReader) {
     const _factory = source.readAddress();
     const _creator = source.readAddress();
+    const _salt = source.readBigNumber();
     const _treasury = source.readAddress();
     const _liquidityManager = source.readAddress();
     const _initialized = source.readBoolean();
@@ -1917,16 +1921,17 @@ export function loadTupleCurveState(source: TupleReader) {
     const _migrated = source.readBoolean();
     const _graduationTarget = source.readBigNumber();
     const _totalCreatorFees = source.readBigNumber();
-    const _totalPlatformFees = source.readBigNumber();
     source = source.readTuple();
+    const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
     const _progressBps = source.readBigNumber();
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
 }
 
 export function loadGetterTupleCurveState(source: TupleReader) {
     const _factory = source.readAddress();
     const _creator = source.readAddress();
+    const _salt = source.readBigNumber();
     const _treasury = source.readAddress();
     const _liquidityManager = source.readAddress();
     const _initialized = source.readBoolean();
@@ -1941,13 +1946,14 @@ export function loadGetterTupleCurveState(source: TupleReader) {
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
     const _progressBps = source.readBigNumber();
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
 }
 
 export function storeTupleCurveState(source: CurveState) {
     const builder = new TupleBuilder();
     builder.writeAddress(source.factory);
     builder.writeAddress(source.creator);
+    builder.writeNumber(source.salt);
     builder.writeAddress(source.treasury);
     builder.writeAddress(source.liquidityManager);
     builder.writeBoolean(source.initialized);
@@ -2619,7 +2625,7 @@ const JettonWallet_types: ABIType[] = [
     {"name":"MigratedEvent","header":1280311556,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"tonLiquidity","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tokenLiquidity","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"JettonData","header":null,"fields":[{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"mintable","type":{"kind":"simple","type":"bool","optional":false}},{"name":"adminAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"walletCode","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"JettonWalletData","header":null,"fields":[{"name":"balance","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"minter","type":{"kind":"simple","type":"address","optional":false}},{"name":"code","type":{"kind":"simple","type":"cell","optional":false}}]},
-    {"name":"CurveState","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"progressBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
+    {"name":"CurveState","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"progressBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
     {"name":"QuoteBuy","header":null,"fields":[{"name":"tokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"QuoteSell","header":null,"fields":[{"name":"tonOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"FactoryInfo","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"creatorFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},

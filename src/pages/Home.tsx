@@ -6,7 +6,7 @@ import { TokenAvatar } from '../components/TokenAvatar';
 import { liveTokenFromCard, registerLiveTokens, launchpadToToken } from '../data/tokens';
 import { fetchChange24hMap } from '../lib/dexscreener';
 import { fetchTonPrice } from '../lib/coingecko';
-import { fetchLaunchpadTokens } from '../lib/tonapi';
+import { fetchLaunchpadTokens } from '../lib/launchpadApi';
 import { CONFIG } from '../lib/config';
 
 const STON_ASSETS = 'https://api.ston.fi/v1/assets';
@@ -62,12 +62,12 @@ export function Home() {
       registerLiveTokens(lpTokens.map(launchpadToToken));
 
       const lpCards: Card[] = lpTokens.map((t, i) => ({
-        id: t.jettonAddress,
-        name: t.name,
-        ticker: t.symbol,
+        id: t.address,
+        name: t.name || 'Unnamed',
+        ticker: t.symbol || '???',
         priceUsd: 0,
         change24h: null,
-        imageUrl: '',
+        imageUrl: t.image,
         color: pickColor(i),
         source: 'launchpad' as const,
         curveProgress: Math.min(100, t.progressBps / 100),

@@ -1,121 +1,93 @@
 /**
- * Deploy LaunchpadFactory to TON mainnet or testnet.
+ * Deploy LaunchpadFactory.
  *
- * Usage:
- *   DEPLOY_MNEMONIC="word1 word2 ..." PLATFORM_TREASURY_ADDRESS=UQ... npm run deploy:mainnet
- *   DEPLOY_MNEMONIC="word1 word2 ..." PLATFORM_TREASURY_ADDRESS=UQ... npm run deploy:testnet
+ *   npm run deploy:testnet -- [--dry-run]
+ *   MAINNET_GO_LIVE_APPROVED=yes npm run deploy:mainnet -- [--dry-run]
+ *
+ * Reads (never prints) DEPLOY_MNEMONIC. Needs PLATFORM_TREASURY_ADDRESS.
+ * LIQUIDITY_MANAGER_ADDRESS defaults to the deployer wallet, which then runs
+ * the graduation keeper (scripts/graduate.ts).
+ *
+ * Safe to re-run: the factory address is deterministic, so an existing
+ * deployment is detected and reused instead of deployed twice.
  */
-import { mnemonicToPrivateKey } from '@ton/crypto';
-import { TonClient, WalletContractV4, internal, toNano, Address } from '@ton/ton';
-import { LaunchpadFactory } from '../build/Launchpad_LaunchpadFactory';
+import { toNano } from '@ton/core';
 import * as fs from 'fs';
 import * as path from 'path';
+import { LaunchpadFactory } from '../build/Launchpad_LaunchpadFactory';
+import { friendly, openWallet, parseNetwork, requireAddress, waitFor } from './lib/wallet';
 
-const network = process.argv[2] ?? 'testnet';
-
-const ENDPOINTS: Record<string, string> = {
-  mainnet: 'https://toncenter.com/api/v2/jsonRPC',
-  testnet: 'https://testnet.toncenter.com/api/v2/jsonRPC',
-};
+const DEPLOY_VALUE = toNano('0.1');
+const MIN_DEPLOYER_BALANCE = toNano('0.2');
 
 async function main() {
-  const mnemonic = process.env.DEPLOY_MNEMONIC;
-  const treasuryStr = process.env.PLATFORM_TREASURY_ADDRESS;
+    const network = parseNetwork(process.argv[2]);
+    const dryRun = process.argv.includes('--dry-run');
 
-  if (!mnemonic) {
-    console.error('ERROR: Set DEPLOY_MNEMONIC environment variable');
-    process.exit(1);
-  }
-  if (!treasuryStr) {
-    console.error('ERROR: Set PLATFORM_TREASURY_ADDRESS environment variable');
-    process.exit(1);
-  }
+    if (network === 'mainnet' && !dryRun && process.env.MAINNET_GO_LIVE_APPROVED !== 'yes') {
+        throw new Error(
+            'Mainnet deploy is locked. It needs a passing testnet run and the founder\'s "MAINNET GO-LIVE APPROVED", ' +
+                'then MAINNET_GO_LIVE_APPROVED=yes in the environment.',
+        );
+    }
 
-  const apiKey = process.env.TONCENTER_API_KEY ?? '';
-  const endpoint = ENDPOINTS[network];
-  if (!endpoint) {
-    console.error(`Unknown network: ${network}`);
-    process.exit(1);
-  }
+    const treasury = requireAddress('PLATFORM_TREASURY_ADDRESS');
+    const wallet = await openWallet(network, 'DEPLOY_MNEMONIC');
+    const liquidityManager = process.env.LIQUIDITY_MANAGER_ADDRESS
+        ? requireAddress('LIQUIDITY_MANAGER_ADDRESS')
+        : wallet.address;
 
-  const client = new TonClient({
-    endpoint,
-    apiKey: apiKey || undefined,
-  });
+    const factory = await LaunchpadFactory.fromInit(wallet.address, treasury, liquidityManager);
+    const opened = wallet.client.open(factory);
 
-  const keyPair = await mnemonicToPrivateKey(mnemonic.split(' '));
-  const wallet = WalletContractV4.create({
-    workchain: 0,
-    publicKey: keyPair.publicKey,
-  });
-  const walletContract = client.open(wallet);
-  const platformTreasury = Address.parse(treasuryStr);
+    console.log(`Network:            ${network}`);
+    console.log(`Deployer (${wallet.version}):    ${friendly(wallet.address, network)}`);
+    console.log(`Platform treasury:  ${friendly(treasury, network)}`);
+    console.log(`Liquidity manager:  ${friendly(liquidityManager, network)}`);
+    console.log(`Factory address:    ${friendly(factory.address, network)}`);
 
-  const factory = await LaunchpadFactory.fromInit(
-    wallet.address,
-    platformTreasury,
-  );
+    const alreadyDeployed = await wallet.client.isContractDeployed(factory.address);
+    if (alreadyDeployed) {
+        console.log('Factory is already deployed at this address; nothing to send.');
+    } else if (dryRun) {
+        console.log('Dry run: nothing sent.');
+        return;
+    } else {
+        const balance = await wallet.balance();
+        if (balance < MIN_DEPLOYER_BALANCE) {
+            throw new Error(`Deployer balance is ${Number(balance) / 1e9} TON; fund it with at least 0.2 TON first.`);
+        }
+        const seqno = await wallet.send([{ to: factory.address, value: DEPLOY_VALUE, init: factory.init! }]);
+        console.log('Deploy transaction sent; waiting for the chain…');
+        if (!(await wallet.waitSeqnoPast(seqno))) throw new Error('Wallet seqno did not advance; check the deployer on the explorer.');
+        if (!(await waitFor(() => wallet.client.isContractDeployed(factory.address)))) {
+            throw new Error('Factory not visible on-chain yet; re-run this command to check again (it will not redeploy).');
+        }
+    }
 
-  console.log(`Network: ${network}`);
-  console.log(`Factory address: ${factory.address.toString()}`);
-  console.log(`Platform treasury: ${platformTreasury.toString()}`);
-  console.log(`Deployer wallet: ${wallet.address.toString()}`);
+    const info = await opened.getGetFactoryInfo();
+    if (!info.treasury.equals(treasury) || !info.liquidityManager.equals(liquidityManager)) {
+        throw new Error('Deployed factory reports a different treasury or liquidity manager than configured.');
+    }
+    if (info.tradeFeeBps !== 200n || info.creatorFeeBps !== 6000n) {
+        throw new Error('Deployed factory reports unexpected fee parameters.');
+    }
+    console.log(`Verified on-chain: fee ${info.tradeFeeBps} bps, creator share ${info.creatorFeeBps} bps, launches ${info.launchCount}`);
 
-  const seqno = await walletContract.getSeqno();
-
-  await walletContract.sendTransfer({
-    seqno,
-    secretKey: keyPair.secretKey,
-    messages: [
-      internal({
-        to: factory.address,
-        value: toNano('0.1'),
-        init: factory.init,
-        body: null,
-      }),
-    ],
-  });
-
-  console.log('Deploy transaction sent. Waiting for confirmation...');
-
-  // Wait for deploy
-  let currentSeqno = seqno;
-  for (let i = 0; i < 30; i++) {
-    await new Promise((r) => setTimeout(r, 2000));
-    currentSeqno = await walletContract.getSeqno();
-    if (currentSeqno > seqno) break;
-  }
-
-  const info = await client.open(factory).getGetFactoryInfo();
-  console.log('Factory deployed successfully!');
-  console.log('Launch fee:', info.launchFee.toString(), 'nanotons');
-  console.log('Trade fee BPS:', info.tradeFeeBps.toString());
-
-  // Write deploy artifact
-  const artifact = {
-    network,
-    factoryAddress: factory.address.toString(),
-    platformTreasury: platformTreasury.toString(),
-    deployer: wallet.address.toString(),
-    deployedAt: new Date().toISOString(),
-  };
-
-  const outPath = path.join(__dirname, '..', 'deployed.json');
-  fs.writeFileSync(outPath, JSON.stringify(artifact, null, 2));
-  console.log(`Artifact written to ${outPath}`);
-
-  // Update SMARTCONTRACT.md
-  const mdPath = path.join(__dirname, '..', '..', 'docs', 'SMARTCONTRACT.md');
-  if (fs.existsSync(mdPath)) {
-    let md = fs.readFileSync(mdPath, 'utf8');
-    md = md.replace('PENDING_DEPLOY', factory.address.toString());
-    md = md.replace('$PLATFORM_TREASURY_ADDRESS', platformTreasury.toString());
-    fs.writeFileSync(mdPath, md);
-    console.log('Updated docs/SMARTCONTRACT.md');
-  }
+    const artifact = {
+        network,
+        factoryAddress: friendly(factory.address, network),
+        platformTreasury: friendly(treasury, network),
+        liquidityManager: friendly(liquidityManager, network),
+        deployer: friendly(wallet.address, network),
+        verifiedAt: new Date().toISOString(),
+    };
+    const outPath = path.join(__dirname, '..', `deployed.${network}.json`);
+    fs.writeFileSync(outPath, JSON.stringify(artifact, null, 2) + '\n');
+    console.log(`Wrote ${path.basename(outPath)}. Set FACTORY_ADDRESS and VITE_FACTORY_ADDRESS to ${artifact.factoryAddress}`);
 }
 
 main().catch((e) => {
-  console.error(e);
-  process.exit(1);
+    console.error(`ERROR: ${e instanceof Error ? e.message : String(e)}`);
+    process.exit(1);
 });

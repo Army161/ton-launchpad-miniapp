@@ -1,48 +1,75 @@
-name: Deploy to Vercel
+name: CI and deploy
 
 on:
   push:
-    branches:
-      - main
-      - clawdbot-permanent
+    branches: [main, clawdbot-permanent]
+  pull_request:
 
 jobs:
-  build-and-deploy:
-    name: Build, Test & Deploy
+  verify:
+    name: Lint, test, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            contracts/package-lock.json
 
-      - name: Install frontend deps
+      - name: Install app deps
         run: npm ci
 
-      - name: Build contracts
+      - name: Build and test contracts (sandbox)
+        working-directory: contracts
         run: |
-          cd contracts
           npm ci --legacy-peer-deps
           npm run build
+          npm run typecheck
           npm test
 
-      - name: Build frontend
+      - name: Generated wrappers match the contracts
+        run: git diff --exit-code -- src/contracts contracts/build/*.ts contracts/build/*.boc
+
+      - name: Lint
+        run: npm run lint
+
+      - name: App and API tests
+        run: npm test
+
+      - name: Typecheck and build
         run: npm run build
 
-      - name: Deploy to Vercel (Production)
+      - name: No secrets in the client bundle
+        run: |
+          if grep -rEl "TELEGRAM_BOT_TOKEN|JWT_SECRET|DEPLOY_MNEMONIC|TONCENTER_API_KEY|BLOB_READ_WRITE_TOKEN" dist; then
+            echo "::error::Server-only variable names found in the client bundle"; exit 1
+          fi
+
+      - name: No env files tracked
+        run: |
+          if git ls-files | grep -E '(^|/)\.env(\.|$)' | grep -v '\.env\.example$'; then
+            echo "::error::An .env file is tracked"; exit 1
+          fi
+
+  deploy:
+    name: Deploy to Vercel (production)
+    needs: verify
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
           if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "::notice::Skipping Vercel deploy — add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID to repo secrets."
-            echo "Vercel Git integration may still auto-deploy on push to main."
+            echo "::notice::Skipping CLI deploy (no Vercel secrets); the Vercel Git integration deploys pushes."
             exit 0
           fi
-          npx vercel@25 deploy --prod \
-            --token "$VERCEL_TOKEN" \
-            --scope "$VERCEL_ORG_ID" \
-            --yes
+          npx vercel@latest deploy --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes

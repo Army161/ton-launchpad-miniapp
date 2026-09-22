@@ -55,7 +55,7 @@ PROGRAM{
   DECLPROC $JettonData$_constructor_totalSupply_mintable_adminAddress_content_walletCode
   DECLPROC $LaunchpadJetton$_fun_get_jetton_data
   DECLPROC $LaunchpadJetton$_fun_get_wallet_address
-  DECLPROC $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps
+  DECLPROC $CurveState$_constructor_factory_creator_salt_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps
   DECLPROC $LaunchpadJetton$_fun_get_curve_state
   DECLPROC $LaunchpadJetton$_fun_quote_buy
   DECLPROC $LaunchpadJetton$_fun_quote_sell
@@ -869,7 +869,7 @@ PROGRAM{
     $JettonWallet$_init_child INLINECALLDICT
     $global_contractAddress INLINECALLDICT
   }>
-  $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps PROCINLINE:<{
+  $CurveState$_constructor_factory_creator_salt_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps PROCINLINE:<{
   }>
   $LaunchpadJetton$_fun_get_curve_state PROCREF:<{
     1500000000000 PUSHINT
@@ -882,20 +882,30 @@ PROGRAM{
     17 s() PUSH
     s0 s2 XCHG
     17 s() PUSH
-    s15 s2 s(-1) PUXC2
-    s15 PUSH
     s0 s2 XCHG
-    18 s() PUSH
-    s14 s2 s(-1) PUXC2
-    s14 PUSH
-    s14 s2 s(-1) PUXC2
-    18 s() PUSH
+    17 s() PUSH
+    s0 s2 XCHG
+    16 s() PUSH
+    s0 s2 XCHG
+    16 s() PUSH
+    s0 s2 XCHG
+    19 s() PUSH
     s15 s2 s(-1) PUXC2
     s15 PUSH
-    -ROT
-    s15 s14 s(-2) PU2XC
-    s15 s(-1) PUXC
-    $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps INLINECALLDICT
+    s15 s2 s(-1) PUXC2
+    19 s() PUSH
+    s0 s2 XCHG
+    16 s() PUSH
+    s0 s2 XCHG
+    16 s() PUSH
+    s0 s2 XCHG
+    16 s() PUSH
+    SWAP
+    16 s() PUSH
+    SWAP
+    16 s() PUSH
+    SWAP
+    $CurveState$_constructor_factory_creator_salt_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps INLINECALLDICT
   }>
   $LaunchpadJetton$_fun_quote_buy PROCREF:<{
     $LaunchpadJetton$_fun_quoteBuy INLINECALLDICT
@@ -929,22 +939,24 @@ PROGRAM{
   %get_curve_state PROC:<{
     $LaunchpadJetton$_contract_load INLINECALLDICT
     $LaunchpadJetton$_fun_get_curve_state INLINECALLDICT
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
-    16 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    17 s() POP
+    s0 16 s() XCHG
+    15 -ROLL
     $CurveState$_to_external INLINECALLDICT
   }>
   %quote_buy PROC:<{

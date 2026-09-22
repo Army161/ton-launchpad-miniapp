@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node node_modules/@tact-lang/compiler/bin/tact.js --config tact.config.json",
+    "build": "node node_modules/@tact-lang/compiler/bin/tact.js --config tact.config.json && node scripts/sync-wrappers.mjs",
     "test": "jest --runInBand",
-    "deploy:mainnet": "npx ts-node scripts/deploy.ts mainnet",
-    "deploy:testnet": "npx ts-node scripts/deploy.ts testnet"
+    "deploy:mainnet": "ts-node scripts/deploy.ts mainnet",
+    "deploy:testnet": "ts-node scripts/deploy.ts testnet",
+    "graduate": "ts-node scripts/graduate.ts",
+    "typecheck": "tsc --noEmit -p ."
   },
   "devDependencies": {
+    "@ston-fi/api": "^0.32.0",
+    "@ston-fi/sdk": "^2.7.0",
     "@tact-lang/compiler": "^1.6.13",
     "@ton-community/func-js": "^0.11.0",
     "@ton/blueprint": "^0.46.0",

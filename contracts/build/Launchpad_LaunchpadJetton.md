@@ -1,6 +1,6 @@
 # Tact compilation report
 Contract: LaunchpadJetton
-BoC Size: 4848 bytes
+BoC Size: 4863 bytes
 
 ## Structures (Structs and Messages)
 Total structures: 36
@@ -122,8 +122,8 @@ TL-B: `_ balance:coins owner:address minter:address code:^cell = JettonWalletDat
 Signature: `JettonWalletData{balance:coins,owner:address,minter:address,code:^cell}`
 
 ### CurveState
-TL-B: `_ factory:address creator:address treasury:address liquidityManager:address initialized:bool virtualTon:coins virtualTokens:coins realTonRaised:coins totalSupply:coins graduated:bool migrated:bool graduationTarget:coins totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 progressBps:int257 = CurveState`
-Signature: `CurveState{factory:address,creator:address,treasury:address,liquidityManager:address,initialized:bool,virtualTon:coins,virtualTokens:coins,realTonRaised:coins,totalSupply:coins,graduated:bool,migrated:bool,graduationTarget:coins,totalCreatorFees:coins,totalPlatformFees:coins,tradeCount:uint32,progressBps:int257}`
+TL-B: `_ factory:address creator:address salt:uint64 treasury:address liquidityManager:address initialized:bool virtualTon:coins virtualTokens:coins realTonRaised:coins totalSupply:coins graduated:bool migrated:bool graduationTarget:coins totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 progressBps:int257 = CurveState`
+Signature: `CurveState{factory:address,creator:address,salt:uint64,treasury:address,liquidityManager:address,initialized:bool,virtualTon:coins,virtualTokens:coins,realTonRaised:coins,totalSupply:coins,graduated:bool,migrated:bool,graduationTarget:coins,totalCreatorFees:coins,totalPlatformFees:coins,tradeCount:uint32,progressBps:int257}`
 
 ### QuoteBuy
 TL-B: `_ tokensOut:coins fee:coins creatorFee:coins platformFee:coins = QuoteBuy`

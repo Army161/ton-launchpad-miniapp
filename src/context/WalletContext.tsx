@@ -2,12 +2,11 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   type ReactNode,
 } from 'react';
-import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
-import { useAuth } from './AuthContext';
+import { CHAIN, useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
+import { CONFIG } from '../lib/config';
 
 type WalletContextValue = {
   connected: boolean;
@@ -32,7 +31,6 @@ function truncateAddress(addr: string): string {
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [tonConnectUI] = useTonConnectUI();
   const wallet = useTonWallet();
-  const { token } = useAuth();
 
   const rawAddress = wallet?.account.address ?? null;
   const friendlyAddress = rawAddress ? truncateAddress(rawAddress) : null;
@@ -48,7 +46,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const sendTransaction = useCallback(
     async (params: { to: string; amount: string; payload?: string }) => {
       const result = await tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 600,
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        // Wallets refuse to sign if the user is on the other network.
+        network: CONFIG.network === 'testnet' ? CHAIN.TESTNET : CHAIN.MAINNET,
         messages: [
           {
             address: params.to,
@@ -61,19 +61,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     },
     [tonConnectUI],
   );
-
-  // Auto-link wallet to Telegram user
-  useEffect(() => {
-    if (!rawAddress || !token) return;
-    fetch('/api/auth/link-wallet', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ walletAddress: rawAddress }),
-    }).catch(() => {});
-  }, [rawAddress, token]);
 
   const value = useMemo(
     () => ({

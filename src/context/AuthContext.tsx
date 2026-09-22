@@ -37,8 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const authenticate = useCallback(async () => {
     const initData = window.Telegram?.WebApp?.initData;
     if (!initData) {
-      // Dev fallback outside Telegram
-      setUser({ id: 0, firstName: 'Dev User' });
+      // Outside Telegram there is no verified identity; show a placeholder only in dev.
+      if (import.meta.env.DEV) setUser({ id: 0, firstName: 'Dev User' });
       setLoading(false);
       return;
     }
@@ -59,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         localStorage.setItem('lp_auth_token', data.token);
       } else {
+        localStorage.removeItem('lp_auth_token');
+        setToken(null);
         // Fallback to unsafe data for UI (no API in dev)
         const unsafe = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (unsafe) setUser({ ...unsafe, photoUrl: unsafe.photo_url });

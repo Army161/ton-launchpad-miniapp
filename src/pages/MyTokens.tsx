@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { ConnectButton } from '../components/ConnectButton';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { useWallet } from '../context/WalletContext';
-import { fetchLaunchpadTokens, fetchWalletJettons, type JettonBalance } from '../lib/tonapi';
+import { Address } from '@ton/core';
+import { fetchWalletJettons, type JettonBalance } from '../lib/tonapi';
+import { fetchLaunchpadTokens } from '../lib/launchpadApi';
+import { formatUnits } from '../lib/contracts';
 import { registerLiveTokens, launchpadToToken } from '../data/tokens';
 
 export function MyTokens() {
@@ -21,7 +24,8 @@ export function MyTokens() {
       if (!cancelled) {
         registerLiveTokens(lpTokens.map(launchpadToToken));
         if (address) {
-          setCreated(lpTokens.filter((t) => t.creator === address).map((t) => t.jettonAddress));
+          const me = Address.parse(address);
+          setCreated(lpTokens.filter((t) => Address.parse(t.creator).equals(me)).map((t) => t.address));
         }
       }
 
@@ -91,7 +95,7 @@ export function MyTokens() {
                       <span className="muted">${j.symbol}</span>
                     </div>
                   </div>
-                  <span className="token-card-price">{j.balance}</span>
+                  <span className="token-card-price">{formatUnits(BigInt(j.balance), j.decimals, 2)}</span>
                 </Link>
               ))}
             </div>

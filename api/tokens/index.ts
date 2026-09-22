@@ -1,48 +1,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyJwt } from '../_lib/jwt';
-import { addToken, listTokens, type TokenRecord } from '../_lib/store';
+import { listLaunchAddresses, mapLimit, readLaunchpadToken, serverFactory, type TokenView } from '../_lib/chain';
+import { serverError } from '../_lib/http';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method === 'GET') {
-    const tokens = listTokens();
-    return res.status(200).json(tokens);
-  }
+// Tokens are discovered from the factory's on-chain history, not from a
+// user-writable registry, so nothing unverified can be listed.
+const CACHE_MS = 20_000;
+let cache: { at: number; tokens: TokenView[] } | null = null;
 
-  if (req.method === 'POST') {
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) return res.status(503).json({ error: 'Server not configured' });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-    const auth = req.headers.authorization;
-    if (!auth?.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized' });
+  const factory = serverFactory();
+  if (!factory) return res.status(200).json({ configured: false, tokens: [] });
+
+  try {
+    if (!cache || Date.now() - cache.at > CACHE_MS) {
+      const addresses = await listLaunchAddresses(factory, 100);
+      const views = await mapLimit(addresses, 3, (a) => readLaunchpadToken(a, factory).catch(() => null));
+      cache = { at: Date.now(), tokens: views.filter((v): v is TokenView => v !== null) };
     }
-    const payload = verifyJwt(auth.slice(7), jwtSecret);
-    if (!payload) return res.status(401).json({ error: 'Invalid token' });
-
-    const body = req.body as Partial<TokenRecord>;
-    if (!body.jettonAddress || !body.curveAddress || !body.name || !body.symbol || !body.creator) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const token: TokenRecord = {
-      jettonAddress: body.jettonAddress,
-      curveAddress: body.curveAddress,
-      creator: body.creator,
-      creatorTelegramId: payload.tgId,
-      name: body.name,
-      symbol: body.symbol,
-      imageUri: body.imageUri,
-      description: body.description,
-      telegramLink: body.telegramLink,
-      raisedTon: body.raisedTon ?? 0,
-      graduated: body.graduated ?? false,
-      progressBps: body.progressBps ?? 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    addToken(token);
-    return res.status(201).json(token);
+    res.setHeader('Cache-Control', 's-maxage=15, stale-while-revalidate=30');
+    return res.status(200).json({ configured: true, tokens: cache.tokens });
+  } catch (err) {
+    return serverError(res, 'tokens', err);
   }
-
-  return res.status(405).json({ error: 'Method not allowed' });
 }

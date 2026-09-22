@@ -183,6 +183,7 @@ struct JettonWalletData {
 struct CurveState {
     factory: Address;
     creator: Address;
+    salt: Int as uint64;
     treasury: Address;
     liquidityManager: Address;
     initialized: Bool;

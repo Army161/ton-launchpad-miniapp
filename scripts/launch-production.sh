@@ -1,79 +1,79 @@
 #!/usr/bin/env bash
-# TON Launchpad — one-shot production launch script
-# Run from repo root. Requires env vars (see docs/LAUNCH.md).
+# TON Launchpad — mainnet launch. Irreversible: spends real TON.
+#
+# Preconditions (see docs/LAUNCH.md):
+#   - testnet gate passed (docs/VERIFICATION.md)
+#   - founder wrote "MAINNET GO-LIVE APPROVED"
+#   - .env.production filled locally (never committed)
+#
+#   set -a && source .env.production && set +a
+#   MAINNET_GO_LIVE_APPROVED=yes ./scripts/launch-production.sh
+#
+# Safe to re-run: the factory deploy detects an existing deployment, and
+# Vercel variables are overwritten with --force instead of duplicated.
+# Secrets are passed to the Vercel CLI on stdin, never on the command line,
+# and are never echoed. Do not add `set -x` to this file.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "=== TON Launchpad Production Launch ==="
+step() { printf '\n==> %s\n' "$1"; }
+die() { printf 'ERROR: %s\n' "$1" >&2; exit 1; }
 
-# ── 1. Validate required env ─────────────────────────────────────────────────
-MISSING=()
-[[ -z "${PLATFORM_TREASURY_ADDRESS:-}" ]] && MISSING+=("PLATFORM_TREASURY_ADDRESS")
-[[ -z "${DEPLOY_MNEMONIC:-}" ]] && MISSING+=("DEPLOY_MNEMONIC")
-[[ -z "${TELEGRAM_BOT_TOKEN:-}" ]] && MISSING+=("TELEGRAM_BOT_TOKEN")
-[[ -z "${JWT_SECRET:-}" ]] && MISSING+=("JWT_SECRET")
+[[ "${MAINNET_GO_LIVE_APPROVED:-}" == "yes" ]] || die 'Locked. Needs the testnet gate and the founder'"'"'s "MAINNET GO-LIVE APPROVED", then MAINNET_GO_LIVE_APPROVED=yes.'
 
-if [[ ${#MISSING[@]} -gt 0 ]]; then
-  echo "ERROR: Missing required environment variables:"
-  printf '  - %s\n' "${MISSING[@]}"
-  echo ""
-  echo "Copy .env.example to .env.production and fill values, then:"
-  echo "  set -a && source .env.production && set +a && ./scripts/launch-production.sh"
-  exit 1
+step "1/5 Validate deploy configuration"
+node scripts/validate-env.ts deploy-mainnet
+
+step "2/5 Build and test contracts"
+(cd contracts && npm ci --legacy-peer-deps && npm run build && npm test)
+
+step "3/5 Deploy or verify the factory on mainnet"
+(cd contracts && npm run deploy:mainnet)
+FACTORY="$(node -e "process.stdout.write(JSON.parse(require('fs').readFileSync('contracts/deployed.mainnet.json','utf8')).factoryAddress)")"
+[[ -n "$FACTORY" ]] || die "Factory address missing from contracts/deployed.mainnet.json"
+echo "Factory: $FACTORY"
+export FACTORY_ADDRESS="$FACTORY" VITE_FACTORY_ADDRESS="$FACTORY" VITE_NETWORK=mainnet
+
+step "4/5 Validate the production runtime configuration"
+# The runtime must not see the deploy mnemonic.
+env -u DEPLOY_MNEMONIC node scripts/validate-env.ts production --network
+
+step "5/5 Configure Vercel and deploy"
+if ! command -v vercel >/dev/null 2>&1; then
+  cat <<EOF
+Vercel CLI not found. In https://vercel.com/dashboard → project → Settings →
+Environment Variables (Production), set:
+  FACTORY_ADDRESS=$FACTORY
+  VITE_FACTORY_ADDRESS=$FACTORY
+  VITE_NETWORK=mainnet
+  PLATFORM_TREASURY_ADDRESS, TELEGRAM_BOT_TOKEN, JWT_SECRET,
+  VITE_MANIFEST_URL, VITE_TWA_RETURN_URL (and TONCENTER_API_KEY if you have one)
+Never add DEPLOY_MNEMONIC to Vercel. Then redeploy production.
+EOF
+  exit 0
 fi
 
-# ── 2. Build & test contracts ────────────────────────────────────────────────
-echo "→ Building contracts..."
-cd contracts
-npm ci --legacy-peer-deps
-npm run build
-npm test
-cd "$ROOT"
+set_var() {
+  local name="$1" value="${!1:-}"
+  [[ -n "$value" ]] || { echo "  skip $name (not set)"; return 0; }
+  printf '%s' "$value" | vercel env add "$name" production --force >/dev/null
+  echo "  set  $name"
+}
+for name in FACTORY_ADDRESS VITE_FACTORY_ADDRESS VITE_NETWORK PLATFORM_TREASURY_ADDRESS \
+            TELEGRAM_BOT_TOKEN JWT_SECRET VITE_MANIFEST_URL VITE_TWA_RETURN_URL TONCENTER_API_KEY; do
+  set_var "$name"
+done
 
-# ── 3. Deploy factory to mainnet ─────────────────────────────────────────────
-echo "→ Deploying LaunchpadFactory to mainnet..."
-cd contracts
-npm run deploy:mainnet
-FACTORY=$(node -e "console.log(JSON.parse(require('fs').readFileSync('deployed.json','utf8')).factoryAddress)")
-cd "$ROOT"
-echo "   Factory: $FACTORY"
+vercel deploy --prod
 
-# ── 4. Set Vercel env vars (requires vercel CLI + login) ─────────────────────
-if command -v vercel >/dev/null 2>&1; then
-  echo "→ Setting Vercel environment variables..."
-  vercel env add VITE_FACTORY_ADDRESS production <<< "$FACTORY" 2>/dev/null || vercel env rm VITE_FACTORY_ADDRESS production -y && vercel env add VITE_FACTORY_ADDRESS production <<< "$FACTORY"
-  vercel env add FACTORY_ADDRESS production <<< "$FACTORY" 2>/dev/null || true
-  vercel env add PLATFORM_TREASURY_ADDRESS production <<< "$PLATFORM_TREASURY_ADDRESS" 2>/dev/null || true
-  vercel env add TELEGRAM_BOT_TOKEN production <<< "$TELEGRAM_BOT_TOKEN" 2>/dev/null || true
-  vercel env add JWT_SECRET production <<< "$JWT_SECRET" 2>/dev/null || true
-  [[ -n "${VITE_TWA_RETURN_URL:-}" ]] && vercel env add VITE_TWA_RETURN_URL production <<< "$VITE_TWA_RETURN_URL" 2>/dev/null || true
-  [[ -n "${VITE_MANIFEST_URL:-}" ]] && vercel env add VITE_MANIFEST_URL production <<< "$VITE_MANIFEST_URL" 2>/dev/null || true
-  vercel env add VITE_NETWORK production <<< "mainnet" 2>/dev/null || true
-
-  echo "→ Deploying to Vercel production..."
-  vercel deploy --prod
-else
-  echo "WARN: vercel CLI not found. Set env vars manually in Vercel Dashboard:"
-  echo "  VITE_FACTORY_ADDRESS=$FACTORY"
-  echo "  FACTORY_ADDRESS=$FACTORY"
-  echo "  PLATFORM_TREASURY_ADDRESS=$PLATFORM_TREASURY_ADDRESS"
-  echo "  TELEGRAM_BOT_TOKEN=***"
-  echo "  JWT_SECRET=***"
-  echo "  VITE_NETWORK=mainnet"
-fi
-
-# ── 5. BotFather reminder ────────────────────────────────────────────────────
 PROD_URL="${VERCEL_PROD_URL:-https://ton-launchpad-miniapp.vercel.app}"
-echo ""
-echo "=== Launch complete ==="
-echo "Factory:  $FACTORY"
-echo "App URL:  $PROD_URL"
-echo ""
-echo "BotFather steps (manual):"
-echo "  1. Open @BotFather → /myapps → your app → Edit link"
-echo "  2. Set URL: $PROD_URL"
-echo "  3. /setmenubutton → your bot → URL: $PROD_URL"
-echo ""
-echo "Update public/tonconnect-manifest.json url/iconUrl to $PROD_URL if using custom domain."
+cat <<EOF
+
+Launch steps done. Factory: $FACTORY
+Next (manual, see docs/LAUNCH.md):
+  - BotFather: point the Mini App and menu button at $PROD_URL
+  - Run the production checks: /production-check
+  - Smoke test in Telegram with the smallest amounts
+EOF
