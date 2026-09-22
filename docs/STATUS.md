@@ -1,6 +1,6 @@
 # STATUS.md — current state
 
-Updated: 2026-09-22 · Branch: `claude/project-thread-6o05dp` · Last verified commit: see "Verified at" below.
+Updated: 2026-09-22 · Branch: `claude/project-thread-6o05dp` · Last verified commit: `62f0c4e`
 
 **Overall: NOT PRODUCTION READY.** All engineering that can be verified without the founder's wallets, bot and
 network access is done and passing. The testnet gate and every live check are blocked on founder actions.
@@ -57,5 +57,5 @@ network access is done and passing. The testnet gate and every live check are bl
 
 ## Verified at
 
-Commit recorded by the commit that last changed this file; verification commands and counts in
-`docs/VERIFICATION.md`. Re-run `/verify` before trusting this table on a later commit.
+`62f0c4e`: contracts build + typecheck + 46/46 tests, wrappers in sync, lint 0 errors, 62/62 app tests, build, bundle
+secret scan clean, no tracked env files. Re-run `/verify` before trusting this table on a later commit.

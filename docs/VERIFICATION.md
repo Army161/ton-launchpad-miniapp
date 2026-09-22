@@ -1,7 +1,7 @@
 # VERIFICATION.md — evidence per requirement
 
 Statuses: NOT_STARTED · IN_PROGRESS · PASS · FAIL · BLOCKED_HUMAN · DEFERRED. PASS needs evidence.
-Last run: 2026-09-22 on branch `claude/project-thread-6o05dp` (commit in `docs/STATUS.md`), Node 22.22, cloud sandbox.
+Last run: 2026-09-22 on branch `claude/project-thread-6o05dp` (verified at `62f0c4e`), Node 22.22, cloud sandbox.
 Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*.test.ts`.
 
 ## Build and static gates
