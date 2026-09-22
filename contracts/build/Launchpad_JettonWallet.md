@@ -1,6 +1,6 @@
 # Tact compilation report
-Contract: LaunchpadFactory
-BoC Size: 5637 bytes
+Contract: JettonWallet
+BoC Size: 1169 bytes
 
 ## Structures (Structs and Messages)
 Total structures: 36
@@ -150,14 +150,10 @@ TL-B: `_ owner:address treasury:address liquidityManager:address launchCount:uin
 Signature: `LaunchpadFactory{owner:address,treasury:address,liquidityManager:address,launchCount:uint32}`
 
 ## Get methods
-Total get methods: 2
+Total get methods: 1
 
-## get_factory_info
+## get_wallet_data
 No arguments
-
-## get_jetton_address
-Argument: creator
-Argument: salt
 
 ## Exit codes
 * 2: Stack underflow
@@ -218,16 +214,13 @@ Argument: salt
 
 ```mermaid
 graph TD
-LaunchpadFactory
-LaunchpadFactory --> BaseTrait
+JettonWallet
+JettonWallet --> BaseTrait
 ```
 
 ## Contract dependency diagram
 
 ```mermaid
 graph TD
-LaunchpadFactory
-LaunchpadFactory --> LaunchpadJetton
-LaunchpadJetton --> JettonWallet
-LaunchpadFactory --> JettonWallet
+JettonWallet
 ```

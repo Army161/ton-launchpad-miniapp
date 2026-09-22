@@ -11,35 +11,41 @@
 ;; __tact_context_get
 (int, slice, int, slice) __tact_context_get() inline;
 
-;; $Buy$_store
-builder $Buy$_store(builder build_0, (int, int) v) inline;
+;; __tact_context_get_sender
+slice __tact_context_get_sender() inline;
 
-;; $Buy$_store_cell
-cell $Buy$_store_cell((int, int) v, builder b) inline;
+;; $JettonSetup$_store
+builder $JettonSetup$_store(builder build_0, (int, slice, slice, cell, int, int) v) inline;
+
+;; $JettonSetup$_store_cell
+cell $JettonSetup$_store_cell((int, slice, slice, cell, int, int) v, builder b) inline;
+
+;; $JettonSetup$_load_bounced
+(slice, ((int))) $JettonSetup$_load_bounced(slice sc_0) inline;
 
 ;; $LaunchpadFactory$_store
-builder $LaunchpadFactory$_store(builder build_0, (slice, slice, int, int) v) inline;
+builder $LaunchpadFactory$_store(builder build_0, (slice, slice, slice, int) v) inline;
 
 ;; $LaunchpadFactory$_load
-(slice, ((slice, slice, int, int))) $LaunchpadFactory$_load(slice sc_0) inline;
+(slice, ((slice, slice, slice, int))) $LaunchpadFactory$_load(slice sc_0) inline;
 
 ;; $FactoryInfo$_to_external
-(slice, slice, int, int, int, int) $FactoryInfo$_to_external(((slice, slice, int, int, int, int)) v) inline;
+(slice, slice, slice, int, int, int, int, int) $FactoryInfo$_to_external(((slice, slice, slice, int, int, int, int, int)) v) inline;
 
-;; $BondingCurve$init$_store
-builder $BondingCurve$init$_store(builder build_0, (slice, slice, slice, slice, slice) v) inline;
+;; $LaunchpadJetton$init$_store
+builder $LaunchpadJetton$init$_store(builder build_0, (slice, slice, int) v) inline;
 
 ;; $LaunchpadFactory$init$_load
-(slice, ((slice, slice))) $LaunchpadFactory$init$_load(slice sc_0) inline;
+(slice, ((slice, slice, slice))) $LaunchpadFactory$init$_load(slice sc_0) inline;
 
 ;; $LaunchpadFactory$_contract_init
-(slice, slice, int, int) $LaunchpadFactory$_contract_init(slice $owner, slice $platformTreasury) impure inline;
+(slice, slice, slice, int) $LaunchpadFactory$_contract_init(slice $owner, slice $treasury, slice $liquidityManager) impure inline;
 
 ;; $LaunchpadFactory$_contract_load
-(slice, slice, int, int) $LaunchpadFactory$_contract_load() impure inline;
+(slice, slice, slice, int) $LaunchpadFactory$_contract_load() impure inline;
 
 ;; $LaunchpadFactory$_contract_store
-() $LaunchpadFactory$_contract_store((slice, slice, int, int) v) impure inline;
+() $LaunchpadFactory$_contract_store((slice, slice, slice, int) v) impure inline;
 
 ;; $Cell$_fun_asSlice
 slice $Cell$_fun_asSlice(cell $self) impure inline;
@@ -53,23 +59,26 @@ slice $global_contractAddressExt(int $chain, cell $code, cell $data) impure inli
 ;; $global_contractAddress
 slice $global_contractAddress((cell, cell) $s) impure inline;
 
-;; $BondingCurve$_init_child
-(cell, cell) $BondingCurve$_init_child(slice $creator, slice $platformTreasury, slice $jettonMaster, slice $name, slice $symbol) inline_ref;
+;; $LaunchpadJetton$_init_child
+(cell, cell) $LaunchpadJetton$_init_child(slice $factory, slice $creator, int $salt) inline_ref;
 
-;; $FactoryInfo$_constructor_owner_platformTreasury_launchCount_launchFee_graduationTarget_tradeFeeBps
-((slice, slice, int, int, int, int)) $FactoryInfo$_constructor_owner_platformTreasury_launchCount_launchFee_graduationTarget_tradeFeeBps(slice $owner, slice $platformTreasury, int $launchCount, int $launchFee, int $graduationTarget, int $tradeFeeBps) inline;
+;; $SendParameters$_constructor_to_value_mode_bounce_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+
+;; $SendParameters$_constructor_to_value_mode_bounce_body_code_data
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body_code_data(slice $to, int $value, int $mode, int $bounce, cell $body, cell $code, cell $data) inline;
+
+;; $FactoryInfo$_constructor_owner_treasury_liquidityManager_launchCount_launchFee_graduationTarget_tradeFeeBps_creatorFeeBps
+((slice, slice, slice, int, int, int, int, int)) $FactoryInfo$_constructor_owner_treasury_liquidityManager_launchCount_launchFee_graduationTarget_tradeFeeBps_creatorFeeBps(slice $owner, slice $treasury, slice $liquidityManager, int $launchCount, int $launchFee, int $graduationTarget, int $tradeFeeBps, int $creatorFeeBps) inline;
 
 ;; $LaunchpadFactory$_fun_get_factory_info
-((slice, slice, int, int), (slice, slice, int, int, int, int)) $LaunchpadFactory$_fun_get_factory_info((slice, slice, int, int) $self) impure inline_ref;
+((slice, slice, slice, int), (slice, slice, slice, int, int, int, int, int)) $LaunchpadFactory$_fun_get_factory_info((slice, slice, slice, int) $self) impure inline_ref;
 
-;; $SendParameters$_constructor_to_value_mode_body
-((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_body(slice $to, int $value, int $mode, cell $body) inline;
+;; $LaunchpadFactory$_fun_get_jetton_address
+((slice, slice, slice, int), slice) $LaunchpadFactory$_fun_get_jetton_address((slice, slice, slice, int) $self, slice $creator, int $salt) impure inline_ref;
 
-;; $SendParameters$_constructor_to_value_mode_code_data_body
-((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_code_data_body(slice $to, int $value, int $mode, cell $code, cell $data, cell $body) inline;
-
-;; $Buy$_constructor_queryId_minTokensOut
-((int, int)) $Buy$_constructor_queryId_minTokensOut(int $queryId, int $minTokensOut) inline;
+;; $JettonSetup$_constructor_queryId_treasury_liquidityManager_content_launchFee_initialBuyTon
+((int, slice, slice, cell, int, int)) $JettonSetup$_constructor_queryId_treasury_liquidityManager_content_launchFee_initialBuyTon(int $queryId, slice $treasury, slice $liquidityManager, cell $content, int $launchFee, int $initialBuyTon) inline;
 
 
 ;; Launchpad_LaunchpadFactory.stdlib.fc
@@ -80,6 +89,10 @@ global int __tact_randomized;
 
 (int, slice, int, slice) __tact_context_get() inline {
     return __tact_context;
+}
+
+slice __tact_context_get_sender() inline {
+    return __tact_context_sender;
 }
 
 builder $global_beginCell() impure asm """
@@ -138,6 +151,10 @@ slice $global_contractAddress((cell, cell) $s) impure inline {
 
 slice $global_myAddress() impure asm """
     MYADDR
+""";
+
+() $global_nativeReserve(int $amount, int $mode) impure asm """
+    RAWRESERVE
 """;
 
 () $global_send((int, cell, cell, cell, int, slice, int) $params) impure asm """
@@ -216,19 +233,9 @@ slice $global_myAddress() impure asm """
 """;
 
 ;; Launchpad_LaunchpadFactory.constants.fc
-;; Cell chGnJPh/6ZMlt0t5V+IZhWZQFYbALoW4d8XjP+owWts=
-cell __gen_cell_cell_7211a724f87fe99325b74b7957e2198566501586c02e85b877c5e33fea305adb() asm """
-    B{b5ee9c7241010101001000001c000000006c61756e63685f66656578cea391} B>boc PUSHREF
-""";
-
-;; Cell M6X4kmlY/qGfPV+7iYl3sHb8MvlR3S38SiKxs4myLf8=
-cell __gen_cell_cell_33a5f8926958fea19f3d5fbb898977b076fc32f951dd2dfc4a22b1b389b22dff() asm """
-    B{b5ee9c72410101010012000020000000006465706c6f795f6375727665fa5a6990} B>boc PUSHREF
-""";
-
-;; Cell sP8AzaY5R1tecRNg6ZUIonkNXuNNBZjn2AZoUPOsbBE=
-cell __gen_cell_cell_b0ff00cda639475b5e711360e99508a2790d5ee34d0598e7d8066850f3ac6c11() asm """
-    B{b5ee9c7241010101000c00001400000000726566756e647b1f4f15} B>boc PUSHREF
+;; Cell GCiJbedRErzqowEqwxKmfnTd4iwuOmaY8jnHu9aJVKM=
+cell __gen_cell_cell_1828896de75112bceaa3012ac312a67e74dde22c2e3a6698f239c7bbd68954a3() asm """
+    B{b5ee9c7241010101001600002800000000466163746f72792077697468647261777a72fa08} B>boc PUSHREF
 """;
 
 ;; Launchpad_LaunchpadFactory.storage.fc
@@ -237,124 +244,132 @@ cell __gen_cell_cell_b0ff00cda639475b5e711360e99508a2790d5ee34d0598e7d8066850f3a
 ;; TLB: _ mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell value:int257 to:address bounce:bool = SendParameters
 ;;
 
-((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_body(slice $to, int $value, int $mode, cell $body) inline {
-    return ($mode, $body, null(), null(), $value, $to, true);
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline {
+    return ($mode, $body, null(), null(), $value, $to, $bounce);
 }
 
-((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_code_data_body(slice $to, int $value, int $mode, cell $code, cell $data, cell $body) inline {
-    return ($mode, $body, $code, $data, $value, $to, true);
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body_code_data(slice $to, int $value, int $mode, int $bounce, cell $body, cell $code, cell $data) inline {
+    return ($mode, $body, $code, $data, $value, $to, $bounce);
 }
 
 ;;
-;; Type: Buy
-;; Header: 0x00000002
-;; TLB: buy#00000002 queryId:uint64 minTokensOut:coins = Buy
+;; Type: JettonSetup
+;; Header: 0x4c500002
+;; TLB: jetton_setup#4c500002 queryId:uint64 treasury:address liquidityManager:address content:^cell launchFee:coins initialBuyTon:coins = JettonSetup
 ;;
 
-builder $Buy$_store(builder build_0, (int, int) v) inline {
-    var (v'queryId, v'minTokensOut) = v;
-    build_0 = store_uint(build_0, 2, 32);
+builder $JettonSetup$_store(builder build_0, (int, slice, slice, cell, int, int) v) inline {
+    var (v'queryId, v'treasury, v'liquidityManager, v'content, v'launchFee, v'initialBuyTon) = v;
+    build_0 = store_uint(build_0, 1280311298, 32);
     build_0 = build_0.store_uint(v'queryId, 64);
-    build_0 = build_0.store_varuint16(v'minTokensOut);
+    build_0 = build_0.store_slice(v'treasury);
+    build_0 = build_0.store_slice(v'liquidityManager);
+    build_0 = build_0.store_ref(v'content);
+    build_0 = build_0.store_varuint16(v'launchFee);
+    build_0 = build_0.store_varuint16(v'initialBuyTon);
     return build_0;
 }
 
-cell $Buy$_store_cell((int, int) v, builder b) inline {
-    return $Buy$_store(b, v).end_cell();
+cell $JettonSetup$_store_cell((int, slice, slice, cell, int, int) v, builder b) inline {
+    return $JettonSetup$_store(b, v).end_cell();
 }
 
-((int, int)) $Buy$_constructor_queryId_minTokensOut(int $queryId, int $minTokensOut) inline {
-    return ($queryId, $minTokensOut);
+(slice, ((int))) $JettonSetup$_load_bounced(slice sc_0) inline {
+    var v'queryId = sc_0~load_uint(64);
+    return (sc_0, (v'queryId));
+}
+
+((int, slice, slice, cell, int, int)) $JettonSetup$_constructor_queryId_treasury_liquidityManager_content_launchFee_initialBuyTon(int $queryId, slice $treasury, slice $liquidityManager, cell $content, int $launchFee, int $initialBuyTon) inline {
+    return ($queryId, $treasury, $liquidityManager, $content, $launchFee, $initialBuyTon);
 }
 
 ;;
 ;; Type: FactoryInfo
-;; TLB: _ owner:address platformTreasury:address launchCount:uint32 launchFee:coins graduationTarget:coins tradeFeeBps:int257 = FactoryInfo
+;; TLB: _ owner:address treasury:address liquidityManager:address launchCount:uint32 launchFee:coins graduationTarget:coins tradeFeeBps:int257 creatorFeeBps:int257 = FactoryInfo
 ;;
 
-(slice, slice, int, int, int, int) $FactoryInfo$_to_external(((slice, slice, int, int, int, int)) v) inline {
-    var (v'owner, v'platformTreasury, v'launchCount, v'launchFee, v'graduationTarget, v'tradeFeeBps) = v; 
-    return (v'owner, v'platformTreasury, v'launchCount, v'launchFee, v'graduationTarget, v'tradeFeeBps);
+(slice, slice, slice, int, int, int, int, int) $FactoryInfo$_to_external(((slice, slice, slice, int, int, int, int, int)) v) inline {
+    var (v'owner, v'treasury, v'liquidityManager, v'launchCount, v'launchFee, v'graduationTarget, v'tradeFeeBps, v'creatorFeeBps) = v; 
+    return (v'owner, v'treasury, v'liquidityManager, v'launchCount, v'launchFee, v'graduationTarget, v'tradeFeeBps, v'creatorFeeBps);
 }
 
-((slice, slice, int, int, int, int)) $FactoryInfo$_constructor_owner_platformTreasury_launchCount_launchFee_graduationTarget_tradeFeeBps(slice $owner, slice $platformTreasury, int $launchCount, int $launchFee, int $graduationTarget, int $tradeFeeBps) inline {
-    return ($owner, $platformTreasury, $launchCount, $launchFee, $graduationTarget, $tradeFeeBps);
+((slice, slice, slice, int, int, int, int, int)) $FactoryInfo$_constructor_owner_treasury_liquidityManager_launchCount_launchFee_graduationTarget_tradeFeeBps_creatorFeeBps(slice $owner, slice $treasury, slice $liquidityManager, int $launchCount, int $launchFee, int $graduationTarget, int $tradeFeeBps, int $creatorFeeBps) inline {
+    return ($owner, $treasury, $liquidityManager, $launchCount, $launchFee, $graduationTarget, $tradeFeeBps, $creatorFeeBps);
 }
 
 ;;
-;; Type: BondingCurve
-;; TLB: _ creator:address platformTreasury:address jettonMaster:address name:^string symbol:^string virtualTon:coins virtualTokens:coins realTonRaised:coins tokensSold:coins graduated:bool totalCreatorFees:coins totalPlatformFees:coins = BondingCurve
+;; Type: LaunchpadJetton
+;; TLB: _ factory:address creator:address salt:uint64 initialized:bool treasury:address liquidityManager:address content:^cell totalSupply:coins virtualTon:coins virtualTokens:coins realTonRaised:coins graduated:bool migrated:bool totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 = LaunchpadJetton
 ;;
 
-builder $BondingCurve$init$_store(builder build_0, (slice, slice, slice, slice, slice) v) inline {
-    var (v'creator, v'platformTreasury, v'jettonMaster, v'name, v'symbol) = v;
+builder $LaunchpadJetton$init$_store(builder build_0, (slice, slice, int) v) inline {
+    var (v'factory, v'creator, v'salt) = v;
+    build_0 = build_0.store_slice(v'factory);
     build_0 = build_0.store_slice(v'creator);
-    build_0 = build_0.store_slice(v'platformTreasury);
-    build_0 = build_0.store_slice(v'jettonMaster);
-    build_0 = build_0.store_builder_ref(begin_cell().store_slice(v'name));
-    build_0 = build_0.store_builder_ref(begin_cell().store_slice(v'symbol));
+    build_0 = build_0.store_int(v'salt, 257);
     return build_0;
 }
 
-cell $BondingCurve$_child_get_code() impure asm """
-    B{b5ee9c7201021901000633000228ff008e88f4a413f4bcf2c80bed5320e303ed43d90102020271030402f83001d072d721d200d200fa4021103450666f04f86102f862ed44d0d200018e2afa40fa40fa40d401d001d401d0d401d001fa00fa00fa00fa00d200fa00fa0030108c108b108a10896c1c8e2bfa40fa40fa40d401d001d401d01514433005d15503821806fc23ac0082300de0b6b3a76400007020705311e20de3020b0a0b01d1bedc1f6a268690000c7157d207d207d206a00e800ea00e86a00e800fd007d007d007d0069007d007d00180846084588450844b60e4715fd207d207d206a00e800ea00e80a8a219802e8aa81c10c037e11d600411806f05b59d3b200003810382988f12a85ed9e36624050201200607004a5376a85272a0a9045270a1208100c8a8812710a90420811770a8812710a9045ca15132a10301d1bb4c3ed44d0d200018e2afa40fa40fa40d401d001d401d0d401d001fa00fa00fa00fa00d200fa00fa0030108c108b108a10896c1c8e2bfa40fa40fa40d401d001d401d01514433005d15503821806fc23ac0082300de0b6b3a76400007020705311e2550bdb3c6cc480801e5ba48ced44d0d200018e2afa40fa40fa40d401d001d401d0d401d001fa00fa00fa00fa00d200fa00fa0030108c108b108a10896c1c8e2bfa40fa40fa40d401d001d401d01514433005d15503821806fc23ac0082300de0b6b3a76400007020705311e2db3c3d3d3d3d3d3d3d3d3d3d3d3d55b0809004c208100c8a8812710a90466a15387a85292a0a9045270a121811770a8812710a9045320a11023004882195d3ef7980025812710a821a9042d544c302c544c302c544c302c544c302c59546cc000045f0d02d4d70d1ff2e08221c002e30221c006e30230c0048e4f8200ba9401b3f2f48200a5c12282195d3ef79800bef2f4108a55177f59c87f01ca0055b050bcce19ce17ce05c8ce15cdc804c8ce14cd58fa0201fa0258fa0258fa0212ca0058fa0258fa02cdc9ed54e05f0cf2c0820c0d03fe31d33f31fa00308200ba9422b3f2f4f8416f243032815b0a22c200f2f4218100c8a8812710a90420811770a8812710a9045ca15042a15398a851a1a051aaa9045199a1208200a23907be16f2f48137ff5375a082300de0b6b3a7640000bbf2f45064a05063a051d1a051e4a021c2009131e30d23c2009133e30df8276f10200e0f1004fe31d33f31fa00fa40f8416f2410235f038200ba9425b3f2f42281114d02c705f2f45376a85173a05177a9045188a1208100c8a8812710a90420811770a8812710a9045ca15233a18200a23905fa00305210be15f2f45075a15077a151e3a051f5a023c2009133e30d24c2009134e30d7188102310255a6d6d40037fc8cf858013141516017871882e0344445a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0017017871882c0346665a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001802d28208989680bc8ec082084c4b40a1718810365a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00923033e22a82195d3ef79800be92307fde109b108a1079106810571046103540331112001e000000006275795f737563636573730064c87f01ca0055b050bcce19ce17ce05c8ce15cdc804c8ce14cd58fa0201fa0258fa0258fa0212ca0058fa0258fa02cdc9ed54017871882f0346665a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0017017871882d0347775a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001800200000000073656c6c5f7375636365737300dcca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00109b108a107910681057104610354033c87f01ca0055b050bcce19ce17ce05c8ce15cdc804c8ce14cd58fa0201fa0258fa0258fa0212ca0058fa0258fa02cdc9ed54001e0000000063726561746f725f666565002000000000706c6174666f726d5f666565} B>boc PUSHREF
+cell $LaunchpadJetton$_child_get_code() impure asm """
+    B{b5ee9c72010245010012e400025aff008e88f4a413f4bcf2c80bed53208e983001d072d721d200d200fa4021103450666f04f86102f862e1ed43d90102020271030402feed44d0d200018e36fa40fa40d33fd200fa40d401d0fa40d4fa00fa00fa00fa00d200d200fa00fa00d430d0d31f300b11100b10bf10be10bd10bc5710550e8eb0fa40fa40810101d700552003d1582270248870821806fc23ac0082300de0b6b3a764000022707054722210cf10bc10abe21111935f0f5be00fd70d1ff2e0821b0603fbbedc1f6a268690000c71b7d207d20699fe9007d206a00e87d206a7d007d007d007d00690069007d007d006a1868698f9805888805885f885f085e885e2b882a8747587d207d20408080eb802a9001e8ac1138124438410c037e11d600411806f05b59d3b200001138382a39110867885e0855f107888807aa876d9e366241b051a02012010110104db3c2304fa2182104c500002ba8ff131d33ffa40fa40d4fa00fa0030f8416f245b812e0c325615c705f2f456108f465f0670804270885610553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df551ce03d3d3d3d7f5472fe2dc8e021073008090052000000004c61756e636820726566756e6465643a20746f6b656e20616c72656164792065786973747303fe553082104c5001015005cb1f13cb3fcecb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0071708824040f552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0029c200e30239820afaf08070fb02708306700a0b0c04f882104c500003ba8f6731d33ffa00fa0030f8416f243032811de95610f2f48200e42328b3f2f48200e7eb248208989680bef2f481769424821005f5e100a013be12f2f41111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a1079106810571046104503db3ce02182107bdd97debae302210d300e0f001c000000004c61756e63682066656501c80f11110f702f11120f11110f0c11100c102f10ac109b108a107910681057104645150403db3cc87f01ca00111055e011101fce1dce1bcb3f19ca0017ce05c8ce14cc58fa0201fa0201fa0258fa0212ca0012ca0058fa0258fa0202c8cb1f12cdcdc9ed540d01ac03c8018210d53276db58cb1fcb3fc95610504410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df10ce10bd108c107b55163002f60f11130f0e11120e0d11110d0c11100c0b11130b0a11120a09111109081110080711130706111206051111050411100403111303021112020111110111105612db3c8200e7eb24c200f2f4238200a2391117be01111601f2f4561558a151aaa05192a1508aa051a1a05147a0035613a002a42a82195d3ef79800be1e1f03fe31d33ffa00fa40d72c01916d93fa4001e201f40430f8416f243032f8285250db3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d012c705f2f4216ee302328200e42328b3f2f481769402820afaf080be12f2f4206ef2d080d08200bd1401d31f322122023282104c500004bae3020182102c76b973bae3025f0f5bf2c0822b2c020120121303fbba48ced44d0d200018e36fa40fa40d33fd200fa40d401d0fa40d4fa00fa00fa00fa00d200d200fa00fa00d430d0d31f300b11100b10bf10be10bd10bc5710550e8eb0fa40fa40810101d700552003d1582270248870821806fc23ac0082300de0b6b3a764000022707054722210cf10bc10abe2db3c571057105710571081b1c1d020158141503fbb6987da89a1a400031c6df481f481a67fa401f481a803a1f481a9f401f401f401f401a401a401f401f401a861a1a63e6016222016217e217c217a2178ae20aa1d1d61f481f481020203ae00aa4007a2b044e04910e104300df847580104601bc16d674ec8000044e0e0a8e444219e21782157c41e22201eaa1db678d98901b191a03fbadbcf6a268690000c71b7d207d20699fe9007d206a00e87d206a7d007d007d007d00690069007d007d006a1868698f9805888805885f885f085e885e2b882a8747587d207d20408080eb802a9001e8ac1138124438410c037e11d600411806f05b59d3b200001138382a39110867885e0855f107888807aa876d9e2b88401b161702f3af16f6a268690000c71b7d207d20699fe9007d206a00e87d206a7d007d007d007d00690069007d007d006a1868698f9805888805885f885f085e885e2b882a8747587d207d20408080eb802a9001e8ac1138124438410c037e11d600411806f05b59d3b200001138382a39110867885e0855f16d9e3652b632c01b180162f828db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d03200045f0f011e23b36df828f828db3c302b552052d0320104db3c1e00046c440000006282195d3ef798008127105370a822a904b6085611025611544f302f025612544e302e544e305612544f302f59546ff052f00030571057105710571057105710571057105710571057105710004a208100c8812710a98620811770a8812710a9045121a152a0a0546aa0a9865290a15312a11302fa8e30367f56122bc85982104c5001035003cb1fcb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0006de2a820afaf080a070fb020f11110f5e3d0c11100c0b11110b0a11100a091111091048104706111106051110050411110403111003021110020111100156115614db3c7f56130456174314252001d60211170256130201111501111729c8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb000c11120c0b11110b0a11100a109f108e107d106c55551045401403830670db3c2e01d45b8108ff27f2f450a2a1216eb39639206ef2d080923108e27080427004c8018210d53276db58cb1fcb3fc91034413010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df551c3002fc01821053454c4cba12f2f4fa00300f11110f5e3d0c11100c0b11110b0a11100a09111109081110080711110706111006051111050411100403111103021110020111120111135610db3c5233a08200e7eb24c200f2f4813fc3531abbf2f4038200a2391118be01111701f2f45191a1085612a05171a10a5612a1045615a02324004a5270a0546880a9865280a1208100c8812710a98620811770a8812710a9045121a15312a11302fc5139a002a42a820afaf080a070fb020f11110f5e3d0c11100c0b11110b0a11100a091111091048104710460511100503111003021110020111100156155612db3c041113047056155045031112030211140201111701111327c8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c92526029e21c2008ec071708856130405552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb009131e220c2009130e30d272802ccc88258c000000000000000000000000101cb67ccc970fb0070830670880411130410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00109f108e107d106c5555454010232a30001e0000000043726561746f7220666565017a7170882f553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0029002000000000506c6174666f726d2066656500220000000053656c6c2070726f636565647301fe31d33f30f8416f24135f038200f49225f2f48151db04b314f2f481769403821008f0d180be13f2f47f70545097a05464c829c8553082104c5001045005cb1f13cb3fce01fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb00820afaf08021fb020f11110f0e11100e10df2a10df10ce0d10ac106b182d02f2d33ffa40d2003021fa44306d018eb430f8285220db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d0dff842708040700596c85006cf16c992356de24630c855208210d17354005004cb1f12cb3f01206e9430cf84809201cee2f400c943303233039c1a10575e32503471820afaf080db3c70830670882e553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb002e2f3002f4f8285250db3c5c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d07ff8287070c8ca00c9d01059104a1023102bc855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec910565e22401310465522c8cf8580323100300000000047726164756174696f6e206c6971756964697479007cc87f01ca00111055e011101fce1dce1bcb3f19ca0017ce05c8ce14cc58fa0201fa0201fa0258fa0212ca0012ca0058fa0258fa0202c8cb1f12cdcdc9ed540058ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00011688c87001ca005a02cecec93400f210246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df551cc87f01ca00111055e011101fce1dce1bcb3f19ca0017ce05c8ce14cc58fa0201fa0201fa0258fa0212ca0012ca0058fa0258fa0202c8cb1f12cdcdc9ed54022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d935360149a65ec0bb513434800066be803e903e9015481b04e6be903e901640b4405c1678b6cf1b0d203704b401d072d721d200d200fa4021103450666f04f86102f862ed44d0d200019afa00fa40fa4055206c139afa40fa405902d1017059e204e30202d70d1ff2e0822182100f8a7ea5bae302218210178d4519bae302018210595f07bcba38393a3b01125cdb3c3054633052303e00b6028020d7217021d749c21f9430d31f01de208210178d4519ba8e1a30d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e082107bdd97deba8e19d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e05f0402f231d33ffa00fa40d72c01916d93fa4001e201f40431fa0023fa4430f2d08af8416f2481114d533cc705f2f48142a629c200f2f451a8a18200ca9721c2fff2f44330523bfa40fa0071d721fa00fa00306c6170f83a23c20091729171e281769402a85240a08209c9c380a08208989680a012bcf2f45138db3c5c3e3c04fc31d33ffa00fa40d72c01916d93fa4001e201fa00f8416f24532cc705b38ebc537cdb3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d05240c705f2f4de51a8a021f8276f1021a1820898968066b608a18208e4e1c0a0a126c200e30f236eb33e3f4041010ee3025f04f2c0824201fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d050767080407f2c48135079c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec9105610451034401310465522c8cf8580ca00cf8440ce01fa028069cf40025c6e013d00586eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed540018f82ac87001ca005a02cecec900e8504b4330fa40fa0071d721fa00fa00306c6170f83a5230a018a171702848135074c8553082107362d09c5005cb1f13cb3f01fa02cecec9284614505510246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0003000c107b50895f0800dc9321c2009170e28e5003206ef2d080727004c8018210d53276db58cb1fcb3fc9414010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00926c31e202c87f01ca0055205afa0212cecec9ed5401fed33ffa00d72c01916d93fa4001e201f40430f8416f24303281114d5118c705f2f48142a624c200f2f45153a18200ca9721c2fff2f4817694068210042c1d80be16f2f470504380407f544857c8554082107bdd97de5006cb1f14cb3f58fa02ce01206e9430cf84809201cee2f400c926444410246d50436d03c8cf8580ca0043017689cf16ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed5444000110} B>boc PUSHREF
 """;
 
-(cell, cell) $BondingCurve$_init_child(slice $creator, slice $platformTreasury, slice $jettonMaster, slice $name, slice $symbol) inline_ref {
+(cell, cell) $LaunchpadJetton$_init_child(slice $factory, slice $creator, int $salt) inline_ref {
     ;; Build init code cell
 
-    ;; Contract Code: BondingCurve
-    cell init_code = $BondingCurve$_child_get_code();
+    ;; Contract Code: LaunchpadJetton
+    cell init_code = $LaunchpadJetton$_child_get_code();
 
 
     builder b = begin_cell();
     b = b.store_int(false, 1);
-    b = $BondingCurve$init$_store(b, ($creator, $platformTreasury, $jettonMaster, $name, $symbol));
+    b = $LaunchpadJetton$init$_store(b, ($factory, $creator, $salt));
     return (init_code, b.end_cell());
 }
 
 ;;
 ;; Type: LaunchpadFactory
-;; TLB: _ owner:address platformTreasury:address launchCount:uint32 launchFee:coins = LaunchpadFactory
+;; TLB: _ owner:address treasury:address liquidityManager:address launchCount:uint32 = LaunchpadFactory
 ;;
 
-builder $LaunchpadFactory$_store(builder build_0, (slice, slice, int, int) v) inline {
-    var (v'owner, v'platformTreasury, v'launchCount, v'launchFee) = v;
+builder $LaunchpadFactory$_store(builder build_0, (slice, slice, slice, int) v) inline {
+    var (v'owner, v'treasury, v'liquidityManager, v'launchCount) = v;
     build_0 = build_0.store_slice(v'owner);
-    build_0 = build_0.store_slice(v'platformTreasury);
+    build_0 = build_0.store_slice(v'treasury);
+    build_0 = build_0.store_slice(v'liquidityManager);
     build_0 = build_0.store_uint(v'launchCount, 32);
-    build_0 = build_0.store_varuint16(v'launchFee);
     return build_0;
 }
 
-(slice, ((slice, slice, int, int))) $LaunchpadFactory$_load(slice sc_0) inline {
+(slice, ((slice, slice, slice, int))) $LaunchpadFactory$_load(slice sc_0) inline {
     var v'owner = sc_0~load_msg_addr();
-    var v'platformTreasury = sc_0~load_msg_addr();
+    var v'treasury = sc_0~load_msg_addr();
+    var v'liquidityManager = sc_0~load_msg_addr();
     var v'launchCount = sc_0~load_uint(32);
-    var v'launchFee = sc_0~load_varuint16();
-    return (sc_0, (v'owner, v'platformTreasury, v'launchCount, v'launchFee));
+    return (sc_0, (v'owner, v'treasury, v'liquidityManager, v'launchCount));
 }
 
-(slice, ((slice, slice))) $LaunchpadFactory$init$_load(slice sc_0) inline {
+(slice, ((slice, slice, slice))) $LaunchpadFactory$init$_load(slice sc_0) inline {
     var v'owner = sc_0~load_msg_addr();
-    var v'platformTreasury = sc_0~load_msg_addr();
-    return (sc_0, (v'owner, v'platformTreasury));
+    var v'treasury = sc_0~load_msg_addr();
+    var v'liquidityManager = sc_0~load_msg_addr();
+    return (sc_0, (v'owner, v'treasury, v'liquidityManager));
 }
 
-(slice, slice, int, int) $LaunchpadFactory$_contract_load() impure inline {
+(slice, slice, slice, int) $LaunchpadFactory$_contract_load() impure inline {
     slice $sc = get_data().begin_parse();
     int $loaded = $sc~load_int(1);
     if ($loaded) {
         return $sc~$LaunchpadFactory$_load();
     }
     else {
-        (slice $owner, slice $platformTreasury) = $sc~$LaunchpadFactory$init$_load();
+        (slice $owner, slice $treasury, slice $liquidityManager) = $sc~$LaunchpadFactory$init$_load();
         $sc.end_parse();
-        return $LaunchpadFactory$_contract_init($owner, $platformTreasury);
+        return $LaunchpadFactory$_contract_init($owner, $treasury, $liquidityManager);
     }
 }
 
-() $LaunchpadFactory$_contract_store((slice, slice, int, int) v) impure inline {
+() $LaunchpadFactory$_contract_store((slice, slice, slice, int) v) impure inline {
     builder b = begin_cell();
     b = b.store_int(true, 1);
     b = $LaunchpadFactory$_store(b, v);
@@ -365,19 +380,25 @@ builder $LaunchpadFactory$_store(builder build_0, (slice, slice, int, int) v) in
 ;; Contract LaunchpadFactory functions
 ;;
 
-(slice, slice, int, int) $LaunchpadFactory$_contract_init(slice $owner, slice $platformTreasury) impure inline {
-    var (($self'owner, $self'platformTreasury, $self'launchCount, $self'launchFee)) = (null(), null(), null(), null());
+(slice, slice, slice, int) $LaunchpadFactory$_contract_init(slice $owner, slice $treasury, slice $liquidityManager) impure inline {
+    var (($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount)) = (null(), null(), null(), null());
     $self'owner = $owner;
-    $self'platformTreasury = $platformTreasury;
+    $self'treasury = $treasury;
+    $self'liquidityManager = $liquidityManager;
     $self'launchCount = 0;
-    $self'launchFee = 50000000;
-    return ($self'owner, $self'platformTreasury, $self'launchCount, $self'launchFee);
+    return ($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount);
 }
 
-((slice, slice, int, int), (slice, slice, int, int, int, int)) $LaunchpadFactory$_fun_get_factory_info((slice, slice, int, int) $self) impure inline_ref {
-    var (($self'owner, $self'platformTreasury, $self'launchCount, $self'launchFee)) = $self;
-    var $fresh$ret_14 = $FactoryInfo$_constructor_owner_platformTreasury_launchCount_launchFee_graduationTarget_tradeFeeBps($self'owner, $self'platformTreasury, $self'launchCount, $self'launchFee, 1500000000000, 200);
-    return (($self'owner, $self'platformTreasury, $self'launchCount, $self'launchFee), $fresh$ret_14);
+((slice, slice, slice, int), (slice, slice, slice, int, int, int, int, int)) $LaunchpadFactory$_fun_get_factory_info((slice, slice, slice, int) $self) impure inline_ref {
+    var (($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount)) = $self;
+    var $fresh$ret_28 = $FactoryInfo$_constructor_owner_treasury_liquidityManager_launchCount_launchFee_graduationTarget_tradeFeeBps_creatorFeeBps($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount, 50000000, 1500000000000, 200, 6000);
+    return (($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount), $fresh$ret_28);
+}
+
+((slice, slice, slice, int), slice) $LaunchpadFactory$_fun_get_jetton_address((slice, slice, slice, int) $self, slice $creator, int $salt) impure inline_ref {
+    var (($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount)) = $self;
+    var $fresh$ret_29 = $global_contractAddress($LaunchpadJetton$_init_child($global_myAddress(), $creator, $salt));
+    return (($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount), $fresh$ret_29);
 }
 
 ;;
@@ -388,6 +409,14 @@ _ %get_factory_info() method_id(112759) {
     var self = $LaunchpadFactory$_contract_load();
     var res = self~$LaunchpadFactory$_fun_get_factory_info();
     return $FactoryInfo$_to_external(res);
+}
+
+_ %get_jetton_address(slice $creator, int $salt) method_id(118368) {
+    slice $creator = $creator;
+    int $salt = $salt;
+    var self = $LaunchpadFactory$_contract_load();
+    var res = self~$LaunchpadFactory$_fun_get_jetton_address($creator, $salt);
+    return res;
 }
 
 ;;
@@ -410,39 +439,62 @@ _ %get_factory_info() method_id(112759) {
     __tact_context_sender = msg_sender_addr;
     
     ;; Load contract data
-    var ($self'owner, $self'platformTreasury, $self'launchCount, $self'launchFee) = $LaunchpadFactory$_contract_load();
+    var ($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount) = $LaunchpadFactory$_contract_load();
     
     ;; Handle bounced messages
-    if (msg_bounced) { return (); }
-    var op = in_msg~load_opcode_internal();
+    if (msg_bounced) {
+        ;; Skip 0xFFFFFFFF prefix of a bounced message
+        in_msg~skip_bits(32);
+        int op = 0;
+        if (slice_bits(in_msg) >= 32) {
+            op = in_msg~load_uint(32);
+        }
+        ;; Bounced handler for JettonSetup message
+        if (op == 0x4c500002) {
+            var ($msg'queryId) = in_msg~$JettonSetup$_load_bounced();
+            $LaunchpadFactory$_contract_store(($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount));
+            return ();
+        }
+        
+        return ();
+    }
+    int op = 0;
+    int in_msg_length = slice_bits(in_msg);
+    if (in_msg_length >= 32) {
+        op = in_msg~load_uint(32);
+    }
     ;; Receive CreateToken message
-    if (op == 0x1) {
+    if (op == 0x4c500001) {
         var $msg'queryId = in_msg~load_uint(64);
-        var $msg'name = in_msg~load_ref().begin_parse();
-        var $msg'symbol = in_msg~load_ref().begin_parse();
-        slice sc_1 = in_msg~load_ref().begin_parse();
-        var $msg'imageUri = sc_1~load_ref().begin_parse();
-        var $msg'description = sc_1~load_ref().begin_parse();
-        var $msg'telegramLink = sc_1~load_ref().begin_parse();
-        var $msg'initialBuyTon = sc_1~load_varuint16();
+        var $msg'salt = in_msg~load_uint(64);
+        var $msg'content = in_msg~load_ref();
+        var $msg'initialBuyTon = in_msg~load_varuint16();
         var ($ctx'bounceable, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
-        throw_unless(23701, ($ctx'value >= $self'launchFee));
-        slice $creator = $ctx'sender;
+        throw_unless(10854, ( (($msg'initialBuyTon == 0)) ? (true) : (($msg'initialBuyTon >= 10000000)) ));
+        throw_unless(46558, ($msg'initialBuyTon <= 100000000000));
+        throw_unless(30356, ($ctx'value >= ((50000000 + $msg'initialBuyTon) + 150000000)));
         $self'launchCount = ($self'launchCount + 1);
-        $global_send($SendParameters$_constructor_to_value_mode_body($self'platformTreasury, $self'launchFee, 1, __gen_cell_cell_7211a724f87fe99325b74b7957e2198566501586c02e85b877c5e33fea305adb()));
-        var ($curveInit'code, $curveInit'data) = $BondingCurve$_init_child($creator, $self'platformTreasury, $global_myAddress(), $msg'name, $msg'symbol);
-        $global_send($SendParameters$_constructor_to_value_mode_code_data_body($global_contractAddress(($curveInit'code, $curveInit'data)), 100000000, 1, $curveInit'code, $curveInit'data, __gen_cell_cell_33a5f8926958fea19f3d5fbb898977b076fc32f951dd2dfc4a22b1b389b22dff()));
-        if (($msg'initialBuyTon > 0)) {
-            $global_send($SendParameters$_constructor_to_value_mode_body($global_contractAddress(($curveInit'code, $curveInit'data)), $msg'initialBuyTon, 1, $Buy$_store_cell($Buy$_constructor_queryId_minTokensOut($msg'queryId, 0), begin_cell())));
-        }
-        int $remaining = ((($ctx'value - $self'launchFee) - 150000000) - $msg'initialBuyTon);
-        if (($remaining > 0)) {
-            $global_send($SendParameters$_constructor_to_value_mode_body($creator, $remaining, 1, __gen_cell_cell_b0ff00cda639475b5e711360e99508a2790d5ee34d0598e7d8066850f3ac6c11()));
-        }
-        $LaunchpadFactory$_contract_store(($self'owner, $self'platformTreasury, $self'launchCount, $self'launchFee));
+        var ($init'code, $init'data) = $LaunchpadJetton$_init_child($global_myAddress(), $ctx'sender, $msg'salt);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body_code_data($global_contractAddress(($init'code, $init'data)), 0, 64, true, $JettonSetup$_store_cell($JettonSetup$_constructor_queryId_treasury_liquidityManager_content_launchFee_initialBuyTon($msg'queryId, $self'treasury, $self'liquidityManager, $msg'content, 50000000, $msg'initialBuyTon), begin_cell()), $init'code, $init'data));
+        $LaunchpadFactory$_contract_store(($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount));
         return ();
     }
     
+    ;; Receive FactoryWithdraw message
+    if (op == 0x4c500005) {
+        var $msg'queryId = in_msg~load_uint(64);
+        throw_unless(35499, ( equal_slices_bits(__tact_context_get_sender(), $self'owner) ));
+        $global_nativeReserve(50000000, 0);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'owner, 0, 128, false, __gen_cell_cell_1828896de75112bceaa3012ac312a67e74dde22c2e3a6698f239c7bbd68954a3()));
+        $LaunchpadFactory$_contract_store(($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount));
+        return ();
+    }
+    
+    ;; Receive empty message
+    if ((op == 0) & (in_msg_length <= 32)) {
+        $LaunchpadFactory$_contract_store(($self'owner, $self'treasury, $self'liquidityManager, $self'launchCount));
+        return ();
+    }
     ;; Throw if not handled
     throw(130);
 }

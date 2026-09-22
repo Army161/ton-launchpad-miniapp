@@ -1,0 +1,1223 @@
+#pragma version =0.4.6;
+#pragma allow-post-modification;
+#pragma compute-asm-ltr;
+
+;; Launchpad_LaunchpadJetton.headers.fc
+;;
+;; Header files for LaunchpadJetton
+;; NOTE: declarations are sorted for optimal order
+;;
+
+;; __tact_store_address_opt
+builder __tact_store_address_opt(builder b, slice address) inline;
+
+;; __tact_not_null
+forall X -> X __tact_not_null(X x) impure inline;
+
+;; __tact_context_get
+(int, slice, int, slice) __tact_context_get() inline;
+
+;; __tact_context_get_sender
+slice __tact_context_get_sender() inline;
+
+;; $JettonTransferInternal$_store
+builder $JettonTransferInternal$_store(builder build_0, (int, int, slice, slice, int, slice) v) inline;
+
+;; $JettonTransferInternal$_store_cell
+cell $JettonTransferInternal$_store_cell((int, int, slice, slice, int, slice) v, builder b) inline;
+
+;; $JettonExcesses$_store
+builder $JettonExcesses$_store(builder build_0, (int) v) inline;
+
+;; $JettonExcesses$_store_cell
+cell $JettonExcesses$_store_cell((int) v, builder b) inline;
+
+;; $TakeWalletAddress$_store
+builder $TakeWalletAddress$_store(builder build_0, (int, slice, cell) v) inline;
+
+;; $TakeWalletAddress$_store_cell
+cell $TakeWalletAddress$_store_cell((int, slice, cell) v, builder b) inline;
+
+;; $TokenLaunched$_store
+builder $TokenLaunched$_store(builder build_0, (int, slice, int, int) v) inline;
+
+;; $TokenLaunched$_store_cell
+cell $TokenLaunched$_store_cell((int, slice, int, int) v, builder b) inline;
+
+;; $TradeEvent$_store
+builder $TradeEvent$_store(builder build_0, (int, slice, int, int, int, int, int, int) v) inline;
+
+;; $TradeEvent$_store_cell
+cell $TradeEvent$_store_cell((int, slice, int, int, int, int, int, int) v, builder b) inline;
+
+;; $GraduatedEvent$_store
+builder $GraduatedEvent$_store(builder build_0, (int, int) v) inline;
+
+;; $GraduatedEvent$_store_cell
+cell $GraduatedEvent$_store_cell((int, int) v, builder b) inline;
+
+;; $MigratedEvent$_store
+builder $MigratedEvent$_store(builder build_0, (int, slice, int, int) v) inline;
+
+;; $MigratedEvent$_store_cell
+cell $MigratedEvent$_store_cell((int, slice, int, int) v, builder b) inline;
+
+;; $LaunchpadJetton$_store
+builder $LaunchpadJetton$_store(builder build_0, (slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) v) inline;
+
+;; $LaunchpadJetton$_load
+(slice, ((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int))) $LaunchpadJetton$_load(slice sc_0) inline;
+
+;; $StateInit$_get_code
+_ $StateInit$_get_code((cell, cell) v) inline;
+
+;; $StdAddress$_get_workchain
+_ $StdAddress$_get_workchain((int, int) v) inline;
+
+;; $JettonData$_to_external
+(int, int, slice, cell, cell) $JettonData$_to_external(((int, int, slice, cell, cell)) v) inline;
+
+;; $CurveState$_to_external
+(slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int) $CurveState$_to_external(((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline;
+
+;; $QuoteBuy$_to_external
+(int, int, int, int) $QuoteBuy$_to_external(((int, int, int, int)) v) inline;
+
+;; $QuoteSell$_to_external
+(int, int, int, int) $QuoteSell$_to_external(((int, int, int, int)) v) inline;
+
+;; $JettonWallet$init$_store
+builder $JettonWallet$init$_store(builder build_0, (slice, slice) v) inline;
+
+;; $LaunchpadJetton$init$_load
+(slice, ((slice, slice, int))) $LaunchpadJetton$init$_load(slice sc_0) inline;
+
+;; $LaunchpadJetton$_contract_init
+(slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $LaunchpadJetton$_contract_init(slice $factory, slice $creator, int $salt) impure inline;
+
+;; $LaunchpadJetton$_contract_load
+(slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $LaunchpadJetton$_contract_load() impure inline;
+
+;; $LaunchpadJetton$_contract_store
+() $LaunchpadJetton$_contract_store((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) v) impure inline;
+
+;; $Cell$_fun_asSlice
+slice $Cell$_fun_asSlice(cell $self) impure inline;
+
+;; $global_newAddress
+slice $global_newAddress(int $chain, int $hash) impure inline;
+
+;; $global_contractAddressExt
+slice $global_contractAddressExt(int $chain, cell $code, cell $data) impure inline;
+
+;; $global_contractAddress
+slice $global_contractAddress((cell, cell) $s) impure inline;
+
+;; $global_emit
+() $global_emit(cell $body) impure inline;
+
+;; $global_tradeFee
+int $global_tradeFee(int $amount) impure inline;
+
+;; $global_creatorShare
+int $global_creatorShare(int $fee) impure inline;
+
+;; $Builder$_fun_asSlice
+slice $Builder$_fun_asSlice(builder $self) impure inline;
+
+;; $JettonWallet$_init_child
+(cell, cell) $JettonWallet$_init_child(slice $owner, slice $minter) inline_ref;
+
+;; $GraduatedEvent$_constructor_queryId_realTonRaised
+((int, int)) $GraduatedEvent$_constructor_queryId_realTonRaised(int $queryId, int $realTonRaised) inline;
+
+;; $TradeEvent$_constructor_queryId_trader_isBuy_tonAmount_tokenAmount_creatorFee_platformFee_realTonRaised
+((int, slice, int, int, int, int, int, int)) $TradeEvent$_constructor_queryId_trader_isBuy_tonAmount_tokenAmount_creatorFee_platformFee_realTonRaised(int $queryId, slice $trader, int $isBuy, int $tonAmount, int $tokenAmount, int $creatorFee, int $platformFee, int $realTonRaised) inline;
+
+;; $QuoteBuy$_constructor_tokensOut_fee_creatorFee_platformFee
+((int, int, int, int)) $QuoteBuy$_constructor_tokensOut_fee_creatorFee_platformFee(int $tokensOut, int $fee, int $creatorFee, int $platformFee) inline;
+
+;; $LaunchpadJetton$_fun_quoteBuy
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quoteBuy((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tonAmount) impure inline_ref;
+
+;; $SendParameters$_constructor_to_value_mode_bounce_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+
+;; $LaunchpadJetton$_fun_payFees
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), ()) $LaunchpadJetton$_fun_payFees((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $creatorFee, int $platformFee) impure inline_ref;
+
+;; $SendParameters$_constructor_to_value_mode_bounce_body_code_data
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body_code_data(slice $to, int $value, int $mode, int $bounce, cell $body, cell $code, cell $data) inline;
+
+;; $JettonTransferInternal$_constructor_queryId_amount_sender_responseDestination_forwardTonAmount_forwardPayload
+((int, int, slice, slice, int, slice)) $JettonTransferInternal$_constructor_queryId_amount_sender_responseDestination_forwardTonAmount_forwardPayload(int $queryId, int $amount, slice $sender, slice $responseDestination, int $forwardTonAmount, slice $forwardPayload) inline;
+
+;; $LaunchpadJetton$_fun_mint
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), ()) $LaunchpadJetton$_fun_mint((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, slice $to, int $amount, int $queryId, int $mode, int $value) impure inline_ref;
+
+;; $LaunchpadJetton$_fun_executeBuy
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), ()) $LaunchpadJetton$_fun_executeBuy((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, slice $buyer, int $tonAmount, int $minTokensOut, int $queryId) impure inline_ref;
+
+;; $QuoteSell$_constructor_tonOut_fee_creatorFee_platformFee
+((int, int, int, int)) $QuoteSell$_constructor_tonOut_fee_creatorFee_platformFee(int $tonOut, int $fee, int $creatorFee, int $platformFee) inline;
+
+;; $LaunchpadJetton$_fun_quoteSell
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quoteSell((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tokenAmount) impure inline_ref;
+
+;; $JettonData$_constructor_totalSupply_mintable_adminAddress_content_walletCode
+((int, int, slice, cell, cell)) $JettonData$_constructor_totalSupply_mintable_adminAddress_content_walletCode(int $totalSupply, int $mintable, slice $adminAddress, cell $content, cell $walletCode) inline;
+
+;; $LaunchpadJetton$_fun_get_jetton_data
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, slice, cell, cell)) $LaunchpadJetton$_fun_get_jetton_data((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $LaunchpadJetton$_fun_get_wallet_address
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), slice) $LaunchpadJetton$_fun_get_wallet_address((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, slice $owner) impure inline_ref;
+
+;; $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps
+((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps(slice $factory, slice $creator, slice $treasury, slice $liquidityManager, int $initialized, int $virtualTon, int $virtualTokens, int $realTonRaised, int $totalSupply, int $graduated, int $migrated, int $graduationTarget, int $totalCreatorFees, int $totalPlatformFees, int $tradeCount, int $progressBps) inline;
+
+;; $LaunchpadJetton$_fun_get_curve_state
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $LaunchpadJetton$_fun_get_curve_state((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref;
+
+;; $LaunchpadJetton$_fun_quote_buy
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quote_buy((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tonAmount) impure inline_ref;
+
+;; $LaunchpadJetton$_fun_quote_sell
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quote_sell((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tokenAmount) impure inline_ref;
+
+;; $TokenLaunched$_constructor_queryId_creator_salt_initialBuyTon
+((int, slice, int, int)) $TokenLaunched$_constructor_queryId_creator_salt_initialBuyTon(int $queryId, slice $creator, int $salt, int $initialBuyTon) inline;
+
+;; $JettonExcesses$_constructor_queryId
+((int)) $JettonExcesses$_constructor_queryId(int $queryId) inline;
+
+;; $MigratedEvent$_constructor_queryId_liquidityManager_tonLiquidity_tokenLiquidity
+((int, slice, int, int)) $MigratedEvent$_constructor_queryId_liquidityManager_tonLiquidity_tokenLiquidity(int $queryId, slice $liquidityManager, int $tonLiquidity, int $tokenLiquidity) inline;
+
+;; $TakeWalletAddress$_constructor_queryId_walletAddress_ownerAddress
+((int, slice, cell)) $TakeWalletAddress$_constructor_queryId_walletAddress_ownerAddress(int $queryId, slice $walletAddress, cell $ownerAddress) inline;
+
+
+;; Launchpad_LaunchpadJetton.stdlib.fc
+global (int, slice, int, slice) __tact_context;
+global slice __tact_context_sender;
+global cell __tact_child_contract_codes;
+global int __tact_randomized;
+
+(slice, slice) __tact_load_address_opt(slice cs) asm """
+
+            b{00} SDBEGINSQ
+            IF:<{
+              PUSHNULL
+            }>ELSE<{
+              LDMSGADDR
+              SWAP
+            }>
+
+""";
+
+builder __tact_store_addr_none(builder b) asm "b{00} STSLICECONST";
+
+builder __tact_store_address_opt(builder b, slice address) inline {
+    if (null?(address)) {
+        return __tact_store_addr_none(b);
+    } else {
+        return b.store_slice(address);
+    }
+}
+
+forall X -> X __tact_not_null(X x) impure inline {
+    throw_if(128, null?(x)); return x;
+}
+
+(int, slice, int, slice) __tact_context_get() inline {
+    return __tact_context;
+}
+
+slice __tact_context_get_sender() inline {
+    return __tact_context_sender;
+}
+
+cell $global_emptyCell() impure asm """
+    <b b> PUSHREF // Pure Fift: "<b" creates a builder, "b>" turns it into a cell at compile time
+""";
+
+builder $global_beginCell() impure asm """
+    NEWC
+""";
+
+int $global_min(int $x, int $y) impure asm """
+    MIN
+""";
+
+int $global_muldivc(int $x, int $y, int $z) impure asm """
+    MULDIVC
+""";
+
+int $global_contractHash(cell $code, cell $data) impure asm """
+    s0 PUSH HASHCU // `data` hash
+    s2 PUSH HASHCU // `code` hash
+    SWAP2
+    CDEPTH         // `data` depth
+    SWAP
+    CDEPTH         // `code` depth
+    131380 INT     // (2 << 16) | (1 << 8) | 0x34
+
+    // Group 2: Composition of the Builder
+    NEWC
+    24 STU  // store refs_descriptor | bits_descriptor | data
+    16 STU  // store depth_descriptor for `code`
+    16 STU  // store depth_descriptor for `data`
+    256 STU // store `code` hash
+    256 STU // store `data` hash
+
+    // Group 3: SHA256 hash of the resulting Builder
+    ONE HASHEXT_SHA256
+""";
+
+slice $Slice$_fun_asAddressUnsafe(slice $self) impure asm "NOP";
+
+slice $Cell$_fun_beginParse(cell $self) impure asm """
+    CTOS
+""";
+
+slice $Cell$_fun_asSlice(cell $self) impure inline {
+    var ($self) = $self;
+    return $Cell$_fun_beginParse($self);
+}
+
+cell $Builder$_fun_endCell(builder $self) impure asm """
+    ENDC
+""";
+
+slice $global_newAddress(int $chain, int $hash) impure inline {
+    return $Slice$_fun_asAddressUnsafe($Cell$_fun_asSlice($Builder$_fun_endCell(store_uint(store_int(store_uint($global_beginCell(), 4, 3), $chain, 8), $hash, 256))));
+}
+
+slice $global_contractAddressExt(int $chain, cell $code, cell $data) impure inline {
+    int $hash = $global_contractHash($code, $data);
+    return $global_newAddress($chain, $hash);
+}
+
+slice $global_contractAddress((cell, cell) $s) impure inline {
+    var (($s'code, $s'data)) = $s;
+    return $global_contractAddressExt(0, $s'code, $s'data);
+}
+
+slice $global_myAddress() impure asm """
+    MYADDR
+""";
+
+() $global_nativeReserve(int $amount, int $mode) impure asm """
+    RAWRESERVE
+""";
+
+() $global_send((int, cell, cell, cell, int, slice, int) $params) impure asm """
+    NEWC
+    b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+    1 STI               // store `bounce`
+    b{000} STSLICECONST // store bounced = false and src = addr_none
+    STSLICE             // store `to`
+    SWAP
+    STGRAMS             // store `value`
+    105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+    STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+    // → Stack state
+    // s0: Builder
+    // s1: `data`
+    // s2: `code`
+    // s3: `body`
+    // s4: `mode`
+
+    // Group 2: Placing the Builder after code and data, then checking those for nullability
+    s2 XCHG0
+    DUP2
+    ISNULL
+    SWAP
+    ISNULL
+    AND
+    // → Stack state
+    // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+    // s1: `code`
+    // s2: `data`
+    // s3: Builder
+    // s4: `body`
+    // s5: `mode`
+
+    // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+    <{
+        DROP2 // drop `data` and `code`, since either of those is null
+        b{0} STSLICECONST
+    }> PUSHCONT
+
+    // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+    <{
+        // _ split_depth:(Maybe (## 5))
+        //   special:(Maybe TickTock)
+        //   code:(Maybe ^Cell)
+        //   data:(Maybe ^Cell)
+        //   library:(Maybe ^Cell)
+        // = StateInit;
+        ROT                // place message Builder on top
+        b{10} STSLICECONST // store Maybe = true, Either = false
+        // Start composing inlined StateInit
+        b{00} STSLICECONST // store split_depth and special first
+        STDICT             // store code
+        STDICT             // store data
+        b{0} STSLICECONST  // store library
+    }> PUSHCONT
+
+    // Group 3: IFELSE that does the branching shown above
+    IFELSE
+    // → Stack state
+    // s0: Builder
+    // s1: null or StateInit
+    // s2: `body`
+    // s3: `mode`
+
+    // Group 4: Finalizing the message
+    STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+    ENDC
+    // → Stack state
+    // s0: Cell
+    // s1: `mode`
+
+    // Group 5: Sending the message, with `mode` on top
+    SWAP
+    SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+""";
+
+() $global_sendRawMessage(cell $msg, int $mode) impure asm """
+    SENDRAWMSG
+""";
+
+builder $Builder$_fun_storeRef(cell $cell, builder $self) impure asm """
+    STREF
+""";
+
+() $global_emit(cell $body) impure inline {
+    cell $c = $Builder$_fun_endCell($Builder$_fun_storeRef($body, store_uint($global_beginCell(), 15211807202738752817960438464513, 104)));
+    $global_sendRawMessage($c, 0);
+}
+
+(int, int) $global_parseStdAddress(slice $slice) impure asm """
+    REWRITESTDADDR
+""";
+
+builder $Builder$_fun_storeBool(int $value, builder $self) impure asm """
+    1 STI
+""";
+
+slice $Builder$_fun_asSlice(builder $self) impure inline {
+    var ($self) = $self;
+    return $Cell$_fun_beginParse($Builder$_fun_endCell($self));
+}
+
+builder $Builder$_fun_storeAddress(builder $self, slice $address) impure asm """
+    STSLICER
+""";
+
+(slice, int) $Slice$_fun_loadCoins(slice $self) impure asm( -> 1 0) """
+    LDVARUINT16
+""";
+
+slice $Address$_fun_asSlice(slice $self) impure asm "NOP";
+
+;; Launchpad_LaunchpadJetton.constants.fc
+;; Cell HRHxLxCYS52rgP39YCiHw7q18H5amf3u90rzWpMEVhU=
+cell __gen_cell_cell_1d11f12f10984b9dab80fdfd602887c3bab5f07e5a99fdeef74af35a93045615() asm """
+    B{b5ee9c7241010101001100001e0000000043726561746f72206665653ef340c4} B>boc PUSHREF
+""";
+
+;; Cell WMUQ/cXwq5F1JLMi16M5SpQ5o1q4AkE6xEsm8W1qo4M=
+cell __gen_cell_cell_58c510fdc5f0ab917524b322d7a3394a9439a35ab802413ac44b26f16d6aa383() asm """
+    B{b5ee9c7241010101001200002000000000506c6174666f726d2066656575ee76c0} B>boc PUSHREF
+""";
+
+;; Cell l3nJDhenYuIqURH4V185MVgj1NBwFfsl1FeQ13i7d98=
+cell __gen_cell_cell_9779c90e17a762e22a5111f8575f39315823d4d07015fb25d45790d778bb77df() asm """
+    B{b5ee9c7241010101002b000052000000004c61756e636820726566756e6465643a20746f6b656e20616c726561647920657869737473b087c781} B>boc PUSHREF
+""";
+
+;; Cell GbZ5FVS6GKsIkHw68KOEIrChtzyKhyVQva4ZSwtDREA=
+cell __gen_cell_cell_19b6791554ba18ab08907c3af0a38422b0a1b73c8a872550bdae194b0b434440() asm """
+    B{b5ee9c7241010101001000001c000000004c61756e636820666565cc3587f5} B>boc PUSHREF
+""";
+
+;; Cell nj+Y/ZrH4EV0uU4f4bOKDLi+Aqe6BWPqXoiPOjEt54U=
+cell __gen_cell_cell_9e3f98fd9ac7e04574b94e1fe1b38a0cb8be02a7ba0563ea5e888f3a312de785() asm """
+    B{b5ee9c724101010100130000220000000053656c6c2070726f6365656473992f7824} B>boc PUSHREF
+""";
+
+;; Cell 3RHvbsTs/1JU1p1NlQlW1wlMGp+V8fNflfymeGJob3M=
+cell __gen_cell_cell_dd11ef6ec4ecff5254d69d4d950956d7094c1a9f95f1f35f95fca67862686f73() asm """
+    B{b5ee9c7241010101001a0000300000000047726164756174696f6e206c6971756964697479f46165b4} B>boc PUSHREF
+""";
+
+;; Launchpad_LaunchpadJetton.storage.fc
+;;
+;; Type: StateInit
+;; TLB: _ code:^cell data:^cell = StateInit
+;;
+
+_ $StateInit$_get_code((cell, cell) v) inline {
+    var (v'code, v'data) = v;
+    return v'code;
+}
+
+;;
+;; Type: SendParameters
+;; TLB: _ mode:int257 body:Maybe ^cell code:Maybe ^cell data:Maybe ^cell value:int257 to:address bounce:bool = SendParameters
+;;
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline {
+    return ($mode, $body, null(), null(), $value, $to, $bounce);
+}
+
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body_code_data(slice $to, int $value, int $mode, int $bounce, cell $body, cell $code, cell $data) inline {
+    return ($mode, $body, $code, $data, $value, $to, $bounce);
+}
+
+;;
+;; Type: StdAddress
+;; TLB: _ workchain:int8 address:uint256 = StdAddress
+;;
+
+_ $StdAddress$_get_workchain((int, int) v) inline {
+    var (v'workchain, v'address) = v;
+    return v'workchain;
+}
+
+;;
+;; Type: JettonTransferInternal
+;; Header: 0x178d4519
+;; TLB: jetton_transfer_internal#178d4519 queryId:uint64 amount:coins sender:address responseDestination:address forwardTonAmount:coins forwardPayload:remainder<slice> = JettonTransferInternal
+;;
+
+builder $JettonTransferInternal$_store(builder build_0, (int, int, slice, slice, int, slice) v) inline {
+    var (v'queryId, v'amount, v'sender, v'responseDestination, v'forwardTonAmount, v'forwardPayload) = v;
+    build_0 = store_uint(build_0, 395134233, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    build_0 = build_0.store_varuint16(v'amount);
+    build_0 = build_0.store_slice(v'sender);
+    build_0 = __tact_store_address_opt(build_0, v'responseDestination);
+    build_0 = build_0.store_varuint16(v'forwardTonAmount);
+    build_0 = build_0.store_slice(v'forwardPayload);
+    return build_0;
+}
+
+cell $JettonTransferInternal$_store_cell((int, int, slice, slice, int, slice) v, builder b) inline {
+    return $JettonTransferInternal$_store(b, v).end_cell();
+}
+
+((int, int, slice, slice, int, slice)) $JettonTransferInternal$_constructor_queryId_amount_sender_responseDestination_forwardTonAmount_forwardPayload(int $queryId, int $amount, slice $sender, slice $responseDestination, int $forwardTonAmount, slice $forwardPayload) inline {
+    return ($queryId, $amount, $sender, $responseDestination, $forwardTonAmount, $forwardPayload);
+}
+
+;;
+;; Type: JettonExcesses
+;; Header: 0xd53276db
+;; TLB: jetton_excesses#d53276db queryId:uint64 = JettonExcesses
+;;
+
+builder $JettonExcesses$_store(builder build_0, (int) v) inline {
+    var (v'queryId) = v;
+    build_0 = store_uint(build_0, 3576854235, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    return build_0;
+}
+
+cell $JettonExcesses$_store_cell((int) v, builder b) inline {
+    return $JettonExcesses$_store(b, v).end_cell();
+}
+
+((int)) $JettonExcesses$_constructor_queryId(int $queryId) inline {
+    return ($queryId);
+}
+
+;;
+;; Type: TakeWalletAddress
+;; Header: 0xd1735400
+;; TLB: take_wallet_address#d1735400 queryId:uint64 walletAddress:address ownerAddress:Maybe ^cell = TakeWalletAddress
+;;
+
+builder $TakeWalletAddress$_store(builder build_0, (int, slice, cell) v) inline {
+    var (v'queryId, v'walletAddress, v'ownerAddress) = v;
+    build_0 = store_uint(build_0, 3513996288, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    build_0 = __tact_store_address_opt(build_0, v'walletAddress);
+    build_0 = build_0.store_maybe_ref(v'ownerAddress);
+    return build_0;
+}
+
+cell $TakeWalletAddress$_store_cell((int, slice, cell) v, builder b) inline {
+    return $TakeWalletAddress$_store(b, v).end_cell();
+}
+
+((int, slice, cell)) $TakeWalletAddress$_constructor_queryId_walletAddress_ownerAddress(int $queryId, slice $walletAddress, cell $ownerAddress) inline {
+    return ($queryId, $walletAddress, $ownerAddress);
+}
+
+;;
+;; Type: TokenLaunched
+;; Header: 0x4c500101
+;; TLB: token_launched#4c500101 queryId:uint64 creator:address salt:uint64 initialBuyTon:coins = TokenLaunched
+;;
+
+builder $TokenLaunched$_store(builder build_0, (int, slice, int, int) v) inline {
+    var (v'queryId, v'creator, v'salt, v'initialBuyTon) = v;
+    build_0 = store_uint(build_0, 1280311553, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    build_0 = build_0.store_slice(v'creator);
+    build_0 = build_0.store_uint(v'salt, 64);
+    build_0 = build_0.store_varuint16(v'initialBuyTon);
+    return build_0;
+}
+
+cell $TokenLaunched$_store_cell((int, slice, int, int) v, builder b) inline {
+    return $TokenLaunched$_store(b, v).end_cell();
+}
+
+((int, slice, int, int)) $TokenLaunched$_constructor_queryId_creator_salt_initialBuyTon(int $queryId, slice $creator, int $salt, int $initialBuyTon) inline {
+    return ($queryId, $creator, $salt, $initialBuyTon);
+}
+
+;;
+;; Type: TradeEvent
+;; Header: 0x4c500102
+;; TLB: trade_event#4c500102 queryId:uint64 trader:address isBuy:bool tonAmount:coins tokenAmount:coins creatorFee:coins platformFee:coins realTonRaised:coins = TradeEvent
+;;
+
+builder $TradeEvent$_store(builder build_0, (int, slice, int, int, int, int, int, int) v) inline {
+    var (v'queryId, v'trader, v'isBuy, v'tonAmount, v'tokenAmount, v'creatorFee, v'platformFee, v'realTonRaised) = v;
+    build_0 = store_uint(build_0, 1280311554, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    build_0 = build_0.store_slice(v'trader);
+    build_0 = build_0.store_int(v'isBuy, 1);
+    build_0 = build_0.store_varuint16(v'tonAmount);
+    build_0 = build_0.store_varuint16(v'tokenAmount);
+    build_0 = build_0.store_varuint16(v'creatorFee);
+    build_0 = build_0.store_varuint16(v'platformFee);
+    build_0 = build_0.store_varuint16(v'realTonRaised);
+    return build_0;
+}
+
+cell $TradeEvent$_store_cell((int, slice, int, int, int, int, int, int) v, builder b) inline {
+    return $TradeEvent$_store(b, v).end_cell();
+}
+
+((int, slice, int, int, int, int, int, int)) $TradeEvent$_constructor_queryId_trader_isBuy_tonAmount_tokenAmount_creatorFee_platformFee_realTonRaised(int $queryId, slice $trader, int $isBuy, int $tonAmount, int $tokenAmount, int $creatorFee, int $platformFee, int $realTonRaised) inline {
+    return ($queryId, $trader, $isBuy, $tonAmount, $tokenAmount, $creatorFee, $platformFee, $realTonRaised);
+}
+
+;;
+;; Type: GraduatedEvent
+;; Header: 0x4c500103
+;; TLB: graduated_event#4c500103 queryId:uint64 realTonRaised:coins = GraduatedEvent
+;;
+
+builder $GraduatedEvent$_store(builder build_0, (int, int) v) inline {
+    var (v'queryId, v'realTonRaised) = v;
+    build_0 = store_uint(build_0, 1280311555, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    build_0 = build_0.store_varuint16(v'realTonRaised);
+    return build_0;
+}
+
+cell $GraduatedEvent$_store_cell((int, int) v, builder b) inline {
+    return $GraduatedEvent$_store(b, v).end_cell();
+}
+
+((int, int)) $GraduatedEvent$_constructor_queryId_realTonRaised(int $queryId, int $realTonRaised) inline {
+    return ($queryId, $realTonRaised);
+}
+
+;;
+;; Type: MigratedEvent
+;; Header: 0x4c500104
+;; TLB: migrated_event#4c500104 queryId:uint64 liquidityManager:address tonLiquidity:coins tokenLiquidity:coins = MigratedEvent
+;;
+
+builder $MigratedEvent$_store(builder build_0, (int, slice, int, int) v) inline {
+    var (v'queryId, v'liquidityManager, v'tonLiquidity, v'tokenLiquidity) = v;
+    build_0 = store_uint(build_0, 1280311556, 32);
+    build_0 = build_0.store_uint(v'queryId, 64);
+    build_0 = build_0.store_slice(v'liquidityManager);
+    build_0 = build_0.store_varuint16(v'tonLiquidity);
+    build_0 = build_0.store_varuint16(v'tokenLiquidity);
+    return build_0;
+}
+
+cell $MigratedEvent$_store_cell((int, slice, int, int) v, builder b) inline {
+    return $MigratedEvent$_store(b, v).end_cell();
+}
+
+((int, slice, int, int)) $MigratedEvent$_constructor_queryId_liquidityManager_tonLiquidity_tokenLiquidity(int $queryId, slice $liquidityManager, int $tonLiquidity, int $tokenLiquidity) inline {
+    return ($queryId, $liquidityManager, $tonLiquidity, $tokenLiquidity);
+}
+
+;;
+;; Type: JettonData
+;; TLB: _ totalSupply:coins mintable:bool adminAddress:address content:^cell walletCode:^cell = JettonData
+;;
+
+(int, int, slice, cell, cell) $JettonData$_to_external(((int, int, slice, cell, cell)) v) inline {
+    var (v'totalSupply, v'mintable, v'adminAddress, v'content, v'walletCode) = v; 
+    return (v'totalSupply, v'mintable, v'adminAddress, v'content, v'walletCode);
+}
+
+((int, int, slice, cell, cell)) $JettonData$_constructor_totalSupply_mintable_adminAddress_content_walletCode(int $totalSupply, int $mintable, slice $adminAddress, cell $content, cell $walletCode) inline {
+    return ($totalSupply, $mintable, $adminAddress, $content, $walletCode);
+}
+
+;;
+;; Type: CurveState
+;; TLB: _ factory:address creator:address treasury:address liquidityManager:address initialized:bool virtualTon:coins virtualTokens:coins realTonRaised:coins totalSupply:coins graduated:bool migrated:bool graduationTarget:coins totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 progressBps:int257 = CurveState
+;;
+
+(slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int) $CurveState$_to_external(((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) v) inline {
+    var (v'factory, v'creator, v'treasury, v'liquidityManager, v'initialized, v'virtualTon, v'virtualTokens, v'realTonRaised, v'totalSupply, v'graduated, v'migrated, v'graduationTarget, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount, v'progressBps) = v; 
+    return (v'factory, v'creator, v'treasury, v'liquidityManager, v'initialized, v'virtualTon, v'virtualTokens, v'realTonRaised, v'totalSupply, v'graduated, v'migrated, v'graduationTarget, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount, v'progressBps);
+}
+
+((slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps(slice $factory, slice $creator, slice $treasury, slice $liquidityManager, int $initialized, int $virtualTon, int $virtualTokens, int $realTonRaised, int $totalSupply, int $graduated, int $migrated, int $graduationTarget, int $totalCreatorFees, int $totalPlatformFees, int $tradeCount, int $progressBps) inline {
+    return ($factory, $creator, $treasury, $liquidityManager, $initialized, $virtualTon, $virtualTokens, $realTonRaised, $totalSupply, $graduated, $migrated, $graduationTarget, $totalCreatorFees, $totalPlatformFees, $tradeCount, $progressBps);
+}
+
+;;
+;; Type: QuoteBuy
+;; TLB: _ tokensOut:coins fee:coins creatorFee:coins platformFee:coins = QuoteBuy
+;;
+
+(int, int, int, int) $QuoteBuy$_to_external(((int, int, int, int)) v) inline {
+    var (v'tokensOut, v'fee, v'creatorFee, v'platformFee) = v; 
+    return (v'tokensOut, v'fee, v'creatorFee, v'platformFee);
+}
+
+((int, int, int, int)) $QuoteBuy$_constructor_tokensOut_fee_creatorFee_platformFee(int $tokensOut, int $fee, int $creatorFee, int $platformFee) inline {
+    return ($tokensOut, $fee, $creatorFee, $platformFee);
+}
+
+;;
+;; Type: QuoteSell
+;; TLB: _ tonOut:coins fee:coins creatorFee:coins platformFee:coins = QuoteSell
+;;
+
+(int, int, int, int) $QuoteSell$_to_external(((int, int, int, int)) v) inline {
+    var (v'tonOut, v'fee, v'creatorFee, v'platformFee) = v; 
+    return (v'tonOut, v'fee, v'creatorFee, v'platformFee);
+}
+
+((int, int, int, int)) $QuoteSell$_constructor_tonOut_fee_creatorFee_platformFee(int $tonOut, int $fee, int $creatorFee, int $platformFee) inline {
+    return ($tonOut, $fee, $creatorFee, $platformFee);
+}
+
+;;
+;; Type: JettonWallet
+;; TLB: _ balance:coins owner:address minter:address = JettonWallet
+;;
+
+builder $JettonWallet$init$_store(builder build_0, (slice, slice) v) inline {
+    var (v'owner, v'minter) = v;
+    build_0 = build_0.store_slice(v'owner);
+    build_0 = build_0.store_slice(v'minter);
+    return build_0;
+}
+
+cell $JettonWallet$_child_get_code() impure asm """
+    B{b5ee9c720102110100048500022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d901020149a65ec0bb513434800066be803e903e9015481b04e6be903e901640b4405c1678b6cf1b0d200304b401d072d721d200d200fa4021103450666f04f86102f862ed44d0d200019afa00fa40fa4055206c139afa40fa405902d1017059e204e30202d70d1ff2e0822182100f8a7ea5bae302218210178d4519bae302018210595f07bcba0405060701125cdb3c3054633052300a00b6028020d7217021d749c21f9430d31f01de208210178d4519ba8e1a30d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e082107bdd97deba8e19d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e05f0402f231d33ffa00fa40d72c01916d93fa4001e201f40431fa0023fa4430f2d08af8416f2481114d533cc705f2f48142a629c200f2f451a8a18200ca9721c2fff2f44330523bfa40fa0071d721fa00fa00306c6170f83a23c20091729171e281769402a85240a08209c9c380a08208989680a012bcf2f45138db3c5c0a0804fc31d33ffa00fa40d72c01916d93fa4001e201fa00f8416f24532cc705b38ebc537cdb3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d05240c705f2f4de51a8a021f8276f1021a1820898968066b608a18208e4e1c0a0a126c200e30f236eb30a0b0c0d010ee3025f04f2c0820e01fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d050767080407f2c48135079c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec9105610451034401310465522c8cf8580ca00cf8440ce01fa028069cf40025c6e010900586eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed540018f82ac87001ca005a02cecec900e8504b4330fa40fa0071d721fa00fa00306c6170f83a5230a018a171702848135074c8553082107362d09c5005cb1f13cb3f01fa02cecec9284614505510246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0003000c107b50895f0800dc9321c2009170e28e5003206ef2d080727004c8018210d53276db58cb1fcb3fc9414010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00926c31e202c87f01ca0055205afa0212cecec9ed5401fed33ffa00d72c01916d93fa4001e201f40430f8416f24303281114d5118c705f2f48142a624c200f2f45153a18200ca9721c2fff2f4817694068210042c1d80be16f2f470504380407f544857c8554082107bdd97de5006cb1f14cb3f58fa02ce01206e9430cf84809201cee2f400c926444410246d50436d03c8cf8580ca000f017689cf16ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed5410000110} B>boc PUSHREF
+""";
+
+(cell, cell) $JettonWallet$_init_child(slice $owner, slice $minter) inline_ref {
+    ;; Build init code cell
+
+    ;; Contract Code: JettonWallet
+    cell init_code = $JettonWallet$_child_get_code();
+
+
+    builder b = begin_cell();
+    b = b.store_int(false, 1);
+    b = $JettonWallet$init$_store(b, ($owner, $minter));
+    return (init_code, b.end_cell());
+}
+
+;;
+;; Type: LaunchpadJetton
+;; TLB: _ factory:address creator:address salt:uint64 initialized:bool treasury:address liquidityManager:address content:^cell totalSupply:coins virtualTon:coins virtualTokens:coins realTonRaised:coins graduated:bool migrated:bool totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 = LaunchpadJetton
+;;
+
+builder $LaunchpadJetton$_store(builder build_0, (slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) v) inline {
+    var (v'factory, v'creator, v'salt, v'initialized, v'treasury, v'liquidityManager, v'content, v'totalSupply, v'virtualTon, v'virtualTokens, v'realTonRaised, v'graduated, v'migrated, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount) = v;
+    build_0 = build_0.store_slice(v'factory);
+    build_0 = build_0.store_slice(v'creator);
+    build_0 = build_0.store_uint(v'salt, 64);
+    build_0 = build_0.store_int(v'initialized, 1);
+    build_0 = build_0.store_slice(v'treasury);
+    var build_1 = begin_cell();
+    build_1 = build_1.store_slice(v'liquidityManager);
+    build_1 = build_1.store_ref(v'content);
+    build_1 = build_1.store_varuint16(v'totalSupply);
+    build_1 = build_1.store_varuint16(v'virtualTon);
+    build_1 = build_1.store_varuint16(v'virtualTokens);
+    build_1 = build_1.store_varuint16(v'realTonRaised);
+    build_1 = build_1.store_int(v'graduated, 1);
+    build_1 = build_1.store_int(v'migrated, 1);
+    build_1 = build_1.store_varuint16(v'totalCreatorFees);
+    build_1 = build_1.store_varuint16(v'totalPlatformFees);
+    var build_2 = begin_cell();
+    build_2 = build_2.store_uint(v'tradeCount, 32);
+    build_1 = store_builder_ref(build_1, build_2);
+    build_0 = store_builder_ref(build_0, build_1);
+    return build_0;
+}
+
+(slice, ((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int))) $LaunchpadJetton$_load(slice sc_0) inline {
+    var v'factory = sc_0~load_msg_addr();
+    var v'creator = sc_0~load_msg_addr();
+    var v'salt = sc_0~load_uint(64);
+    var v'initialized = sc_0~load_int(1);
+    var v'treasury = sc_0~load_msg_addr();
+    slice sc_1 = sc_0~load_ref().begin_parse();
+    var v'liquidityManager = sc_1~load_msg_addr();
+    var v'content = sc_1~load_ref();
+    var v'totalSupply = sc_1~load_varuint16();
+    var v'virtualTon = sc_1~load_varuint16();
+    var v'virtualTokens = sc_1~load_varuint16();
+    var v'realTonRaised = sc_1~load_varuint16();
+    var v'graduated = sc_1~load_int(1);
+    var v'migrated = sc_1~load_int(1);
+    var v'totalCreatorFees = sc_1~load_varuint16();
+    var v'totalPlatformFees = sc_1~load_varuint16();
+    slice sc_2 = sc_1~load_ref().begin_parse();
+    var v'tradeCount = sc_2~load_uint(32);
+    return (sc_0, (v'factory, v'creator, v'salt, v'initialized, v'treasury, v'liquidityManager, v'content, v'totalSupply, v'virtualTon, v'virtualTokens, v'realTonRaised, v'graduated, v'migrated, v'totalCreatorFees, v'totalPlatformFees, v'tradeCount));
+}
+
+(slice, ((slice, slice, int))) $LaunchpadJetton$init$_load(slice sc_0) inline {
+    var v'factory = sc_0~load_msg_addr();
+    var v'creator = sc_0~load_msg_addr();
+    var v'salt = sc_0~load_int(257);
+    return (sc_0, (v'factory, v'creator, v'salt));
+}
+
+(slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $LaunchpadJetton$_contract_load() impure inline {
+    slice $sc = get_data().begin_parse();
+    int $loaded = $sc~load_int(1);
+    if ($loaded) {
+        return $sc~$LaunchpadJetton$_load();
+    }
+    else {
+        (slice $factory, slice $creator, int $salt) = $sc~$LaunchpadJetton$init$_load();
+        $sc.end_parse();
+        return $LaunchpadJetton$_contract_init($factory, $creator, $salt);
+    }
+}
+
+() $LaunchpadJetton$_contract_store((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) v) impure inline {
+    builder b = begin_cell();
+    b = b.store_int(true, 1);
+    b = $LaunchpadJetton$_store(b, v);
+    set_data(b.end_cell());
+}
+
+;;
+;; Contract LaunchpadJetton functions
+;;
+
+(slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $LaunchpadJetton$_contract_init(slice $factory, slice $creator, int $salt) impure inline {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = (null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null(), null());
+    $self'factory = $factory;
+    $self'creator = $creator;
+    $self'salt = $salt;
+    $self'initialized = false;
+    $self'treasury = $factory;
+    $self'liquidityManager = $factory;
+    $self'content = $global_emptyCell();
+    $self'totalSupply = 0;
+    $self'virtualTon = 30000000000;
+    $self'virtualTokens = 1000000000000000000;
+    $self'realTonRaised = 0;
+    $self'graduated = false;
+    $self'migrated = false;
+    $self'totalCreatorFees = 0;
+    $self'totalPlatformFees = 0;
+    $self'tradeCount = 0;
+    return ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount);
+}
+
+int $global_tradeFee(int $amount) impure inline {
+    return $global_muldivc($amount, 200, 10000);
+}
+
+int $global_creatorShare(int $fee) impure inline {
+    return (($fee * 6000) / 10000);
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quoteBuy((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tonAmount) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    int $fee = $global_tradeFee($tonAmount);
+    int $creatorFee = $global_creatorShare($fee);
+    int $tonAfterFee = ($tonAmount - $fee);
+    int $newVirtualTon = ($self'virtualTon + $tonAfterFee);
+    int $newVirtualTokens = $global_muldivc($self'virtualTon, $self'virtualTokens, $newVirtualTon);
+    var $fresh$ret_11 = $QuoteBuy$_constructor_tokensOut_fee_creatorFee_platformFee(($self'virtualTokens - $newVirtualTokens), $fee, $creatorFee, ($fee - $creatorFee));
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_11);
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), ()) $LaunchpadJetton$_fun_payFees((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $creatorFee, int $platformFee) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    if (($creatorFee > 0)) {
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'creator, $creatorFee, 1, false, __gen_cell_cell_1d11f12f10984b9dab80fdfd602887c3bab5f07e5a99fdeef74af35a93045615()));
+    }
+    if (($platformFee > 0)) {
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'treasury, $platformFee, 1, false, __gen_cell_cell_58c510fdc5f0ab917524b322d7a3394a9439a35ab802413ac44b26f16d6aa383()));
+    }
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), ());
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), ()) $LaunchpadJetton$_fun_mint((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, slice $to, int $amount, int $queryId, int $mode, int $value) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    var ($init'code, $init'data) = $JettonWallet$_init_child($to, $global_myAddress());
+    $global_send($SendParameters$_constructor_to_value_mode_bounce_body_code_data($global_contractAddress(($init'code, $init'data)), $value, $mode, true, $JettonTransferInternal$_store_cell($JettonTransferInternal$_constructor_queryId_amount_sender_responseDestination_forwardTonAmount_forwardPayload($queryId, $amount, $global_myAddress(), $to, 0, $Builder$_fun_asSlice($Builder$_fun_storeBool(false, $global_beginCell()))), begin_cell()), $init'code, $init'data));
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), ());
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), ()) $LaunchpadJetton$_fun_executeBuy((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, slice $buyer, int $tonAmount, int $minTokensOut, int $queryId) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    var ($q'tokensOut, $q'fee, $q'creatorFee, $q'platformFee) = ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_quoteBuy($tonAmount);
+    throw_unless(59371, ($q'tokensOut > 0));
+    throw_unless(41529, ($q'tokensOut >= $minTokensOut));
+    int $tonAfterFee = ($tonAmount - $q'fee);
+    $self'virtualTon = ($self'virtualTon + $tonAfterFee);
+    $self'virtualTokens = ($self'virtualTokens - $q'tokensOut);
+    $self'realTonRaised = ($self'realTonRaised + $tonAfterFee);
+    $self'totalSupply = ($self'totalSupply + $q'tokensOut);
+    $self'totalCreatorFees = ($self'totalCreatorFees + $q'creatorFee);
+    $self'totalPlatformFees = ($self'totalPlatformFees + $q'platformFee);
+    $self'tradeCount = ($self'tradeCount + 1);
+    if (($self'realTonRaised >= 1500000000000)) {
+        $self'graduated = true;
+        $global_emit($GraduatedEvent$_store_cell($GraduatedEvent$_constructor_queryId_realTonRaised($queryId, $self'realTonRaised), begin_cell()));
+    }
+    $global_nativeReserve(($self'realTonRaised + 50000000), 0);
+    ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_payFees($q'creatorFee, $q'platformFee);
+    $global_emit($TradeEvent$_store_cell($TradeEvent$_constructor_queryId_trader_isBuy_tonAmount_tokenAmount_creatorFee_platformFee_realTonRaised($queryId, $buyer, true, $tonAmount, $q'tokensOut, $q'creatorFee, $q'platformFee, $self'realTonRaised), begin_cell()));
+    ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_mint($buyer, $q'tokensOut, $queryId, 128, 0);
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), ());
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quoteSell((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tokenAmount) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    int $newVirtualTokens = ($self'virtualTokens + $tokenAmount);
+    int $newVirtualTon = $global_muldivc($self'virtualTon, $self'virtualTokens, $newVirtualTokens);
+    int $grossTonOut = ($self'virtualTon - $newVirtualTon);
+    int $fee = $global_tradeFee($grossTonOut);
+    int $creatorFee = $global_creatorShare($fee);
+    var $fresh$ret_12 = $QuoteSell$_constructor_tonOut_fee_creatorFee_platformFee(($grossTonOut - $fee), $fee, $creatorFee, ($fee - $creatorFee));
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_12);
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, slice, cell, cell)) $LaunchpadJetton$_fun_get_jetton_data((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    var $fresh$ret_13 = $JettonData$_constructor_totalSupply_mintable_adminAddress_content_walletCode($self'totalSupply, (~ $self'migrated), null(), $self'content, $StateInit$_get_code($JettonWallet$_init_child($global_myAddress(), $global_myAddress())));
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_13);
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), slice) $LaunchpadJetton$_fun_get_wallet_address((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, slice $owner) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    var $fresh$ret_14 = $global_contractAddress($JettonWallet$_init_child($owner, $global_myAddress()));
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_14);
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (slice, slice, slice, slice, int, int, int, int, int, int, int, int, int, int, int, int)) $LaunchpadJetton$_fun_get_curve_state((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    var $fresh$ret_15 = $CurveState$_constructor_factory_creator_treasury_liquidityManager_initialized_virtualTon_virtualTokens_realTonRaised_totalSupply_graduated_migrated_graduationTarget_totalCreatorFees_totalPlatformFees_tradeCount_progressBps($self'factory, $self'creator, $self'treasury, $self'liquidityManager, $self'initialized, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'totalSupply, $self'graduated, $self'migrated, 1500000000000, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount, $global_min(10000, (($self'realTonRaised * 10000) / 1500000000000)));
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_15);
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quote_buy((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tonAmount) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    var $fresh$ret_16 = ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_quoteBuy($tonAmount);
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_16);
+}
+
+((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int), (int, int, int, int)) $LaunchpadJetton$_fun_quote_sell((slice, slice, int, int, slice, slice, cell, int, int, int, int, int, int, int, int, int) $self, int $tokenAmount) impure inline_ref {
+    var (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)) = $self;
+    var $fresh$ret_17 = ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_quoteSell($tokenAmount);
+    return (($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount), $fresh$ret_17);
+}
+
+;;
+;; Get methods of a Contract LaunchpadJetton
+;;
+
+_ %get_jetton_data() method_id(106029) {
+    var self = $LaunchpadJetton$_contract_load();
+    var res = self~$LaunchpadJetton$_fun_get_jetton_data();
+    return $JettonData$_to_external(res);
+}
+
+_ %get_wallet_address(slice $owner) method_id(103289) {
+    slice $owner = $owner;
+    var self = $LaunchpadJetton$_contract_load();
+    var res = self~$LaunchpadJetton$_fun_get_wallet_address($owner);
+    return res;
+}
+
+_ %get_curve_state() method_id(124044) {
+    var self = $LaunchpadJetton$_contract_load();
+    var res = self~$LaunchpadJetton$_fun_get_curve_state();
+    return $CurveState$_to_external(res);
+}
+
+_ %quote_buy(int $tonAmount) method_id(111811) {
+    int $tonAmount = $tonAmount;
+    var self = $LaunchpadJetton$_contract_load();
+    var res = self~$LaunchpadJetton$_fun_quote_buy($tonAmount);
+    return $QuoteBuy$_to_external(res);
+}
+
+_ %quote_sell(int $tokenAmount) method_id(88963) {
+    int $tokenAmount = $tokenAmount;
+    var self = $LaunchpadJetton$_contract_load();
+    var res = self~$LaunchpadJetton$_fun_quote_sell($tokenAmount);
+    return $QuoteSell$_to_external(res);
+}
+
+;;
+;; Routing of a Contract LaunchpadJetton
+;;
+
+;; message opcode reader utility: only binary receivers
+;; Returns 32 bit message opcode, otherwise throws the "Invalid incoming message" exit code
+(slice, int) ~load_opcode_internal(slice s) asm( -> 1 0) "32 LDUQ 130 THROWIFNOT";
+
+() recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
+    
+    ;; Context
+    var cs = in_msg_cell.begin_parse();
+    cs~skip_bits(2);
+    var msg_bounceable = cs~load_int(1);
+    var msg_bounced = cs~load_int(1);
+    slice msg_sender_addr = cs~load_msg_addr();
+    __tact_context = (msg_bounceable, msg_sender_addr, msg_value, cs);
+    __tact_context_sender = msg_sender_addr;
+    
+    ;; Load contract data
+    var ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount) = $LaunchpadJetton$_contract_load();
+    
+    ;; Handle bounced messages
+    if (msg_bounced) { return (); }
+    var op = in_msg~load_opcode_internal();
+    ;; Receive JettonSetup message
+    if (op == 0x4c500002) {
+        var $msg'queryId = in_msg~load_uint(64);
+        var $msg'treasury = in_msg~load_msg_addr();
+        var $msg'liquidityManager = in_msg~load_msg_addr();
+        var $msg'content = in_msg~load_ref();
+        var $msg'launchFee = in_msg~load_varuint16();
+        var $msg'initialBuyTon = in_msg~load_varuint16();
+        var ($ctx'bounceable, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
+        throw_unless(11788, ( equal_slices_bits($ctx'sender, $self'factory) ));
+        if ($self'initialized) {
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'creator, 0, 66, false, __gen_cell_cell_9779c90e17a762e22a5111f8575f39315823d4d07015fb25d45790d778bb77df()));
+            $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+            return ();
+        }
+        $self'initialized = true;
+        $self'treasury = $msg'treasury;
+        $self'liquidityManager = $msg'liquidityManager;
+        $self'content = $msg'content;
+        $global_emit($TokenLaunched$_store_cell($TokenLaunched$_constructor_queryId_creator_salt_initialBuyTon($msg'queryId, $self'creator, $self'salt, $msg'initialBuyTon), begin_cell()));
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'treasury, $msg'launchFee, 1, false, __gen_cell_cell_19b6791554ba18ab08907c3af0a38422b0a1b73c8a872550bdae194b0b434440()));
+        if (($msg'initialBuyTon > 0)) {
+            ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_executeBuy($self'creator, $msg'initialBuyTon, 0, $msg'queryId);
+            $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+            return ();
+        }
+        $global_nativeReserve(50000000, 0);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'creator, 0, 128, false, $JettonExcesses$_store_cell($JettonExcesses$_constructor_queryId($msg'queryId), begin_cell())));
+        $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+        return ();
+    }
+    
+    ;; Receive Buy message
+    if (op == 0x4c500003) {
+        var $msg'queryId = in_msg~load_uint(64);
+        var $msg'tonAmount = in_msg~load_varuint16();
+        var $msg'minTokensOut = in_msg~load_varuint16();
+        var ($ctx'bounceable, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
+        throw_unless(7657, $self'initialized);
+        throw_unless(58403, (~ $self'graduated));
+        throw_unless(59371, ($msg'tonAmount >= 10000000));
+        throw_unless(30356, ($ctx'value >= ($msg'tonAmount + 100000000)));
+        ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_executeBuy($ctx'sender, $msg'tonAmount, $msg'minTokensOut, $msg'queryId);
+        $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+        return ();
+    }
+    
+    ;; Receive JettonBurnNotification message
+    if (op == 0x7bdd97de) {
+        var $msg'queryId = in_msg~load_uint(64);
+        var $msg'amount = in_msg~load_varuint16();
+        var $msg'sender = in_msg~load_msg_addr();
+        var $msg'responseDestination = in_msg~__tact_load_address_opt();
+        var $msg'customPayload = in_msg~load_maybe_ref();
+        var ($ctx'bounceable, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
+        var ($wallet'code, $wallet'data) = $JettonWallet$_init_child($msg'sender, $global_myAddress());
+        throw_unless(4429, ( equal_slices_bits($ctx'sender, $global_contractAddress(($wallet'code, $wallet'data))) ));
+        if (null?($msg'customPayload)) {
+            throw_unless(2303, $self'graduated);
+            $self'totalSupply = ($self'totalSupply - $msg'amount);
+            slice $to = ((~ null?($msg'responseDestination)) ? __tact_not_null($msg'responseDestination) : $msg'sender);
+            $global_send($SendParameters$_constructor_to_value_mode_bounce_body($to, 0, 66, false, $JettonExcesses$_store_cell($JettonExcesses$_constructor_queryId($msg'queryId), begin_cell())));
+            $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+            return ();
+        }
+        throw_unless(58403, (~ $self'graduated));
+        throw_unless(30356, ($ctx'value >= 50000000));
+        slice $payload = $Cell$_fun_beginParse(__tact_not_null($msg'customPayload));
+        throw_unless(48404, ($payload~load_uint(32) == 1397050444));
+        int $minTonOut = $payload~$Slice$_fun_loadCoins();
+        var ($q'tonOut, $q'fee, $q'creatorFee, $q'platformFee) = ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_quoteSell($msg'amount);
+        int $grossTonOut = ($q'tonOut + $q'fee);
+        throw_unless(59371, ($q'tonOut > 0));
+        throw_unless(16323, ($grossTonOut <= $self'realTonRaised));
+        throw_unless(41529, ($q'tonOut >= $minTonOut));
+        $self'virtualTon = ($self'virtualTon - $grossTonOut);
+        $self'virtualTokens = ($self'virtualTokens + $msg'amount);
+        $self'realTonRaised = ($self'realTonRaised - $grossTonOut);
+        $self'totalSupply = ($self'totalSupply - $msg'amount);
+        $self'totalCreatorFees = ($self'totalCreatorFees + $q'creatorFee);
+        $self'totalPlatformFees = ($self'totalPlatformFees + $q'platformFee);
+        $self'tradeCount = ($self'tradeCount + 1);
+        $global_nativeReserve(($self'realTonRaised + 50000000), 0);
+        ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_payFees($q'creatorFee, $q'platformFee);
+        $global_emit($TradeEvent$_store_cell($TradeEvent$_constructor_queryId_trader_isBuy_tonAmount_tokenAmount_creatorFee_platformFee_realTonRaised($msg'queryId, $msg'sender, false, $grossTonOut, $msg'amount, $q'creatorFee, $q'platformFee, $self'realTonRaised), begin_cell()));
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($msg'sender, 0, 128, false, __gen_cell_cell_9e3f98fd9ac7e04574b94e1fe1b38a0cb8be02a7ba0563ea5e888f3a312de785()));
+        $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+        return ();
+    }
+    
+    ;; Receive Migrate message
+    if (op == 0x4c500004) {
+        var $msg'queryId = in_msg~load_uint(64);
+        var ($ctx'bounceable, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
+        throw_unless(62610, $self'graduated);
+        throw_unless(20955, (~ $self'migrated));
+        throw_unless(30356, ($ctx'value >= 150000000));
+        int $tonLiquidity = $self'realTonRaised;
+        int $tokenLiquidity = $self'virtualTokens;
+        $self'migrated = true;
+        $self'realTonRaised = 0;
+        $self'virtualTokens = 0;
+        $self'totalSupply = ($self'totalSupply + $tokenLiquidity);
+        $global_emit($MigratedEvent$_store_cell($MigratedEvent$_constructor_queryId_liquidityManager_tonLiquidity_tokenLiquidity($msg'queryId, $self'liquidityManager, $tonLiquidity, $tokenLiquidity), begin_cell()));
+        $global_nativeReserve(50000000, 0);
+        ($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount)~$LaunchpadJetton$_fun_mint($self'liquidityManager, $tokenLiquidity, $msg'queryId, 1, 50000000);
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'liquidityManager, 0, 128, false, __gen_cell_cell_dd11ef6ec4ecff5254d69d4d950956d7094c1a9f95f1f35f95fca67862686f73()));
+        $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+        return ();
+    }
+    
+    ;; Receive ProvideWalletAddress message
+    if (op == 0x2c76b973) {
+        var $msg'queryId = in_msg~load_uint(64);
+        var $msg'ownerAddress = in_msg~load_msg_addr();
+        var $msg'includeAddress = in_msg~load_int(1);
+        int $ownerWorkchain = $StdAddress$_get_workchain($global_parseStdAddress($Address$_fun_asSlice($msg'ownerAddress)));
+        slice $walletAddress = null();
+        ifnot ($ownerWorkchain) {
+            $walletAddress = $global_contractAddress($JettonWallet$_init_child($msg'ownerAddress, $global_myAddress()));
+        }
+        $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_context_get_sender(), 0, 64, false, $TakeWalletAddress$_store_cell($TakeWalletAddress$_constructor_queryId_walletAddress_ownerAddress($msg'queryId, $walletAddress, ($msg'includeAddress ? $Builder$_fun_endCell($Builder$_fun_storeAddress($global_beginCell(), $msg'ownerAddress)) : null())), begin_cell())));
+        $LaunchpadJetton$_contract_store(($self'factory, $self'creator, $self'salt, $self'initialized, $self'treasury, $self'liquidityManager, $self'content, $self'totalSupply, $self'virtualTon, $self'virtualTokens, $self'realTonRaised, $self'graduated, $self'migrated, $self'totalCreatorFees, $self'totalPlatformFees, $self'tradeCount));
+        return ();
+    }
+    
+    ;; Throw if not handled
+    throw(130);
+}
+
+
+() __tact_selector_hack_asm() impure asm """
+@atend @ 1 {
+        execute current@ context@ current!
+        {
+            // The core idea of this function is to save gas by avoiding unnecessary dict jump, when recv_internal/recv_external is called
+            // We want to extract recv_internal/recv_external from the dict and select needed function
+            // not by jumping to the needed function by it's index, but by using usual IF statements.
+
+            }END> b> // Close previous builder, now we have a cell of previous code on top of the stack
+
+            <{ // Start of the new code builder
+                SETCP0
+                // Swap the new code builder with the previous code, now we have previous code on top of the stack
+                swap
+                // Transform cell to slice and load first ref from the previous code, now we have the dict on top of the stack
+                <s ref@
+
+                // Extract the recv_internal from the dict
+                dup 0 swap @procdictkeylen idict@ { "internal shortcut error" abort } ifnot
+                swap
+
+                // Delete the recv_internal from the dict
+                0 swap @procdictkeylen idict- drop
+                // Delete the recv_external from the dict (it's okay if it's not there)
+                -1 swap @procdictkeylen idict- drop
+                // Delete the __tact_selector_hack from the dict
+                65535 swap @procdictkeylen idict- drop
+
+                // Bring the code builder from the bottom of the stack
+                // because if recv_external extraction is optional, and the number of elements on the stack is not fixed
+                depth 1- roll
+                // Swap with the dict from which we extracted recv_internal and (maybe) recv_external
+                swap
+
+                // Check if the dict is empty
+                dup null?
+                // Store a copy of this flag in the bottom of the stack
+                dup depth 1- -roll
+                {
+                    // If the dict is empty, just drop it (it will be null if it's empty)
+                    drop
+                }
+                {
+                    // If the dict is not empty, prepare continuation to be stored in c3
+                    <{
+                        // Save this dict as first ref in this continuation, it will be pushed in runtime by DICTPUSHCONST
+                        swap @procdictkeylen DICTPUSHCONST
+                        // Jump to the needed function by it's index
+                        DICTIGETJMPZ
+                        // If such key is not found, throw 11 along with the key as an argument
+                        11 THROWARG
+                    }> PUSHCONT
+                    // Store the continuation in c3
+                    c3 POP
+                } cond
+
+                // Function id is on top of the (runtime) stack
+                DUP IFNOTJMP:<{
+                    // place recv_internal here
+                    DROP swap @addop
+                }>
+
+                // Bring back the flag, indicating if the dict is empty or not from the bottom of the stack
+                depth 1- roll
+                {
+                    // If the dict is empty, throw 11
+                    11 THROWARG
+                }
+                {
+                    // If the dict is not empty, jump to continuation from c3
+                    c3 PUSH JMPX
+                } cond
+            }> b>
+        } : }END>c
+        current@ context! current!
+    } does @atend !
+""";
+
+() __tact_selector_hack() method_id(65535) {
+    return __tact_selector_hack_asm();
+}
