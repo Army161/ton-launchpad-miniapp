@@ -8,14 +8,18 @@ Telegram-native meme coin launchpad on TON: create Jettons on a bonding curve, t
 
 ## V1 — Live Operational (current sprint)
 
-- [x] Mini App UI shell (Home, Create, Buy, Sell, Detail, nav)
-- [ ] Tact smart contracts (Factory, BondingCurve, Jetton)
-- [ ] TON Connect wallet integration
-- [ ] Telegram initData auth (no signup form)
-- [ ] 2% trading fee → 60% creator / 40% platform
-- [ ] STON.fi graduation at 1,500 TON cap
-- [ ] Live feeds: STON.fi, DexScreener, CoinGecko, TonAPI
-- [ ] Vercel + Cloudflare deployment
+Engineering status is tracked in `docs/STATUS.md`; evidence in `docs/VERIFICATION.md`.
+
+- [x] Mini App UI shell (Home, Create, Buy, Sell, Detail, My Tokens, Profile, nav)
+- [x] Tact contracts: Factory, LaunchpadJetton (minter + curve), JettonWallet — sandbox-tested
+- [x] TON Connect wallet integration (network pinned, return URL)
+- [x] Telegram initData auth (no signup form)
+- [x] 2% trading fee → 60% creator / 40% platform, on-chain
+- [x] Graduation at 1,500 TON; keeper seeds STON.fi and locks LP (ADR-005)
+- [x] Live feeds: STON.fi, DexScreener, CoinGecko, TonAPI (fail safe)
+- [ ] Testnet gate (founder wallet)
+- [ ] Mainnet factory deploy (after "MAINNET GO-LIVE APPROVED")
+- [ ] Vercel production on this code + BotFather; Cloudflare custom domain later
 
 ## V2 — Advanced Economics (documented, not built)
 
@@ -66,16 +70,17 @@ See fee mechanics section below.
 
 ## Milestones
 
-| Milestone | Target |
+| Milestone | Status |
 |-----------|--------|
-| Docs skeleton | Phase 0 |
-| Contracts + tests | Phase 1 |
-| Mainnet deploy | Phase 1 |
-| Wallet + auth | Phase 2 |
-| Wire trading | Phase 3 |
-| Deploy infra | Phase 5 |
+| Docs and control files | Done |
+| Contracts + sandbox tests | Done |
+| Wallet + auth | Done (live check pending) |
+| Wire trading | Done (live check pending) |
+| Testnet gate | Blocked on founder wallet |
+| Mainnet deploy | Blocked on testnet gate + approval |
+| Design pixel pass | Waiting for founder mockups |
 
-## TODO
+## V1.1 candidates
 
-- [ ] Flesh out timeline dates after mainnet deploy
-- [ ] Add mockup-driven UI pass when design assets arrive
+- Explore page (search/filter), indexer or DB for token history beyond recent factory transactions
+- Upload rate limit, code-splitting, independent audit

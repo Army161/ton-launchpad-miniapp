@@ -5,6 +5,10 @@
  *   2. seeds a STON.fi v2 TON/jetton pool from that wallet.
  *
  *   npm run graduate -- <testnet|mainnet> <jettonAddress> [--ton=<amount>] [--execute]
+ *   npm run graduate -- <testnet|mainnet> --lock-lp --pool=<poolAddress> [--execute]
+ *
+ * --lock-lp sends every LP token the keeper holds for that pool to the zero
+ * address, which locks the liquidity permanently (irreversible).
  *
  * The TON side of the pool is the curve reserve moved by Migrate. If Migrate
  * already ran in an earlier invocation, pass it with --ton=<amount>.
@@ -18,14 +22,54 @@ import { StonApiClient } from '@ston-fi/api';
 import { dexFactory } from '@ston-fi/sdk';
 import { LaunchpadJetton, storeMigrate } from '../build/Launchpad_LaunchpadJetton';
 import { JettonWallet } from '../build/Launchpad_JettonWallet';
-import { friendly, openWallet, parseNetwork, waitFor } from './lib/wallet';
+import { JettonMaster, JettonWallet as TonJettonWallet } from '@ton/ton';
+import { friendly, openWallet, parseNetwork, waitFor, type Network } from './lib/wallet';
 
 const MIGRATE_GAS = toNano('0.15');
 /** TON kept back in the keeper wallet for the STON.fi message fees. */
 const KEEPER_GAS_RESERVE = toNano('1');
 
+const ZERO_ADDRESS = Address.parse('EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c');
+
+async function lockLp(network: Network, execute: boolean) {
+    const poolArg = process.argv.find((a) => a.startsWith('--pool='));
+    if (!poolArg) throw new Error('--lock-lp needs --pool=<poolAddress>');
+    const pool = Address.parse(poolArg.slice(7));
+    const keeper = await openWallet(network, process.env.KEEPER_MNEMONIC ? 'KEEPER_MNEMONIC' : 'DEPLOY_MNEMONIC');
+    const lpWalletAddress = await keeper.client.open(JettonMaster.create(pool)).getWalletAddress(keeper.address);
+    const lpBalance = await keeper.client.open(TonJettonWallet.create(lpWalletAddress)).getBalance();
+    console.log(`Pool:        ${friendly(pool, network)}`);
+    console.log(`LP held:     ${lpBalance} units in ${friendly(lpWalletAddress, network)}`);
+    if (lpBalance === 0n) throw new Error('Keeper holds no LP tokens for this pool.');
+    console.log(`Plan:        transfer all LP to ${ZERO_ADDRESS.toString()} (permanent lock)`);
+    if (!execute) {
+        console.log('Dry run: re-run with --execute to send.');
+        return;
+    }
+    const body = beginCell()
+        .storeUint(0x0f8a7ea5, 32)
+        .storeUint(0, 64)
+        .storeCoins(lpBalance)
+        .storeAddress(ZERO_ADDRESS)
+        .storeAddress(keeper.address)
+        .storeBit(false)
+        .storeCoins(0)
+        .storeBit(false)
+        .endCell();
+    const seqno = await keeper.send([{ to: lpWalletAddress, value: toNano('0.05'), body }]);
+    await keeper.waitSeqnoPast(seqno);
+    console.log('LP transfer sent. Confirm on the explorer that the keeper LP balance is 0.');
+}
+
 async function main() {
     const network = parseNetwork(process.argv[2]);
+    if (process.argv.includes('--lock-lp')) {
+        const execute = process.argv.includes('--execute');
+        if (network === 'mainnet' && execute && process.env.MAINNET_GO_LIVE_APPROVED !== 'yes') {
+            throw new Error('Mainnet execution needs MAINNET_GO_LIVE_APPROVED=yes.');
+        }
+        return lockLp(network, execute);
+    }
     const jettonAddress = Address.parse(process.argv[3] ?? '');
     const execute = process.argv.includes('--execute');
     if (network === 'mainnet' && execute && process.env.MAINNET_GO_LIVE_APPROVED !== 'yes') {
@@ -119,6 +163,7 @@ async function main() {
     ]);
     await keeper.waitSeqnoPast(seqno);
     console.log(`Liquidity sent. Check the pool: https://${network === 'testnet' ? 'testnet.' : ''}tonviewer.com/${sim.poolAddress}`);
+    console.log(`Then lock the LP: npm run graduate -- ${network} --lock-lp --pool=${sim.poolAddress} --execute`);
 }
 
 main().catch((e) => {

@@ -1,6 +1,7 @@
 # DESIGN.md — UI/UX Specification
 
-> **Status:** Blocked on founder mockup / Figma upload
+> **Status:** `DESIGN_PIXEL_PASS = WAITING_FOR_FOUNDER_ASSET`. Functional UI is complete; the pixel pass starts when
+> mockups or a Figma file are uploaded. It must not change contract or transaction behaviour.
 
 ## Reference launchpads
 
@@ -16,10 +17,10 @@
 | Home | `/` | Built — tabs Launchpad / Graduated |
 | Creator Studio | `/create` | Built |
 | Token detail | `/token/:id` | Built |
-| Buy / Sell | `/buy/:id`, `/sell/:id` | Built |
-| Explore | `/explore` | Placeholder |
-| My Tokens | `/my-tokens` | Placeholder |
-| Profile | `/profile` | Placeholder |
+| Buy / Sell | `/buy/:id`, `/sell/:id` | Built — live quotes, 1% slippage, signing → confirming → done |
+| Explore | `/explore` | Placeholder (V1.1) |
+| My Tokens | `/my-tokens` | Built — wallet jettons via TonAPI |
+| Profile | `/profile` | Built — Telegram profile and wallet |
 
 ## Design tokens (locked)
 
