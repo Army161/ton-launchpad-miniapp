@@ -1282,6 +1282,7 @@ export type Buy = {
     queryId: bigint;
     tonAmount: bigint;
     minTokensOut: bigint;
+    referrer: Address | null;
 }
 
 export function storeBuy(src: Buy) {
@@ -1291,6 +1292,7 @@ export function storeBuy(src: Buy) {
         b_0.storeUint(src.queryId, 64);
         b_0.storeCoins(src.tonAmount);
         b_0.storeCoins(src.minTokensOut);
+        b_0.storeAddress(src.referrer);
     };
 }
 
@@ -1300,21 +1302,24 @@ export function loadBuy(slice: Slice) {
     const _queryId = sc_0.loadUintBig(64);
     const _tonAmount = sc_0.loadCoins();
     const _minTokensOut = sc_0.loadCoins();
-    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut };
+    const _referrer = sc_0.loadMaybeAddress();
+    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut, referrer: _referrer };
 }
 
 export function loadTupleBuy(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _tonAmount = source.readBigNumber();
     const _minTokensOut = source.readBigNumber();
-    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut };
+    const _referrer = source.readAddressOpt();
+    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut, referrer: _referrer };
 }
 
 export function loadGetterTupleBuy(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _tonAmount = source.readBigNumber();
     const _minTokensOut = source.readBigNumber();
-    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut };
+    const _referrer = source.readAddressOpt();
+    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut, referrer: _referrer };
 }
 
 export function storeTupleBuy(source: Buy) {
@@ -1322,6 +1327,7 @@ export function storeTupleBuy(source: Buy) {
     builder.writeNumber(source.queryId);
     builder.writeNumber(source.tonAmount);
     builder.writeNumber(source.minTokensOut);
+    builder.writeAddress(source.referrer);
     return builder.build();
 }
 
@@ -1580,6 +1586,71 @@ export function dictValueParserTradeEvent(): DictionaryValue<TradeEvent> {
         },
         parse: (src) => {
             return loadTradeEvent(src.loadRef().beginParse());
+        }
+    }
+}
+
+export type ReferralPaidEvent = {
+    $$type: 'ReferralPaidEvent';
+    queryId: bigint;
+    referrer: Address;
+    trader: Address;
+    referrerFee: bigint;
+}
+
+export function storeReferralPaidEvent(src: ReferralPaidEvent) {
+    return (builder: Builder) => {
+        const b_0 = builder;
+        b_0.storeUint(1280311557, 32);
+        b_0.storeUint(src.queryId, 64);
+        b_0.storeAddress(src.referrer);
+        b_0.storeAddress(src.trader);
+        b_0.storeCoins(src.referrerFee);
+    };
+}
+
+export function loadReferralPaidEvent(slice: Slice) {
+    const sc_0 = slice;
+    if (sc_0.loadUint(32) !== 1280311557) { throw Error('Invalid prefix'); }
+    const _queryId = sc_0.loadUintBig(64);
+    const _referrer = sc_0.loadAddress();
+    const _trader = sc_0.loadAddress();
+    const _referrerFee = sc_0.loadCoins();
+    return { $$type: 'ReferralPaidEvent' as const, queryId: _queryId, referrer: _referrer, trader: _trader, referrerFee: _referrerFee };
+}
+
+export function loadTupleReferralPaidEvent(source: TupleReader) {
+    const _queryId = source.readBigNumber();
+    const _referrer = source.readAddress();
+    const _trader = source.readAddress();
+    const _referrerFee = source.readBigNumber();
+    return { $$type: 'ReferralPaidEvent' as const, queryId: _queryId, referrer: _referrer, trader: _trader, referrerFee: _referrerFee };
+}
+
+export function loadGetterTupleReferralPaidEvent(source: TupleReader) {
+    const _queryId = source.readBigNumber();
+    const _referrer = source.readAddress();
+    const _trader = source.readAddress();
+    const _referrerFee = source.readBigNumber();
+    return { $$type: 'ReferralPaidEvent' as const, queryId: _queryId, referrer: _referrer, trader: _trader, referrerFee: _referrerFee };
+}
+
+export function storeTupleReferralPaidEvent(source: ReferralPaidEvent) {
+    const builder = new TupleBuilder();
+    builder.writeNumber(source.queryId);
+    builder.writeAddress(source.referrer);
+    builder.writeAddress(source.trader);
+    builder.writeNumber(source.referrerFee);
+    return builder.build();
+}
+
+export function dictValueParserReferralPaidEvent(): DictionaryValue<ReferralPaidEvent> {
+    return {
+        serialize: (src, builder) => {
+            builder.storeRef(beginCell().store(storeReferralPaidEvent(src)).endCell());
+        },
+        parse: (src) => {
+            return loadReferralPaidEvent(src.loadRef().beginParse());
         }
     }
 }
@@ -1853,6 +1924,7 @@ export type CurveState = {
     totalPlatformFees: bigint;
     tradeCount: bigint;
     progressBps: bigint;
+    totalReferrerFees: bigint;
 }
 
 export function storeCurveState(src: CurveState) {
@@ -1877,6 +1949,7 @@ export function storeCurveState(src: CurveState) {
         b_2.storeCoins(src.totalPlatformFees);
         b_2.storeUint(src.tradeCount, 32);
         b_2.storeInt(src.progressBps, 257);
+        b_2.storeCoins(src.totalReferrerFees);
         b_1.storeRef(b_2.endCell());
         b_0.storeRef(b_1.endCell());
     };
@@ -1903,7 +1976,8 @@ export function loadCurveState(slice: Slice) {
     const _totalPlatformFees = sc_2.loadCoins();
     const _tradeCount = sc_2.loadUintBig(32);
     const _progressBps = sc_2.loadIntBig(257);
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    const _totalReferrerFees = sc_2.loadCoins();
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadTupleCurveState(source: TupleReader) {
@@ -1925,7 +1999,8 @@ export function loadTupleCurveState(source: TupleReader) {
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
     const _progressBps = source.readBigNumber();
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadGetterTupleCurveState(source: TupleReader) {
@@ -1946,7 +2021,8 @@ export function loadGetterTupleCurveState(source: TupleReader) {
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
     const _progressBps = source.readBigNumber();
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps, totalReferrerFees: _totalReferrerFees };
 }
 
 export function storeTupleCurveState(source: CurveState) {
@@ -1968,6 +2044,7 @@ export function storeTupleCurveState(source: CurveState) {
     builder.writeNumber(source.totalPlatformFees);
     builder.writeNumber(source.tradeCount);
     builder.writeNumber(source.progressBps);
+    builder.writeNumber(source.totalReferrerFees);
     return builder.build();
 }
 
@@ -2118,6 +2195,7 @@ export type FactoryInfo = {
     graduationTarget: bigint;
     tradeFeeBps: bigint;
     creatorFeeBps: bigint;
+    referrerFeeBps: bigint;
 }
 
 export function storeFactoryInfo(src: FactoryInfo) {
@@ -2132,6 +2210,7 @@ export function storeFactoryInfo(src: FactoryInfo) {
         b_1.storeCoins(src.graduationTarget);
         b_1.storeInt(src.tradeFeeBps, 257);
         b_1.storeInt(src.creatorFeeBps, 257);
+        b_1.storeInt(src.referrerFeeBps, 257);
         b_0.storeRef(b_1.endCell());
     };
 }
@@ -2147,7 +2226,8 @@ export function loadFactoryInfo(slice: Slice) {
     const _graduationTarget = sc_1.loadCoins();
     const _tradeFeeBps = sc_1.loadIntBig(257);
     const _creatorFeeBps = sc_1.loadIntBig(257);
-    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps };
+    const _referrerFeeBps = sc_1.loadIntBig(257);
+    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps, referrerFeeBps: _referrerFeeBps };
 }
 
 export function loadTupleFactoryInfo(source: TupleReader) {
@@ -2159,7 +2239,8 @@ export function loadTupleFactoryInfo(source: TupleReader) {
     const _graduationTarget = source.readBigNumber();
     const _tradeFeeBps = source.readBigNumber();
     const _creatorFeeBps = source.readBigNumber();
-    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps };
+    const _referrerFeeBps = source.readBigNumber();
+    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps, referrerFeeBps: _referrerFeeBps };
 }
 
 export function loadGetterTupleFactoryInfo(source: TupleReader) {
@@ -2171,7 +2252,8 @@ export function loadGetterTupleFactoryInfo(source: TupleReader) {
     const _graduationTarget = source.readBigNumber();
     const _tradeFeeBps = source.readBigNumber();
     const _creatorFeeBps = source.readBigNumber();
-    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps };
+    const _referrerFeeBps = source.readBigNumber();
+    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps, referrerFeeBps: _referrerFeeBps };
 }
 
 export function storeTupleFactoryInfo(source: FactoryInfo) {
@@ -2184,6 +2266,7 @@ export function storeTupleFactoryInfo(source: FactoryInfo) {
     builder.writeNumber(source.graduationTarget);
     builder.writeNumber(source.tradeFeeBps);
     builder.writeNumber(source.creatorFeeBps);
+    builder.writeNumber(source.referrerFeeBps);
     return builder.build();
 }
 
@@ -2273,6 +2356,7 @@ export type LaunchpadJetton$Data = {
     totalCreatorFees: bigint;
     totalPlatformFees: bigint;
     tradeCount: bigint;
+    totalReferrerFees: bigint;
 }
 
 export function storeLaunchpadJetton$Data(src: LaunchpadJetton$Data) {
@@ -2296,6 +2380,7 @@ export function storeLaunchpadJetton$Data(src: LaunchpadJetton$Data) {
         b_1.storeCoins(src.totalPlatformFees);
         const b_2 = new Builder();
         b_2.storeUint(src.tradeCount, 32);
+        b_2.storeCoins(src.totalReferrerFees);
         b_1.storeRef(b_2.endCell());
         b_0.storeRef(b_1.endCell());
     };
@@ -2321,7 +2406,8 @@ export function loadLaunchpadJetton$Data(slice: Slice) {
     const _totalPlatformFees = sc_1.loadCoins();
     const sc_2 = sc_1.loadRef().beginParse();
     const _tradeCount = sc_2.loadUintBig(32);
-    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount };
+    const _totalReferrerFees = sc_2.loadCoins();
+    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadTupleLaunchpadJetton$Data(source: TupleReader) {
@@ -2342,7 +2428,8 @@ export function loadTupleLaunchpadJetton$Data(source: TupleReader) {
     source = source.readTuple();
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
-    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadGetterTupleLaunchpadJetton$Data(source: TupleReader) {
@@ -2362,7 +2449,8 @@ export function loadGetterTupleLaunchpadJetton$Data(source: TupleReader) {
     const _totalCreatorFees = source.readBigNumber();
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
-    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, totalReferrerFees: _totalReferrerFees };
 }
 
 export function storeTupleLaunchpadJetton$Data(source: LaunchpadJetton$Data) {
@@ -2383,6 +2471,7 @@ export function storeTupleLaunchpadJetton$Data(source: LaunchpadJetton$Data) {
     builder.writeNumber(source.totalCreatorFees);
     builder.writeNumber(source.totalPlatformFees);
     builder.writeNumber(source.tradeCount);
+    builder.writeNumber(source.totalReferrerFees);
     return builder.build();
 }
 
@@ -2616,21 +2705,22 @@ const JettonWallet_types: ABIType[] = [
     {"name":"TakeWalletAddress","header":3513996288,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"walletAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"ownerAddress","type":{"kind":"simple","type":"cell","optional":true}}]},
     {"name":"CreateToken","header":1280311297,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"initialBuyTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"JettonSetup","header":1280311298,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"initialBuyTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
-    {"name":"Buy","header":1280311299,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"tonAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"minTokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
+    {"name":"Buy","header":1280311299,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"tonAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"minTokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"referrer","type":{"kind":"simple","type":"address","optional":true}}]},
     {"name":"Migrate","header":1280311300,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"FactoryWithdraw","header":1280311301,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"TokenLaunched","header":1280311553,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"initialBuyTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"TradeEvent","header":1280311554,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"trader","type":{"kind":"simple","type":"address","optional":false}},{"name":"isBuy","type":{"kind":"simple","type":"bool","optional":false}},{"name":"tonAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tokenAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
+    {"name":"ReferralPaidEvent","header":1280311557,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"referrer","type":{"kind":"simple","type":"address","optional":false}},{"name":"trader","type":{"kind":"simple","type":"address","optional":false}},{"name":"referrerFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"GraduatedEvent","header":1280311555,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"MigratedEvent","header":1280311556,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"tonLiquidity","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tokenLiquidity","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"JettonData","header":null,"fields":[{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"mintable","type":{"kind":"simple","type":"bool","optional":false}},{"name":"adminAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"walletCode","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"JettonWalletData","header":null,"fields":[{"name":"balance","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"minter","type":{"kind":"simple","type":"address","optional":false}},{"name":"code","type":{"kind":"simple","type":"cell","optional":false}}]},
-    {"name":"CurveState","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"progressBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
+    {"name":"CurveState","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"progressBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"totalReferrerFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"QuoteBuy","header":null,"fields":[{"name":"tokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"QuoteSell","header":null,"fields":[{"name":"tonOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
-    {"name":"FactoryInfo","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"creatorFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
+    {"name":"FactoryInfo","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"creatorFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"referrerFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
     {"name":"JettonWallet$Data","header":null,"fields":[{"name":"balance","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"minter","type":{"kind":"simple","type":"address","optional":false}}]},
-    {"name":"LaunchpadJetton$Data","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}}]},
+    {"name":"LaunchpadJetton$Data","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"totalReferrerFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"LaunchpadFactory$Data","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}}]},
 ]
 
@@ -2650,6 +2740,7 @@ const JettonWallet_opcodes = {
     "FactoryWithdraw": 1280311301,
     "TokenLaunched": 1280311553,
     "TradeEvent": 1280311554,
+    "ReferralPaidEvent": 1280311557,
     "GraduatedEvent": 1280311555,
     "MigratedEvent": 1280311556,
 }
@@ -2675,6 +2766,8 @@ export const GRADUATION_TARGET = 1500000000000n;
 export const TRADE_FEE_BPS = 200n;
 export const CREATOR_FEE_BPS = 6000n;
 export const BPS = 10000n;
+export const REFERRER_FEE_BPS = 2000n;
+export const REFERRAL_DUST = 500000n;
 export const VIRTUAL_TON = 30000000000n;
 export const VIRTUAL_TOKENS = 1000000000000000000n;
 export const MIN_TRADE = 10000000n;

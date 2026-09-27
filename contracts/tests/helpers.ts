@@ -11,6 +11,8 @@ export const GRADUATION_TARGET = toNano('1500');
 export const TRADE_FEE_BPS = 200n;
 export const CREATOR_FEE_BPS = 6000n;
 export const BPS = 10000n;
+export const REFERRER_FEE_BPS = 2000n;
+export const REFERRAL_DUST = toNano('0.0005');
 export const MIN_TRADE = toNano('0.01');
 export const MAX_INITIAL_BUY = toNano('100');
 export const CREATE_GAS = toNano('0.15');
@@ -36,6 +38,14 @@ export function feeSplit(amount: bigint) {
     const fee = ceilDiv(amount * TRADE_FEE_BPS, BPS);
     const creatorFee = (fee * CREATOR_FEE_BPS) / BPS;
     return { fee, creatorFee, platformFee: fee - creatorFee };
+}
+
+/** Buy fee split when the buy names a referrer: the cut comes from the platform. */
+export function referralSplit(amount: bigint) {
+    const f = feeSplit(amount);
+    const cut = (f.fee * REFERRER_FEE_BPS) / BPS;
+    const referrerFee = cut >= REFERRAL_DUST ? cut : 0n;
+    return { ...f, platformFee: f.platformFee - referrerFee, referrerFee };
 }
 
 export type Curve = { virtualTon: bigint; virtualTokens: bigint };

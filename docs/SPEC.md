@@ -14,7 +14,8 @@ Telegram → Mini App → TON Connect → Create jetton → Bonding curve → Bu
 | Launch fee | 0.05 TON to the platform treasury | LaunchpadJetton setup |
 | Trade fee | 2.00% of the TON side of every buy and sell | `tradeFee()` |
 | Creator share | 60% of the trade fee | `creatorShare()` |
-| Platform share | 40% of the trade fee (remainder after creator share) | LaunchpadJetton |
+| Platform share | 40% of the trade fee (remainder after creator share); 20% on a referred buy | LaunchpadJetton |
+| Referrer share | 20% of the fee on a buy that names a referrer, taken from the platform share. Not paid on sells, on self-referral, or when the cut is below 0.0005 TON (kept by the platform) | `referrerShare()`, ADR-008 |
 | Curve | constant product on virtual reserves: 30 TON / 1B tokens | LaunchpadJetton |
 | Graduation | when net TON raised ≥ 1,500 TON | LaunchpadJetton |
 | Initial creator buy | 0 or 0.01–100 TON | LaunchpadFactory |

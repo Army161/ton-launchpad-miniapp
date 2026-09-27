@@ -3,7 +3,8 @@
 ## Mission
 
 Finish and maintain TON Launchpad V1 without bypassing tests, security checks or deployment verification.
-V1 economics are locked (2% trade fee, 60% creator / 40% platform, 1500 TON graduation); see `docs/SPEC.md`.
+V1 economics are locked (2% trade fee, 60% creator / 40% platform, or 60 / 20 / 20 when a buy names a referrer,
+1500 TON graduation); see `docs/SPEC.md` and ADR-008.
 
 ## Required workflow
 

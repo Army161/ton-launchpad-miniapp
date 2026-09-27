@@ -3,7 +3,7 @@ Contract: JettonWallet
 BoC Size: 1169 bytes
 
 ## Structures (Structs and Messages)
-Total structures: 36
+Total structures: 37
 
 ### DataSize
 TL-B: `_ cells:int257 bits:int257 refs:int257 = DataSize`
@@ -86,8 +86,8 @@ TL-B: `jetton_setup#4c500002 queryId:uint64 treasury:address liquidityManager:ad
 Signature: `JettonSetup{queryId:uint64,treasury:address,liquidityManager:address,content:^cell,launchFee:coins,initialBuyTon:coins}`
 
 ### Buy
-TL-B: `buy#4c500003 queryId:uint64 tonAmount:coins minTokensOut:coins = Buy`
-Signature: `Buy{queryId:uint64,tonAmount:coins,minTokensOut:coins}`
+TL-B: `buy#4c500003 queryId:uint64 tonAmount:coins minTokensOut:coins referrer:address = Buy`
+Signature: `Buy{queryId:uint64,tonAmount:coins,minTokensOut:coins,referrer:address}`
 
 ### Migrate
 TL-B: `migrate#4c500004 queryId:uint64 = Migrate`
@@ -104,6 +104,10 @@ Signature: `TokenLaunched{queryId:uint64,creator:address,salt:uint64,initialBuyT
 ### TradeEvent
 TL-B: `trade_event#4c500102 queryId:uint64 trader:address isBuy:bool tonAmount:coins tokenAmount:coins creatorFee:coins platformFee:coins realTonRaised:coins = TradeEvent`
 Signature: `TradeEvent{queryId:uint64,trader:address,isBuy:bool,tonAmount:coins,tokenAmount:coins,creatorFee:coins,platformFee:coins,realTonRaised:coins}`
+
+### ReferralPaidEvent
+TL-B: `referral_paid_event#4c500105 queryId:uint64 referrer:address trader:address referrerFee:coins = ReferralPaidEvent`
+Signature: `ReferralPaidEvent{queryId:uint64,referrer:address,trader:address,referrerFee:coins}`
 
 ### GraduatedEvent
 TL-B: `graduated_event#4c500103 queryId:uint64 realTonRaised:coins = GraduatedEvent`
@@ -122,8 +126,8 @@ TL-B: `_ balance:coins owner:address minter:address code:^cell = JettonWalletDat
 Signature: `JettonWalletData{balance:coins,owner:address,minter:address,code:^cell}`
 
 ### CurveState
-TL-B: `_ factory:address creator:address salt:uint64 treasury:address liquidityManager:address initialized:bool virtualTon:coins virtualTokens:coins realTonRaised:coins totalSupply:coins graduated:bool migrated:bool graduationTarget:coins totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 progressBps:int257 = CurveState`
-Signature: `CurveState{factory:address,creator:address,salt:uint64,treasury:address,liquidityManager:address,initialized:bool,virtualTon:coins,virtualTokens:coins,realTonRaised:coins,totalSupply:coins,graduated:bool,migrated:bool,graduationTarget:coins,totalCreatorFees:coins,totalPlatformFees:coins,tradeCount:uint32,progressBps:int257}`
+TL-B: `_ factory:address creator:address salt:uint64 treasury:address liquidityManager:address initialized:bool virtualTon:coins virtualTokens:coins realTonRaised:coins totalSupply:coins graduated:bool migrated:bool graduationTarget:coins totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 progressBps:int257 totalReferrerFees:coins = CurveState`
+Signature: `CurveState{factory:address,creator:address,salt:uint64,treasury:address,liquidityManager:address,initialized:bool,virtualTon:coins,virtualTokens:coins,realTonRaised:coins,totalSupply:coins,graduated:bool,migrated:bool,graduationTarget:coins,totalCreatorFees:coins,totalPlatformFees:coins,tradeCount:uint32,progressBps:int257,totalReferrerFees:coins}`
 
 ### QuoteBuy
 TL-B: `_ tokensOut:coins fee:coins creatorFee:coins platformFee:coins = QuoteBuy`
@@ -134,16 +138,16 @@ TL-B: `_ tonOut:coins fee:coins creatorFee:coins platformFee:coins = QuoteSell`
 Signature: `QuoteSell{tonOut:coins,fee:coins,creatorFee:coins,platformFee:coins}`
 
 ### FactoryInfo
-TL-B: `_ owner:address treasury:address liquidityManager:address launchCount:uint32 launchFee:coins graduationTarget:coins tradeFeeBps:int257 creatorFeeBps:int257 = FactoryInfo`
-Signature: `FactoryInfo{owner:address,treasury:address,liquidityManager:address,launchCount:uint32,launchFee:coins,graduationTarget:coins,tradeFeeBps:int257,creatorFeeBps:int257}`
+TL-B: `_ owner:address treasury:address liquidityManager:address launchCount:uint32 launchFee:coins graduationTarget:coins tradeFeeBps:int257 creatorFeeBps:int257 referrerFeeBps:int257 = FactoryInfo`
+Signature: `FactoryInfo{owner:address,treasury:address,liquidityManager:address,launchCount:uint32,launchFee:coins,graduationTarget:coins,tradeFeeBps:int257,creatorFeeBps:int257,referrerFeeBps:int257}`
 
 ### JettonWallet$Data
 TL-B: `_ balance:coins owner:address minter:address = JettonWallet`
 Signature: `JettonWallet{balance:coins,owner:address,minter:address}`
 
 ### LaunchpadJetton$Data
-TL-B: `_ factory:address creator:address salt:uint64 initialized:bool treasury:address liquidityManager:address content:^cell totalSupply:coins virtualTon:coins virtualTokens:coins realTonRaised:coins graduated:bool migrated:bool totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 = LaunchpadJetton`
-Signature: `LaunchpadJetton{factory:address,creator:address,salt:uint64,initialized:bool,treasury:address,liquidityManager:address,content:^cell,totalSupply:coins,virtualTon:coins,virtualTokens:coins,realTonRaised:coins,graduated:bool,migrated:bool,totalCreatorFees:coins,totalPlatformFees:coins,tradeCount:uint32}`
+TL-B: `_ factory:address creator:address salt:uint64 initialized:bool treasury:address liquidityManager:address content:^cell totalSupply:coins virtualTon:coins virtualTokens:coins realTonRaised:coins graduated:bool migrated:bool totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 totalReferrerFees:coins = LaunchpadJetton`
+Signature: `LaunchpadJetton{factory:address,creator:address,salt:uint64,initialized:bool,treasury:address,liquidityManager:address,content:^cell,totalSupply:coins,virtualTon:coins,virtualTokens:coins,realTonRaised:coins,graduated:bool,migrated:bool,totalCreatorFees:coins,totalPlatformFees:coins,tradeCount:uint32,totalReferrerFees:coins}`
 
 ### LaunchpadFactory$Data
 TL-B: `_ owner:address treasury:address liquidityManager:address launchCount:uint32 = LaunchpadFactory`

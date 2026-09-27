@@ -68,12 +68,14 @@ export function buildCreateTokenBody(params: {
     .endCell();
 }
 
-export function buildBuyBody(tonAmount: bigint, minTokensOut: bigint, queryId = 0n): Cell {
+/** `referrer` earns 20% of the trade fee (from the platform's share); null for none. */
+export function buildBuyBody(tonAmount: bigint, minTokensOut: bigint, queryId = 0n, referrer: Address | null = null): Cell {
   return beginCell()
     .storeUint(OP_BUY, 32)
     .storeUint(queryId, 64)
     .storeCoins(tonAmount)
     .storeCoins(minTokensOut)
+    .storeAddress(referrer)
     .endCell();
 }
 

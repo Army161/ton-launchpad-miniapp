@@ -25,6 +25,7 @@ contract LaunchpadJetton {
     totalCreatorFees: Int as coins;
     totalPlatformFees: Int as coins;
     tradeCount: Int as uint32;
+    totalReferrerFees: Int as coins;
 
     init(factory: Address, creator: Address, salt: Int) {
         self.factory = factory;
@@ -44,6 +45,7 @@ contract LaunchpadJetton {
         self.totalCreatorFees = 0;
         self.totalPlatformFees = 0;
         self.tradeCount = 0;
+        self.totalReferrerFees = 0;
     }
 
     // ── Setup (factory only, once) ──────────────────────────────────────────
@@ -85,7 +87,7 @@ contract LaunchpadJetton {
 
         if (msg.initialBuyTon > 0) {
             // executeBuy reserves the curve's TON before sending anything else.
-            self.executeBuy(self.creator, msg.initialBuyTon, 0, msg.queryId);
+            self.executeBuy(self.creator, msg.initialBuyTon, 0, msg.queryId, null);
             return;
         }
 
@@ -106,13 +108,20 @@ contract LaunchpadJetton {
         require(!self.graduated, "Curve graduated");
         require(msg.tonAmount >= MIN_TRADE, "Trade too small");
         require(ctx.value >= msg.tonAmount + BUY_GAS, "Insufficient TON attached");
-        self.executeBuy(ctx.sender, msg.tonAmount, msg.minTokensOut, msg.queryId);
+        self.executeBuy(ctx.sender, msg.tonAmount, msg.minTokensOut, msg.queryId, msg.referrer);
     }
 
-    fun executeBuy(buyer: Address, tonAmount: Int, minTokensOut: Int, queryId: Int) {
+    fun executeBuy(buyer: Address, tonAmount: Int, minTokensOut: Int, queryId: Int, referrer: Address?) {
         let q: QuoteBuy = self.quoteBuy(tonAmount);
         require(q.tokensOut > 0, "Trade too small");
         require(q.tokensOut >= minTokensOut, "Slippage exceeded");
+
+        // The referrer's cut comes out of the platform's share only.
+        let referrerFee: Int = 0;
+        if (referrer != null && referrer!! != buyer) {
+            referrerFee = referrerShare(q.fee);
+        }
+        let platformFee: Int = q.platformFee - referrerFee;
 
         let tonAfterFee: Int = tonAmount - q.fee;
         self.virtualTon = self.virtualTon + tonAfterFee;
@@ -120,7 +129,8 @@ contract LaunchpadJetton {
         self.realTonRaised = self.realTonRaised + tonAfterFee;
         self.totalSupply = self.totalSupply + q.tokensOut;
         self.totalCreatorFees = self.totalCreatorFees + q.creatorFee;
-        self.totalPlatformFees = self.totalPlatformFees + q.platformFee;
+        self.totalPlatformFees = self.totalPlatformFees + platformFee;
+        self.totalReferrerFees = self.totalReferrerFees + referrerFee;
         self.tradeCount = self.tradeCount + 1;
 
         if (self.realTonRaised >= GRADUATION_TARGET) {
@@ -130,7 +140,22 @@ contract LaunchpadJetton {
 
         // Lock the reserve first: every send below can only spend what is left.
         nativeReserve(self.realTonRaised + MINTER_MIN_STORAGE, ReserveExact);
-        self.payFees(q.creatorFee, q.platformFee);
+        self.payFees(q.creatorFee, platformFee);
+        if (referrerFee > 0) {
+            send(SendParameters{
+                to: referrer!!,
+                value: referrerFee,
+                mode: SendPayGasSeparately,
+                bounce: false,
+                body: "Referral fee".asComment(),
+            });
+            emit(ReferralPaidEvent{
+                queryId: queryId,
+                referrer: referrer!!,
+                trader: buyer,
+                referrerFee: referrerFee,
+            }.toCell());
+        }
 
         emit(TradeEvent{
             queryId: queryId,
@@ -139,7 +164,7 @@ contract LaunchpadJetton {
             tonAmount: tonAmount,
             tokenAmount: q.tokensOut,
             creatorFee: q.creatorFee,
-            platformFee: q.platformFee,
+            platformFee: platformFee,
             realTonRaised: self.realTonRaised,
         }.toCell());
 
@@ -368,6 +393,7 @@ contract LaunchpadJetton {
             totalPlatformFees: self.totalPlatformFees,
             tradeCount: self.tradeCount,
             progressBps: min(BPS, self.realTonRaised * BPS / GRADUATION_TARGET),
+            totalReferrerFees: self.totalReferrerFees,
         };
     }
 

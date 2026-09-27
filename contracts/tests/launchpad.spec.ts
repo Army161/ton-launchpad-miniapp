@@ -24,6 +24,9 @@ import {
     MIN_TRADE,
     MINTER_MIN_STORAGE,
     OP,
+    REFERRAL_DUST,
+    referralSplit,
+    REFERRER_FEE_BPS,
     SELL_PAYLOAD_OP,
     tonForNetAmount,
     TOTAL_SUPPLY_NANO,
@@ -78,11 +81,12 @@ describe('Launchpad', () => {
         tonAmount: bigint,
         minTokensOut = 0n,
         gas = BUY_GAS,
+        referrer: Address | null = null,
     ) {
         return jetton.send(
             who.getSender(),
             { value: tonAmount + gas },
-            { $$type: 'Buy', queryId: 1n, tonAmount, minTokensOut },
+            { $$type: 'Buy', queryId: 1n, tonAmount, minTokensOut, referrer },
         );
     }
 
@@ -136,6 +140,7 @@ describe('Launchpad', () => {
             expect(info.graduationTarget).toBe(GRADUATION_TARGET);
             expect(info.tradeFeeBps).toBe(200n);
             expect(info.creatorFeeBps).toBe(6000n);
+            expect(info.referrerFeeBps).toBe(REFERRER_FEE_BPS);
             expect(info.launchCount).toBe(0n);
         });
 
@@ -297,7 +302,7 @@ describe('Launchpad', () => {
             const underfunded = await buy(jetton, alice, toNano('1'), 0n, BUY_GAS - 1n);
             expect(underfunded.transactions).toHaveTransaction({ to: jetton.address, success: false, exitCode: JE['Insufficient TON attached'] });
             // Claims more TON than attached.
-            const lying = await jetton.send(alice.getSender(), { value: toNano('0.2') }, { $$type: 'Buy', queryId: 0n, tonAmount: toNano('100'), minTokensOut: 0n });
+            const lying = await jetton.send(alice.getSender(), { value: toNano('0.2') }, { $$type: 'Buy', queryId: 0n, tonAmount: toNano('100'), minTokensOut: 0n, referrer: null });
             expect(lying.transactions).toHaveTransaction({ to: jetton.address, success: false });
             expect((await curve(jetton)).totalSupply).toBe(0n);
         });
@@ -479,6 +484,99 @@ describe('Launchpad', () => {
         });
     });
 
+    // ── Referrals ──────────────────────────────────────────────────────────
+    describe('referral', () => {
+        let referrer: SandboxContract<TreasuryContract>;
+        beforeEach(async () => {
+            referrer = await blockchain.treasury('referrer');
+        });
+
+        const cases = ['0.2', '1', '7.77', '1000'];
+        it.each(cases)('buy of %s TON with a referrer pays 60/20/20 from the platform share', async (amount) => {
+            const { jetton } = await launch();
+            const tonAmount = toNano(amount);
+            const f = referralSplit(tonAmount);
+            expect(f.referrerFee).toBeGreaterThan(0n);
+            expect(f.creatorFee + f.platformFee + f.referrerFee).toBe(f.fee);
+            expect(f.creatorFee).toBe(feeSplit(tonAmount).creatorFee);
+
+            const res = await buy(jetton, alice, tonAmount, 0n, BUY_GAS, referrer.address);
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: creator.address, value: f.creatorFee });
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: treasury.address, value: f.platformFee });
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: referrer.address, value: f.referrerFee, success: true });
+            const s = await curve(jetton);
+            expect(s.totalCreatorFees).toBe(f.creatorFee);
+            expect(s.totalPlatformFees).toBe(f.platformFee);
+            expect(s.totalReferrerFees).toBe(f.referrerFee);
+            expect(s.realTonRaised).toBe(tonAmount - f.fee);
+            await expectSolvent(jetton);
+        });
+
+        it('mints the same tokens with or without a referrer', async () => {
+            const a = await launch(1n);
+            const b = await launch(2n);
+            await buy(a.jetton, alice, toNano('3'));
+            await buy(b.jetton, alice, toNano('3'), 0n, BUY_GAS, referrer.address);
+            expect(await balanceOf(b.jetton, alice.address)).toBe(await balanceOf(a.jetton, alice.address));
+        });
+
+        it('keeps a dust referral cut with the platform instead of sending it', async () => {
+            const { jetton } = await launch();
+            const tonAmount = MIN_TRADE; // fee 0.0002 TON, 20% = 0.00004 TON < dust
+            expect(referralSplit(tonAmount).referrerFee).toBe(0n);
+            const res = await buy(jetton, alice, tonAmount, 0n, BUY_GAS, referrer.address);
+            expect(res.transactions).not.toHaveTransaction({ from: jetton.address, to: referrer.address });
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: treasury.address, value: feeSplit(tonAmount).platformFee });
+            expect((await curve(jetton)).totalReferrerFees).toBe(0n);
+        });
+
+        it('pays the first referral exactly at the dust threshold', async () => {
+            const { jetton } = await launch();
+            // fee = 0.0025 TON → 20% = 0.0005 TON = REFERRAL_DUST
+            const tonAmount = toNano('0.125');
+            expect(referralSplit(tonAmount).referrerFee).toBe(REFERRAL_DUST);
+            const res = await buy(jetton, alice, tonAmount, 0n, BUY_GAS, referrer.address);
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: referrer.address, value: REFERRAL_DUST });
+            const below = await buy(jetton, alice, toNano('0.12'), 0n, BUY_GAS, referrer.address);
+            expect(below.transactions).not.toHaveTransaction({ from: jetton.address, to: referrer.address });
+        });
+
+        it('ignores self-referral', async () => {
+            const { jetton } = await launch();
+            const res = await buy(jetton, alice, toNano('1'), 0n, BUY_GAS, alice.address);
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: treasury.address, value: feeSplit(toNano('1')).platformFee });
+            expect((await curve(jetton)).totalReferrerFees).toBe(0n);
+        });
+
+        it('a referrer that cannot accept TON does not block the buy', async () => {
+            const { jetton } = await launch();
+            // An address with no contract: the non-bouncing payout just lands there.
+            const nowhere = new Address(0, Buffer.alloc(32, 7));
+            const res = await buy(jetton, alice, toNano('1'), 0n, BUY_GAS, nowhere);
+            expect(res.transactions).toHaveTransaction({ from: alice.address, to: jetton.address, success: true });
+            expect(await balanceOf(jetton, alice.address)).toBeGreaterThan(0n);
+            await expectSolvent(jetton);
+        });
+
+        it('sells never pay a referrer and keep 60/40', async () => {
+            const { jetton } = await launch();
+            await buy(jetton, alice, toNano('5'), 0n, BUY_GAS, referrer.address);
+            const held = await balanceOf(jetton, alice.address);
+            const q = expectedSell(await curve(jetton), held);
+            const res = await sell(jetton, alice, held);
+            expect(res.transactions).not.toHaveTransaction({ from: jetton.address, to: referrer.address });
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: treasury.address, value: q.platformFee });
+        });
+
+        it('the mint cannot bounce at the minimum attached gas, even with a referral payout', async () => {
+            const { jetton } = await launch();
+            const res = await buy(jetton, alice, toNano('1'), 0n, BUY_GAS, referrer.address);
+            const walletAddr = (await walletOf(jetton, alice.address)).address;
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: walletAddr, deploy: true, success: true });
+            expect(res.transactions).not.toHaveTransaction({ from: walletAddr, to: jetton.address, inMessageBounced: true });
+        });
+    });
+
     // ── Fee maths ──────────────────────────────────────────────────────────
     describe('fees', () => {
         const cases = ['0.01', '0.012345678', '0.333333333', '1', '7.77', '99.999999999', '1000'];
@@ -511,6 +609,7 @@ describe('Launchpad', () => {
             const rand = () => ((rng = (rng * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
             let creatorSum = 0n;
             let platformSum = 0n;
+            let referrerSum = 0n;
             for (let i = 0; i < 40; i++) {
                 const trader = i % 2 === 0 ? alice : bob;
                 const held = await balanceOf(jetton, trader.address);
@@ -522,16 +621,19 @@ describe('Launchpad', () => {
                     platformSum += q.platformFee;
                 } else {
                     const tonAmount = MIN_TRADE + BigInt(Math.floor(rand() * 20e9));
-                    const f = feeSplit(tonAmount);
-                    await buy(jetton, trader, tonAmount);
+                    const referred = rand() < 0.5;
+                    const f = referred ? referralSplit(tonAmount) : { ...feeSplit(tonAmount), referrerFee: 0n };
+                    await buy(jetton, trader, tonAmount, 0n, BUY_GAS, referred ? mallory.address : null);
                     creatorSum += f.creatorFee;
                     platformSum += f.platformFee;
+                    referrerSum += f.referrerFee;
                 }
                 await expectSolvent(jetton);
             }
             const s = await curve(jetton);
             expect(s.totalCreatorFees).toBe(creatorSum);
             expect(s.totalPlatformFees).toBe(platformSum);
+            expect(s.totalReferrerFees).toBe(referrerSum);
 
             // Everyone exits: the reserve covers every holder.
             for (const trader of [alice, bob]) {

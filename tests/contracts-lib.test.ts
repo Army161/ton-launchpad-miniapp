@@ -32,7 +32,13 @@ describe('message encoding matches the compiled contract ABI', () => {
 
   it('Buy', () => {
     const ours = buildBuyBody(toNano('2'), 123n, 7n);
-    const abi = beginCell().store(storeBuy({ $$type: 'Buy', queryId: 7n, tonAmount: toNano('2'), minTokensOut: 123n })).endCell();
+    const abi = beginCell().store(storeBuy({ $$type: 'Buy', queryId: 7n, tonAmount: toNano('2'), minTokensOut: 123n, referrer: null })).endCell();
+    expect(ours.equals(abi)).toBe(true);
+  });
+
+  it('Buy with a referrer', () => {
+    const ours = buildBuyBody(toNano('2'), 123n, 7n, B);
+    const abi = beginCell().store(storeBuy({ $$type: 'Buy', queryId: 7n, tonAmount: toNano('2'), minTokensOut: 123n, referrer: B })).endCell();
     expect(ours.equals(abi)).toBe(true);
   });
 

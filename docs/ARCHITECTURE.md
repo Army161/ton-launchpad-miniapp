@@ -25,13 +25,18 @@ Telegram ──► Mini App (Vite/React, Vercel static) ──TON Connect──�
 | `0x4c500004` | `Migrate{queryId}` | anyone → graduated jetton |
 | `0x4c500005` | `FactoryWithdraw` | factory owner → factory (recovers TON from bounced deploys only) |
 
-Events are emitted as external messages: `TokenLaunched`, `TradeEvent`, `GraduatedEvent`, `MigratedEvent`.
+Events are emitted as external messages: `TokenLaunched`, `TradeEvent`, `ReferralPaidEvent`, `GraduatedEvent`,
+`MigratedEvent`.
 
 ### Curve maths
 
 `k = virtualTon × virtualTokens`; buy: `tokensOut = virtualTokens − ceil(k / (virtualTon + tonIn − fee))`;
 sell: `grossTon = virtualTon − ceil(k / (virtualTokens + tokensIn))`, seller gets `grossTon − fee`.
 `fee = ceil(amount × 2%)`, `creatorFee = floor(fee × 60%)`, `platformFee = fee − creatorFee`.
+On a buy with `referrer` set (and not the buyer): `referrerFee = floor(fee × 20%)` if that is ≥ 0.0005 TON, else 0;
+`platformFee` drops by `referrerFee`. The referrer is paid with a non-bouncing message, so a bad referrer address
+cannot block a buy. Deep links must fit Telegram's 64-character `startapp` limit, so they will carry a short launch id
+and referral code resolved by the API, not raw addresses (not built yet).
 Invariants tested after every trade: `virtualTon − 30 TON = realTonRaised`, `virtualTokens + totalSupply = 1B`,
 contract balance ≥ `realTonRaised` + storage buffer.
 

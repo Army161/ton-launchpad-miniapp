@@ -73,6 +73,7 @@ contract LaunchpadFactory {
             graduationTarget: GRADUATION_TARGET,
             tradeFeeBps: TRADE_FEE_BPS,
             creatorFeeBps: CREATOR_FEE_BPS,
+            referrerFeeBps: REFERRER_FEE_BPS,
         };
     }
 

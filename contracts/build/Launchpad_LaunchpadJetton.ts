@@ -1282,6 +1282,7 @@ export type Buy = {
     queryId: bigint;
     tonAmount: bigint;
     minTokensOut: bigint;
+    referrer: Address | null;
 }
 
 export function storeBuy(src: Buy) {
@@ -1291,6 +1292,7 @@ export function storeBuy(src: Buy) {
         b_0.storeUint(src.queryId, 64);
         b_0.storeCoins(src.tonAmount);
         b_0.storeCoins(src.minTokensOut);
+        b_0.storeAddress(src.referrer);
     };
 }
 
@@ -1300,21 +1302,24 @@ export function loadBuy(slice: Slice) {
     const _queryId = sc_0.loadUintBig(64);
     const _tonAmount = sc_0.loadCoins();
     const _minTokensOut = sc_0.loadCoins();
-    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut };
+    const _referrer = sc_0.loadMaybeAddress();
+    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut, referrer: _referrer };
 }
 
 export function loadTupleBuy(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _tonAmount = source.readBigNumber();
     const _minTokensOut = source.readBigNumber();
-    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut };
+    const _referrer = source.readAddressOpt();
+    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut, referrer: _referrer };
 }
 
 export function loadGetterTupleBuy(source: TupleReader) {
     const _queryId = source.readBigNumber();
     const _tonAmount = source.readBigNumber();
     const _minTokensOut = source.readBigNumber();
-    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut };
+    const _referrer = source.readAddressOpt();
+    return { $$type: 'Buy' as const, queryId: _queryId, tonAmount: _tonAmount, minTokensOut: _minTokensOut, referrer: _referrer };
 }
 
 export function storeTupleBuy(source: Buy) {
@@ -1322,6 +1327,7 @@ export function storeTupleBuy(source: Buy) {
     builder.writeNumber(source.queryId);
     builder.writeNumber(source.tonAmount);
     builder.writeNumber(source.minTokensOut);
+    builder.writeAddress(source.referrer);
     return builder.build();
 }
 
@@ -1580,6 +1586,71 @@ export function dictValueParserTradeEvent(): DictionaryValue<TradeEvent> {
         },
         parse: (src) => {
             return loadTradeEvent(src.loadRef().beginParse());
+        }
+    }
+}
+
+export type ReferralPaidEvent = {
+    $$type: 'ReferralPaidEvent';
+    queryId: bigint;
+    referrer: Address;
+    trader: Address;
+    referrerFee: bigint;
+}
+
+export function storeReferralPaidEvent(src: ReferralPaidEvent) {
+    return (builder: Builder) => {
+        const b_0 = builder;
+        b_0.storeUint(1280311557, 32);
+        b_0.storeUint(src.queryId, 64);
+        b_0.storeAddress(src.referrer);
+        b_0.storeAddress(src.trader);
+        b_0.storeCoins(src.referrerFee);
+    };
+}
+
+export function loadReferralPaidEvent(slice: Slice) {
+    const sc_0 = slice;
+    if (sc_0.loadUint(32) !== 1280311557) { throw Error('Invalid prefix'); }
+    const _queryId = sc_0.loadUintBig(64);
+    const _referrer = sc_0.loadAddress();
+    const _trader = sc_0.loadAddress();
+    const _referrerFee = sc_0.loadCoins();
+    return { $$type: 'ReferralPaidEvent' as const, queryId: _queryId, referrer: _referrer, trader: _trader, referrerFee: _referrerFee };
+}
+
+export function loadTupleReferralPaidEvent(source: TupleReader) {
+    const _queryId = source.readBigNumber();
+    const _referrer = source.readAddress();
+    const _trader = source.readAddress();
+    const _referrerFee = source.readBigNumber();
+    return { $$type: 'ReferralPaidEvent' as const, queryId: _queryId, referrer: _referrer, trader: _trader, referrerFee: _referrerFee };
+}
+
+export function loadGetterTupleReferralPaidEvent(source: TupleReader) {
+    const _queryId = source.readBigNumber();
+    const _referrer = source.readAddress();
+    const _trader = source.readAddress();
+    const _referrerFee = source.readBigNumber();
+    return { $$type: 'ReferralPaidEvent' as const, queryId: _queryId, referrer: _referrer, trader: _trader, referrerFee: _referrerFee };
+}
+
+export function storeTupleReferralPaidEvent(source: ReferralPaidEvent) {
+    const builder = new TupleBuilder();
+    builder.writeNumber(source.queryId);
+    builder.writeAddress(source.referrer);
+    builder.writeAddress(source.trader);
+    builder.writeNumber(source.referrerFee);
+    return builder.build();
+}
+
+export function dictValueParserReferralPaidEvent(): DictionaryValue<ReferralPaidEvent> {
+    return {
+        serialize: (src, builder) => {
+            builder.storeRef(beginCell().store(storeReferralPaidEvent(src)).endCell());
+        },
+        parse: (src) => {
+            return loadReferralPaidEvent(src.loadRef().beginParse());
         }
     }
 }
@@ -1853,6 +1924,7 @@ export type CurveState = {
     totalPlatformFees: bigint;
     tradeCount: bigint;
     progressBps: bigint;
+    totalReferrerFees: bigint;
 }
 
 export function storeCurveState(src: CurveState) {
@@ -1877,6 +1949,7 @@ export function storeCurveState(src: CurveState) {
         b_2.storeCoins(src.totalPlatformFees);
         b_2.storeUint(src.tradeCount, 32);
         b_2.storeInt(src.progressBps, 257);
+        b_2.storeCoins(src.totalReferrerFees);
         b_1.storeRef(b_2.endCell());
         b_0.storeRef(b_1.endCell());
     };
@@ -1903,7 +1976,8 @@ export function loadCurveState(slice: Slice) {
     const _totalPlatformFees = sc_2.loadCoins();
     const _tradeCount = sc_2.loadUintBig(32);
     const _progressBps = sc_2.loadIntBig(257);
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    const _totalReferrerFees = sc_2.loadCoins();
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadTupleCurveState(source: TupleReader) {
@@ -1925,7 +1999,8 @@ export function loadTupleCurveState(source: TupleReader) {
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
     const _progressBps = source.readBigNumber();
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadGetterTupleCurveState(source: TupleReader) {
@@ -1946,7 +2021,8 @@ export function loadGetterTupleCurveState(source: TupleReader) {
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
     const _progressBps = source.readBigNumber();
-    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'CurveState' as const, factory: _factory, creator: _creator, salt: _salt, treasury: _treasury, liquidityManager: _liquidityManager, initialized: _initialized, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, totalSupply: _totalSupply, graduated: _graduated, migrated: _migrated, graduationTarget: _graduationTarget, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, progressBps: _progressBps, totalReferrerFees: _totalReferrerFees };
 }
 
 export function storeTupleCurveState(source: CurveState) {
@@ -1968,6 +2044,7 @@ export function storeTupleCurveState(source: CurveState) {
     builder.writeNumber(source.totalPlatformFees);
     builder.writeNumber(source.tradeCount);
     builder.writeNumber(source.progressBps);
+    builder.writeNumber(source.totalReferrerFees);
     return builder.build();
 }
 
@@ -2118,6 +2195,7 @@ export type FactoryInfo = {
     graduationTarget: bigint;
     tradeFeeBps: bigint;
     creatorFeeBps: bigint;
+    referrerFeeBps: bigint;
 }
 
 export function storeFactoryInfo(src: FactoryInfo) {
@@ -2132,6 +2210,7 @@ export function storeFactoryInfo(src: FactoryInfo) {
         b_1.storeCoins(src.graduationTarget);
         b_1.storeInt(src.tradeFeeBps, 257);
         b_1.storeInt(src.creatorFeeBps, 257);
+        b_1.storeInt(src.referrerFeeBps, 257);
         b_0.storeRef(b_1.endCell());
     };
 }
@@ -2147,7 +2226,8 @@ export function loadFactoryInfo(slice: Slice) {
     const _graduationTarget = sc_1.loadCoins();
     const _tradeFeeBps = sc_1.loadIntBig(257);
     const _creatorFeeBps = sc_1.loadIntBig(257);
-    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps };
+    const _referrerFeeBps = sc_1.loadIntBig(257);
+    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps, referrerFeeBps: _referrerFeeBps };
 }
 
 export function loadTupleFactoryInfo(source: TupleReader) {
@@ -2159,7 +2239,8 @@ export function loadTupleFactoryInfo(source: TupleReader) {
     const _graduationTarget = source.readBigNumber();
     const _tradeFeeBps = source.readBigNumber();
     const _creatorFeeBps = source.readBigNumber();
-    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps };
+    const _referrerFeeBps = source.readBigNumber();
+    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps, referrerFeeBps: _referrerFeeBps };
 }
 
 export function loadGetterTupleFactoryInfo(source: TupleReader) {
@@ -2171,7 +2252,8 @@ export function loadGetterTupleFactoryInfo(source: TupleReader) {
     const _graduationTarget = source.readBigNumber();
     const _tradeFeeBps = source.readBigNumber();
     const _creatorFeeBps = source.readBigNumber();
-    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps };
+    const _referrerFeeBps = source.readBigNumber();
+    return { $$type: 'FactoryInfo' as const, owner: _owner, treasury: _treasury, liquidityManager: _liquidityManager, launchCount: _launchCount, launchFee: _launchFee, graduationTarget: _graduationTarget, tradeFeeBps: _tradeFeeBps, creatorFeeBps: _creatorFeeBps, referrerFeeBps: _referrerFeeBps };
 }
 
 export function storeTupleFactoryInfo(source: FactoryInfo) {
@@ -2184,6 +2266,7 @@ export function storeTupleFactoryInfo(source: FactoryInfo) {
     builder.writeNumber(source.graduationTarget);
     builder.writeNumber(source.tradeFeeBps);
     builder.writeNumber(source.creatorFeeBps);
+    builder.writeNumber(source.referrerFeeBps);
     return builder.build();
 }
 
@@ -2273,6 +2356,7 @@ export type LaunchpadJetton$Data = {
     totalCreatorFees: bigint;
     totalPlatformFees: bigint;
     tradeCount: bigint;
+    totalReferrerFees: bigint;
 }
 
 export function storeLaunchpadJetton$Data(src: LaunchpadJetton$Data) {
@@ -2296,6 +2380,7 @@ export function storeLaunchpadJetton$Data(src: LaunchpadJetton$Data) {
         b_1.storeCoins(src.totalPlatformFees);
         const b_2 = new Builder();
         b_2.storeUint(src.tradeCount, 32);
+        b_2.storeCoins(src.totalReferrerFees);
         b_1.storeRef(b_2.endCell());
         b_0.storeRef(b_1.endCell());
     };
@@ -2321,7 +2406,8 @@ export function loadLaunchpadJetton$Data(slice: Slice) {
     const _totalPlatformFees = sc_1.loadCoins();
     const sc_2 = sc_1.loadRef().beginParse();
     const _tradeCount = sc_2.loadUintBig(32);
-    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount };
+    const _totalReferrerFees = sc_2.loadCoins();
+    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadTupleLaunchpadJetton$Data(source: TupleReader) {
@@ -2342,7 +2428,8 @@ export function loadTupleLaunchpadJetton$Data(source: TupleReader) {
     source = source.readTuple();
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
-    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, totalReferrerFees: _totalReferrerFees };
 }
 
 export function loadGetterTupleLaunchpadJetton$Data(source: TupleReader) {
@@ -2362,7 +2449,8 @@ export function loadGetterTupleLaunchpadJetton$Data(source: TupleReader) {
     const _totalCreatorFees = source.readBigNumber();
     const _totalPlatformFees = source.readBigNumber();
     const _tradeCount = source.readBigNumber();
-    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount };
+    const _totalReferrerFees = source.readBigNumber();
+    return { $$type: 'LaunchpadJetton$Data' as const, factory: _factory, creator: _creator, salt: _salt, initialized: _initialized, treasury: _treasury, liquidityManager: _liquidityManager, content: _content, totalSupply: _totalSupply, virtualTon: _virtualTon, virtualTokens: _virtualTokens, realTonRaised: _realTonRaised, graduated: _graduated, migrated: _migrated, totalCreatorFees: _totalCreatorFees, totalPlatformFees: _totalPlatformFees, tradeCount: _tradeCount, totalReferrerFees: _totalReferrerFees };
 }
 
 export function storeTupleLaunchpadJetton$Data(source: LaunchpadJetton$Data) {
@@ -2383,6 +2471,7 @@ export function storeTupleLaunchpadJetton$Data(source: LaunchpadJetton$Data) {
     builder.writeNumber(source.totalCreatorFees);
     builder.writeNumber(source.totalPlatformFees);
     builder.writeNumber(source.tradeCount);
+    builder.writeNumber(source.totalReferrerFees);
     return builder.build();
 }
 
@@ -2477,7 +2566,7 @@ function initLaunchpadJetton_init_args(src: LaunchpadJetton_init_args) {
 }
 
 async function LaunchpadJetton_init(factory: Address, creator: Address, salt: bigint) {
-    const __code = Cell.fromHex('b5ee9c72410245010012f300025aff008e88f4a413f4bcf2c80bed53208e983001d072d721d200d200fa4021103450666f04f86102f862e1ed43d90112020271020403fbbedc1f6a268690000c71b7d207d20699fe9007d206a00e87d206a7d007d007d007d00690069007d007d006a1868698f9805888805885f885f085e885e2b882a8747587d207d20408080eb802a9001e8ac1138124438410c037e11d600411806f05b59d3b200001138382a39110867885e0855f107888807aa876d9e3662413030e0104db3c22020120050f020120060c020158070a03fbadbcf6a268690000c71b7d207d20699fe9007d206a00e87d206a7d007d007d007d00690069007d007d006a1868698f9805888805885f885f085e885e2b882a8747587d207d20408080eb802a9001e8ac1138124438410c037e11d600411806f05b59d3b200001138382a39110867885e0855f107888807aa876d9e2b88401308090162f828db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d03200045f0f02f3af16f6a268690000c71b7d207d20699fe9007d206a00e87d206a7d007d007d007d00690069007d007d006a1868698f9805888805885f885f085e885e2b882a8747587d207d20408080eb802a9001e8ac1138124438410c037e11d600411806f05b59d3b200001138382a39110867885e0855f16d9e3652b632c0130b011e23b36df828f828db3c302b552052d03203fbb6987da89a1a400031c6df481f481a67fa401f481a803a1f481a9f401f401f401f401a401a401f401f401a861a1a63e6016222016217e217c217a2178ae20aa1d1d61f481f481020203ae00aa4007a2b044e04910e104300df847580104601bc16d674ec8000044e0e0a8e444219e21782157c41e22201eaa1db678d9890130d0e0104db3c1c00046c4403fbba48ced44d0d200018e36fa40fa40d33fd200fa40d401d0fa40d4fa00fa00fa00fa00d200d200fa00fa00d430d0d31f300b11100b10bf10be10bd10bc5710550e8eb0fa40fa40810101d700552003d1582270248870821806fc23ac0082300de0b6b3a764000022707054722210cf10bc10abe2db3c57115711571157118131011007882195d3ef798008127105370a822a904b6085611025611025611025610025610025613544f302f544f305613025610025610025610015610015610010038571157115711571157115711571157115711571157115711111055e002feed44d0d200018e36fa40fa40d33fd200fa40d401d0fa40d4fa00fa00fa00fa00d200d200fa00fa00d430d0d31f300b11100b10bf10be10bd10bc5710550e8eb0fa40fa40810101d700552003d1582270248870821806fc23ac0082300de0b6b3a764000022707054722210cf10bc10abe21111935f0f5be00fd70d1ff2e0821314000004fa2182104c500002ba8ff131d33ffa40fa40d4fa00fa0030f8416f245b812e0c325615c705f2f456108f465f0670804270885610553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df551ce03d3d3d3d7f5472fe2dc8e0211530161a0052000000004c61756e636820726566756e6465643a20746f6b656e20616c72656164792065786973747303fe553082104c5001015005cb1f13cb3fcecb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0071708824040f552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0029c200e30239820afaf08070fb0270830670171819001c000000004c61756e63682066656501c80f11110f702f11120f11110f0c11100c102f10ac109b108a107910681057104645150403db3cc87f01ca00111055e011101fce1dce1bcb3f19ca0017ce05c8ce14cc58fa0201fa0201fa0258fa0212ca0012ca0058fa0258fa0202c8cb1f12cdcdc9ed541b01ac03c8018210d53276db58cb1fcb3fc95610504410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df10ce10bd108c107b55163004f882104c500003ba8f6731d33ffa00fa0030f8416f243032811de95610f2f48200e42328b3f2f48200e7eb248208989680bef2f481769424821005f5e100a013be12f2f41111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a1079106810571046104503db3ce02182107bdd97debae302211b301f2a02f60f11130f0e11120e0d11110d0c11100c0b11130b0a11120a09111109081110080711130706111206051111050411100403111303021112020111110111105612db3c8200e7eb24c200f2f4238200a2391117be01111601f2f4561558a151aaa05192a1508aa051a1a05147a0035613a002a42a82195d3ef79800be1c1d004a208100c8812710a98620811770a8812710a9045121a152a0a0546aa0a9865290a15312a11302fa8e30367f56122bc85982104c5001035003cb1fcb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0006de2a820afaf080a070fb020f11110f5e3d0c11100c0b11110b0a11100a091111091048104706111106051110050411110403111003021110020111100156115614db3c7f56130456174314241e01d60211170256130201111501111729c8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb000c11120c0b11110b0a11100a109f108e107d106c55551045401403830670db3c2d03fe31d33ffa00fa40d72c01916d93fa4001e201f40430f8416f243032f8285250db3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d012c705f2f4216ee302328200e42328b3f2f481769402820afaf080be12f2f4206ef2d080d08200bd1401d31f32202101d45b8108ff27f2f450a2a1216eb39639206ef2d080923108e27080427004c8018210d53276db58cb1fcb3fc91034413010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df551c3002fc01821053454c4cba12f2f4fa00300f11110f5e3d0c11100c0b11110b0a11100a09111109081110080711110706111006051111050411100403111103021110020111120111135610db3c5233a08200e7eb24c200f2f4813fc3531abbf2f4038200a2391118be01111701f2f45191a1085612a05171a10a5612a1045615a02223004a5270a0546880a9865280a1208100c8812710a98620811770a8812710a9045121a15312a11302fc5139a002a42a820afaf080a070fb020f11110f5e3d0c11100c0b11110b0a11100a091111091048104710460511100503111003021110020111100156155612db3c041113047056155045031112030211140201111701111327c8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c92428029e21c2008ec071708856130405552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb009131e220c2009130e30d2526001e0000000043726561746f7220666565017a7170882f553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0027002000000000506c6174666f726d2066656502ccc88258c000000000000000000000000101cb67ccc970fb0070830670880411130410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00109f108e107d106c555545401023293000220000000053656c6c2070726f6365656473023282104c500004bae3020182102c76b973bae3025f0f5bf2c0822b3101fe31d33f30f8416f24135f038200f49225f2f48151db04b314f2f481769403821008f0d180be13f2f47f70545097a05464c829c8553082104c5001045005cb1f13cb3fce01fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb00820afaf08021fb020f11110f0e11100e10df2a10df10ce0d10ac106b182c039c1a10575e32503471820afaf080db3c70830670882e553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb002d2f3002f4f8285250db3c5c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d07ff8287070c8ca00c9d01059104a1023102bc855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec910565e22401310465522c8cf8580322e0058ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0000300000000047726164756174696f6e206c6971756964697479007cc87f01ca00111055e011101fce1dce1bcb3f19ca0017ce05c8ce14cc58fa0201fa0201fa0258fa0212ca0012ca0058fa0258fa0202c8cb1f12cdcdc9ed5402f2d33ffa40d2003021fa44306d018eb430f8285220db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d0dff842708040700596c85006cf16c992356de24630c855208210d17354005004cb1f12cb3f01206e9430cf84809201cee2f400c943303244011688c87001ca005a02cecec933022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d934360149a65ec0bb513434800066be803e903e9015481b04e6be903e901640b4405c1678b6cf1b0d203501125cdb3c3054633052303c04b401d072d721d200d200fa4021103450666f04f86102f862ed44d0d200019afa00fa40fa4055206c139afa40fa405902d1017059e204e30202d70d1ff2e0822182100f8a7ea5bae302218210178d4519bae302018210595f07bcba37383b4000b6028020d7217021d749c21f9430d31f01de208210178d4519ba8e1a30d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e082107bdd97deba8e19d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e05f0402f231d33ffa00fa40d72c01916d93fa4001e201f40431fa0023fa4430f2d08af8416f2481114d533cc705f2f48142a629c200f2f451a8a18200ca9721c2fff2f44330523bfa40fa0071d721fa00fa00306c6170f83a23c20091729171e281769402a85240a08209c9c380a08208989680a012bcf2f45138db3c5c3c3901fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d050767080407f2c48135079c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec9105610451034401310465522c8cf8580ca00cf8440ce01fa028069cf40025c6e013a00586eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed5404fc31d33ffa00fa40d72c01916d93fa4001e201fa00f8416f24532cc705b38ebc537cdb3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d05240c705f2f4de51a8a021f8276f1021a1820898968066b608a18208e4e1c0a0a126c200e30f236eb33c3d3e3f0018f82ac87001ca005a02cecec900e8504b4330fa40fa0071d721fa00fa00306c6170f83a5230a018a171702848135074c8553082107362d09c5005cb1f13cb3f01fa02cecec9284614505510246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0003000c107b50895f0800dc9321c2009170e28e5003206ef2d080727004c8018210d53276db58cb1fcb3fc9414010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00926c31e202c87f01ca0055205afa0212cecec9ed54010ee3025f04f2c0824101fed33ffa00d72c01916d93fa4001e201f40430f8416f24303281114d5118c705f2f48142a624c200f2f45153a18200ca9721c2fff2f4817694068210042c1d80be16f2f470504380407f544857c8554082107bdd97de5006cb1f14cb3f58fa02ce01206e9430cf84809201cee2f400c926444410246d50436d03c8cf8580ca0042017689cf16ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed544300011000f210246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0010df551cc87f01ca00111055e011101fce1dce1bcb3f19ca0017ce05c8ce14cc58fa0201fa0201fa0258fa0212ca0012ca0058fa0258fa0202c8cb1f12cdcdc9ed544bbe0daf');
+    const __code = Cell.fromHex('b5ee9c7241024a0100125100022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d9010f0202710204022dbedc1ed9e08880888888807888807aa876d9e3662362a410030104db3c27020120050d020120060b0201580709022fadbced9e08880888888807888807aa876d9e2b882f8798c010080162f828db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d0360215af16ed9e6d9e367ab612c0100a011e24b36df828f828db3c302c552052e036022db6987b6782220222222201e22201eaa1db678d988d8a90100c0104db3c1b025dba48cdb3cdb3c571257125712571257125712571257125712571257125712571257125712571257121111111055e08100e008282195d3ef798008127105380a822a904b6085612025612025612025611025611025614025610025610025610025614025611025611025611015611015611015611048a01d072d721d200d200fa4021103450666f04f86102f862db3c1112945f0f5f03e01110d70d1ff2e0822182104c500002bae3022182104c500003bae3022182107bdd97deba1013192302f6ed44d0d200018e3efa40fa40d33fd200fa40d401d0fa40d4fa00fa00fa00fa00d200d200fa00fa00d430d0d31ffa00300c11110c0c11100c10cf10ce10cd57110f11100f550e8eb3fa40fa40810101d700552003d1582270248870821806fc23ac0082300de0b6b3a7640000227070547222200d11100d10cd10bc111200000002e203ea31d33ffa40fa40d4fa00fa0030f8416f245b812e0c325616c705f2f456118f485f0670804270885611553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000e11100e551de03e3e3e3e7f22561156112ec81449150052000000004c61756e636820726566756e6465643a20746f6b656e20616c72656164792065786973747303fe553082104c5001015005cb1f13cb3fcecb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0071708824041110552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb002ac200e3023a820afaf08070fb02708306161718001c000000004c61756e63682066656501f0111011121110706d561111141111111311110e11120e0311110310ce10bd10ac109b108a1079106810570610355044db3cc87f01ca001111111055e0011110011111ce1ece1ccb3f1aca0018ce06c8ce15cc5003fa0201fa0201fa0201fa0212ca0012ca0058fa0258fa0202c8cb1f5003fa02cdcdc9ed541a01b27003c8018210d53276db58cb1fcb3fc95611504410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000e11100e10df10ce109d108c55174902f431d33ffa00fa00d72c01916d93fa4001e231f8416f243032811de95612f2f48200e4232ab3f2f48200e7eb258208989680bef2f481769425821005f5e100a013be12f2f41113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a1079106810575044db3c1a4903f61110111511100f11140f0e11130e0d11120d0c11110c0b11150b0a11140a09111309081112080711110706111506051114050411130403111203021111020111150111145612db3c8200e7eb24c200f2f4238200a2391117be01111601f2f47056186eb39c5618206ef2d0805618c705b39170e2e30011155615a11b1c1d004a208100c8812710a98620811770a8812710a9045121a152b0a0546bb0a98652a0a15312a113002c30218107d0a8812710a90420820807a120be923070df01fa56165003a151cca051b3a150aca051c2a05169a05151a0035614a004a42c82195d3ef79800be8e30387f56182dc85982104c5001035003cb1fcb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0008de2c820afaf080a070fb021110111311100f11120f0e11110e0d11130d0c11120c0b11110b1e03e20a11130a10690811130807111107061112060511130504111104031113030211130201111156125612db3c5614c2009457145716e30d7f561704561643140211160256140201111401111328c8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c9291f2202d45617206ef2d0807170885618552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001117206ef2d0805618025617011116c8553082104c5001055005cb1f13cb3fcece01fa02c92021002000000000526566657272616c20666565003cc88258c000000000000000000000000101cb67ccc970fb00111211151112016cc88258c000000000000000000000000101cb67ccc970fb000b11130b0a11120a0911110908111008557710470544165502830670db3c32033ae3022182104c500004bae3020182102c76b973bae3025f0f5f03f2c08224303503fe31d33ffa00fa40d72c01916d93fa4001e201f40430f8416f243032f8285250db3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d012c705f2f4216ee302328200e42329b3f2f481769402820afaf080be12f2f4206ef2d080d08200bd1401d31f36252601d85b8108ff28f2f450b2a1216eb3963a206ef2d080923109e27080427004c8018210d53276db58cb1fcb3fc91034413010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000e11100e551d4902fe01821053454c4cba12f2f4fa00301110111211105e3e0d11110d0c11120c0b11110b0a11120a09111109081112080711110706111206051111050411120403111103021112020111130111145612db3c5233a08200e7eb24c200f2f4813fc3531bbbf2f4038200a2391119be01111801f2f451a1a1095614a05181a10b56142728004a5280a0546990a9865290a1208100c8812710a98620811770a8812710a9045121a15312a11302c8a1055616a0514aa003a42b820afaf080a070fb021110111211105e3e0d11110d0c11120c0b11110b0a11120a1059105810570611110604111104031111030211110201111156165613db3c041113047056165045031113030211160201111801111428c8292d029e21c2008ec071708856140405552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb009131e220c2009130e30d2a2b001e0000000043726561746f7220666565017c7170885610553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb002c002000000000506c6174666f726d2066656502f8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb0070830670880411140410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb002e2f00220000000053656c6c2070726f636565647300c20a11100a109f108e107d106c105b104a10394816035055074414c87f01ca001111111055e0011110011111ce1ece1ccb3f1aca0018ce06c8ce15cc5003fa0201fa0201fa0201fa0212ca0012ca0058fa0258fa0202c8cb1f5003fa02cdcdc9ed5401fc31d33f30f8416f24135f038200f49226f2f48151db05b315f2f481769404821008f0d180be14f2f47f705450a8a05465d92ac8553082104c5001045005cb1f13cb3fce01fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb00820afaf08021fb021110111211100f11110f0e11100e10df2b10df0e3103b010bd107c191b106810271046103550440371820afaf080db3c70830670882f553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0032344902f4f8285250db3c5c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d07ff8287070c8ca00c9d01059104a1023102bc855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec910565e22401310465522c8cf858036330058ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0000300000000047726164756174696f6e206c697175696469747902f2d33ffa40d2003021fa44306d018eb430f8285220db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d0dff842708040700596c85006cf16c992356de24630c855208210d17354005004cb1f12cb3f01206e9430cf84809201cee2f400c943303648011688c87001ca005a02cecec937022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d9383a0149a65ec0bb513434800066be803e903e9015481b04e6be903e901640b4405c1678b6cf1b0d203901125cdb3c3054633052304004b401d072d721d200d200fa4021103450666f04f86102f862ed44d0d200019afa00fa40fa4055206c139afa40fa405902d1017059e204e30202d70d1ff2e0822182100f8a7ea5bae302218210178d4519bae302018210595f07bcba3b3c3f4400b6028020d7217021d749c21f9430d31f01de208210178d4519ba8e1a30d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e082107bdd97deba8e19d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e05f0402f231d33ffa00fa40d72c01916d93fa4001e201f40431fa0023fa4430f2d08af8416f2481114d533cc705f2f48142a629c200f2f451a8a18200ca9721c2fff2f44330523bfa40fa0071d721fa00fa00306c6170f83a23c20091729171e281769402a85240a08209c9c380a08208989680a012bcf2f45138db3c5c403d01fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d050767080407f2c48135079c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec9105610451034401310465522c8cf8580ca00cf8440ce01fa028069cf40025c6e013e00586eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed5404fc31d33ffa00fa40d72c01916d93fa4001e201fa00f8416f24532cc705b38ebc537cdb3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d05240c705f2f4de51a8a021f8276f1021a1820898968066b608a18208e4e1c0a0a126c200e30f236eb3404142430018f82ac87001ca005a02cecec900e8504b4330fa40fa0071d721fa00fa00306c6170f83a5230a018a171702848135074c8553082107362d09c5005cb1f13cb3f01fa02cecec9284614505510246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0003000c107b50895f0800dc9321c2009170e28e5003206ef2d080727004c8018210d53276db58cb1fcb3fc9414010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00926c31e202c87f01ca0055205afa0212cecec9ed54010ee3025f04f2c0824501fed33ffa00d72c01916d93fa4001e201f40430f8416f24303281114d5118c705f2f48142a624c200f2f45153a18200ca9721c2fff2f4817694068210042c1d80be16f2f470504380407f544857c8554082107bdd97de5006cb1f14cb3f58fa02ce01206e9430cf84809201cee2f400c926444410246d50436d03c8cf8580ca0046017689cf16ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed5447000110017a10246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000e11100e551d49008ec87f01ca001111111055e0011110011111ce1ece1ccb3f1aca0018ce06c8ce15cc5003fa0201fa0201fa0201fa0212ca0012ca0058fa0258fa0202c8cb1f5003fa02cdcdc9ed54726ec3f7');
     const builder = beginCell();
     builder.storeUint(0, 1);
     initLaunchpadJetton_init_args({ $$type: 'LaunchpadJetton_init_args', factory, creator, salt })(builder);
@@ -2618,21 +2707,22 @@ const LaunchpadJetton_types: ABIType[] = [
     {"name":"TakeWalletAddress","header":3513996288,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"walletAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"ownerAddress","type":{"kind":"simple","type":"cell","optional":true}}]},
     {"name":"CreateToken","header":1280311297,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"initialBuyTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"JettonSetup","header":1280311298,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"initialBuyTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
-    {"name":"Buy","header":1280311299,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"tonAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"minTokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
+    {"name":"Buy","header":1280311299,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"tonAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"minTokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"referrer","type":{"kind":"simple","type":"address","optional":true}}]},
     {"name":"Migrate","header":1280311300,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"FactoryWithdraw","header":1280311301,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}}]},
     {"name":"TokenLaunched","header":1280311553,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"initialBuyTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"TradeEvent","header":1280311554,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"trader","type":{"kind":"simple","type":"address","optional":false}},{"name":"isBuy","type":{"kind":"simple","type":"bool","optional":false}},{"name":"tonAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tokenAmount","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
+    {"name":"ReferralPaidEvent","header":1280311557,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"referrer","type":{"kind":"simple","type":"address","optional":false}},{"name":"trader","type":{"kind":"simple","type":"address","optional":false}},{"name":"referrerFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"GraduatedEvent","header":1280311555,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"MigratedEvent","header":1280311556,"fields":[{"name":"queryId","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"tonLiquidity","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tokenLiquidity","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"JettonData","header":null,"fields":[{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"mintable","type":{"kind":"simple","type":"bool","optional":false}},{"name":"adminAddress","type":{"kind":"simple","type":"address","optional":true}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"walletCode","type":{"kind":"simple","type":"cell","optional":false}}]},
     {"name":"JettonWalletData","header":null,"fields":[{"name":"balance","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"minter","type":{"kind":"simple","type":"address","optional":false}},{"name":"code","type":{"kind":"simple","type":"cell","optional":false}}]},
-    {"name":"CurveState","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"progressBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
+    {"name":"CurveState","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"progressBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"totalReferrerFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"QuoteBuy","header":null,"fields":[{"name":"tokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"QuoteSell","header":null,"fields":[{"name":"tonOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
-    {"name":"FactoryInfo","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"creatorFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
+    {"name":"FactoryInfo","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"creatorFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"referrerFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
     {"name":"JettonWallet$Data","header":null,"fields":[{"name":"balance","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"minter","type":{"kind":"simple","type":"address","optional":false}}]},
-    {"name":"LaunchpadJetton$Data","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}}]},
+    {"name":"LaunchpadJetton$Data","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"totalReferrerFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"LaunchpadFactory$Data","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}}]},
 ]
 
@@ -2652,6 +2742,7 @@ const LaunchpadJetton_opcodes = {
     "FactoryWithdraw": 1280311301,
     "TokenLaunched": 1280311553,
     "TradeEvent": 1280311554,
+    "ReferralPaidEvent": 1280311557,
     "GraduatedEvent": 1280311555,
     "MigratedEvent": 1280311556,
 }
@@ -2687,6 +2778,8 @@ export const GRADUATION_TARGET = 1500000000000n;
 export const TRADE_FEE_BPS = 200n;
 export const CREATOR_FEE_BPS = 6000n;
 export const BPS = 10000n;
+export const REFERRER_FEE_BPS = 2000n;
+export const REFERRAL_DUST = 500000n;
 export const VIRTUAL_TON = 30000000000n;
 export const VIRTUAL_TOKENS = 1000000000000000000n;
 export const MIN_TRADE = 10000000n;

@@ -1,7 +1,7 @@
 # VERIFICATION.md — evidence per requirement
 
 Statuses: NOT_STARTED · IN_PROGRESS · PASS · FAIL · BLOCKED_HUMAN · DEFERRED. PASS needs evidence.
-Last run: 2026-09-22 on branch `claude/project-thread-6o05dp` (verified at `62f0c4e`), Node 22.22, cloud sandbox.
+Last run: 2026-09-27 on branch `claude/project-thread-dm0n4u` (referral share, ADR-008), Node 22, cloud sandbox.
 Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*.test.ts`.
 
 ## Build and static gates
@@ -11,9 +11,9 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled | build log | PASS |
 | Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no diff | CI step "Generated wrappers match" | PASS |
 | Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors | | PASS |
-| Contract tests | sandbox | `cd contracts && npm test` | all pass | 46/46 | jest output | PASS |
+| Contract tests | sandbox | `cd contracts && npm test` | all pass | 57/57 | jest output | PASS |
 | App lint | oxlint | `npm run lint` | 0 errors | 0 errors, 5 warnings (fast-refresh/effect style) | | PASS |
-| App + API tests | vitest | `npm test` | all pass | 62/62 | vitest output | PASS |
+| App + API tests | vitest | `npm test` | all pass | 63/63 | vitest output | PASS |
 | Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |
 | No server secrets in bundle | grep dist | CI step | no matches | no matches | | PASS |
 | Dependency audit | npm audit | `npm audit --omit=dev`; `cd contracts && npm audit` | no runtime vulns | 0 / 0 | SECURITY #16–17 | PASS |
@@ -23,6 +23,9 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Requirement | Test | Expected | Actual | Status |
 |---|---|---|---|---|
 | Fee = 2%, 60/40 split | "mints exactly the quoted amount and pays 2% split 60/40"; `fees` suite (7 sizes 0.01–1000 TON) | creator/treasury receive exact nanoton amounts | exact | PASS |
+| Referral split 60/20/20 from platform share | `referral` suite: 4 sizes 0.2–1000 TON; same tokens minted with or without referrer | creator/treasury/referrer receive exact nanoton amounts; creator unchanged | exact | PASS |
+| Referral dust, self-referral, sells | "keeps a dust referral cut…", "pays the first referral exactly at the dust threshold", "ignores self-referral", "sells never pay a referrer" | no referrer message; platform keeps the cut | yes | PASS |
+| Bad referrer cannot block a buy; mint does not bounce | "a referrer that cannot accept TON…", "the mint cannot bounce at the minimum attached gas…" | buy succeeds, wallet deployed, no bounce | yes | PASS |
 | Tiny trades still pay fees | "fees are never zero on the smallest allowed trade" | both shares > 0 at 0.01 TON | yes | PASS |
 | Rounding cannot leak funds | "repeated random trades never leak value…" (40 trades, all exit) | reserve never negative, totals match | pass; dust < 1000 nanoton stays in pool | PASS |
 | Quotes match execution | getters `quote_buy`/`quote_sell` vs minted/paid | equal | equal | PASS |

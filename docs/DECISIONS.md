@@ -39,3 +39,12 @@ refunds the creator and changes nothing.
 
 `deploy:mainnet`, `graduate --execute` on mainnet and `launch-production.sh` require `MAINNET_GO_LIVE_APPROVED=yes`,
 set only after the founder writes "MAINNET GO-LIVE APPROVED".
+
+## ADR-008 Referral share on buys, funded from the platform share
+
+Decided by the founder on 2026-09-27 (option "Platform share"). A `Buy` may name a `referrer`; it receives 20% of the
+trade fee, taken from the platform's 40%, so the split on a referred buy is creator 60 / platform 20 / referrer 20.
+The creator's income never changes. Sells, self-referrals and cuts below `REFERRAL_DUST` (0.0005 TON) pay no referrer;
+the cut stays with the platform. The threshold comes from sandbox measurements: a fee message costs about
+0.00008 TON (forward + receive), so smaller payouts would be mostly gas. Added before the contract freeze because
+changing `Buy` after deploy would need a new factory.

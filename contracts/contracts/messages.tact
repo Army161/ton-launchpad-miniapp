@@ -10,6 +10,13 @@ const GRADUATION_TARGET: Int = ton("1500");
 const TRADE_FEE_BPS: Int = 200;       // 2% of every trade
 const CREATOR_FEE_BPS: Int = 6000;    // 60% of the trade fee → creator
 const BPS: Int = 10000;               // platform receives the remaining 40%
+// A buy that names a referrer moves 20% of the trade fee from the platform's
+// share to the referrer (creator 60 / platform 20 / referrer 20). Sells and
+// buys without a referrer keep 60 / 40. See ADR-008.
+const REFERRER_FEE_BPS: Int = 2000;
+// A referrer cut below this is kept by the platform: forwarding it would cost
+// about as much as it is worth (a fee message costs ~0.00008 TON).
+const REFERRAL_DUST: Int = ton("0.0005");
 
 const VIRTUAL_TON: Int = ton("30");               // virtual TON reserve of the curve
 const VIRTUAL_TOKENS: Int = TOTAL_SUPPLY_NANO;    // virtual token reserve of the curve
@@ -115,10 +122,13 @@ message(0x4c500002) JettonSetup {
 }
 
 // Trader → jetton. Message value must be tonAmount + BUY_GAS or more.
+// `referrer` (optional) earns REFERRER_FEE_BPS of the trade fee; ignored when
+// it is the buyer or when the cut is below REFERRAL_DUST.
 message(0x4c500003) Buy {
     queryId: Int as uint64;
     tonAmount: Int as coins;
     minTokensOut: Int as coins;
+    referrer: Address?;
 }
 
 // Anyone → graduated jetton. Moves liquidity to the liquidity manager.
@@ -149,6 +159,13 @@ message(0x4c500102) TradeEvent {
     creatorFee: Int as coins;
     platformFee: Int as coins;
     realTonRaised: Int as coins;
+}
+
+message(0x4c500105) ReferralPaidEvent {
+    queryId: Int as uint64;
+    referrer: Address;
+    trader: Address;
+    referrerFee: Int as coins;
 }
 
 message(0x4c500103) GraduatedEvent {
@@ -198,6 +215,7 @@ struct CurveState {
     totalPlatformFees: Int as coins;
     tradeCount: Int as uint32;
     progressBps: Int;
+    totalReferrerFees: Int as coins;
 }
 
 struct QuoteBuy {
@@ -223,6 +241,7 @@ struct FactoryInfo {
     graduationTarget: Int as coins;
     tradeFeeBps: Int;
     creatorFeeBps: Int;
+    referrerFeeBps: Int;
 }
 
 // ─── Pure curve maths (shared by handlers and getters) ───────────────────────
@@ -235,4 +254,10 @@ inline fun tradeFee(amount: Int): Int {
 
 inline fun creatorShare(fee: Int): Int {
     return fee * CREATOR_FEE_BPS / BPS;
+}
+
+// Referrer's cut of a buy fee, or 0 when it is dust.
+inline fun referrerShare(fee: Int): Int {
+    let cut: Int = fee * REFERRER_FEE_BPS / BPS;
+    return cut >= REFERRAL_DUST ? cut : 0;
 }

@@ -1,6 +1,6 @@
 # STATUS.md — current state
 
-Updated: 2026-09-22 · Branch: `claude/project-thread-6o05dp` · Last verified commit: `62f0c4e`
+Updated: 2026-09-27 · Branch: `claude/project-thread-dm0n4u` (on top of `claude/project-thread-6o05dp`) · Referral share added (ADR-008)
 
 **Overall: NOT PRODUCTION READY.** All engineering that can be verified without the founder's wallets, bot and
 network access is done and passing. The testnet gate and every live check are blocked on founder actions.
@@ -12,8 +12,8 @@ network access is done and passing. The testnet gate and every live check are bl
 | Build (app, API, scripts) | PASS | `npm run build` |
 | Lint | PASS | `npm run lint` (0 errors) |
 | Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
-| Contract tests | PASS | 46/46 sandbox tests against the compiled contracts |
-| App/API tests | PASS | 62/62 vitest |
+| Contract tests | PASS | 57/57 sandbox tests against the compiled contracts |
+| App/API tests | PASS | 63/63 vitest |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
 | Testnet deployment | BLOCKED_HUMAN | needs a funded testnet deployer wallet and network access (`docs/EXECUTION.md`) |
@@ -53,7 +53,8 @@ network access is done and passing. The testnet gate and every live check are bl
 | Rate limit on `/api/metadata/upload` | P2 | SECURITY #13 |
 | Bundle size (1.05 MB, mostly TON libraries) | P2 | code-split the trading pages |
 | Independent contract audit | P1 before real volume | SECURITY #12 |
-| Trustless on-chain STON.fi migration | V2 | ADR-005 |
+| Trustless on-chain STON.fi migration | P1 before audit | ADR-005; keeper wallet custody is the largest open risk |
+| Short referral deep links (`startapp`, 64-char limit) | P1 | contract side done (ADR-008); needs launch id + referral code mapping in the API and the Buy page reading `start_param` |
 
 ## Verified at
 
