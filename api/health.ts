@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { serverFactory, serverNetwork } from './_lib/chain';
+import { serverFactory, serverNetwork } from './_lib/chain.js';
 
 /** Configuration sanity for monitoring. Reports presence only, never values. */
 export default function handler(_req: VercelRequest, res: VercelResponse) {

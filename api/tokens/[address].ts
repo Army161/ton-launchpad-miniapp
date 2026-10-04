@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Address } from '@ton/core';
-import { readHolderBalance, readLaunchpadToken, serverFactory } from '../_lib/chain';
-import { serverError } from '../_lib/http';
+import { readHolderBalance, readLaunchpadToken, serverFactory } from '../_lib/chain.js';
+import { serverError } from '../_lib/http.js';
 
 function parseAddress(value: unknown): Address | null {
   if (typeof value !== 'string' || value.length > 100) return null;

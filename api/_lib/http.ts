@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { verifyJwt, type JwtPayload } from './jwt';
+import { verifyJwt, type JwtPayload } from './jwt.js';
 
 /** Sends a generic 500 without leaking stack traces or upstream error text. */
 export function serverError(res: VercelResponse, where: string, err: unknown) {

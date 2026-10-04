@@ -1,8 +1,8 @@
 import { Address } from '@ton/core';
 import { TonClient } from '@ton/ton';
-import { LaunchpadJetton } from '../../src/contracts/LaunchpadJetton';
-import { JettonWallet } from '../../src/contracts/JettonWallet';
-import { parseOnchainContent } from '../../src/lib/metadata';
+import { LaunchpadJetton } from '../../src/contracts/LaunchpadJetton.js';
+import { JettonWallet } from '../../src/contracts/JettonWallet.js';
+import { parseOnchainContent } from '../../src/lib/metadata.js';
 
 const OP_JETTON_SETUP = 0x4c500002;
 
