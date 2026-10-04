@@ -1,75 +1,106 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { toNano } from '@ton/core';
-import { IconBack, IconCheck, IconInfo, IconMenu, IconShield, IconTelegram } from '../components/Icons';
+import { Address } from '@ton/core';
+import { IconBack, IconCheck, IconInfo, IconShield } from '../components/Icons';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { useToast } from '../context/ToastContext';
 import { useWallet } from '../context/WalletContext';
-import { getToken } from '../data/tokens';
-import { formatTon, quoteSell } from '../lib/contracts';
-import { CONFIG } from '../lib/config';
+import { useToken } from '../data/tokens';
+import {
+  buildSellBody,
+  computeWalletAddress,
+  formatTokens,
+  formatTon,
+  formatUnits,
+  parseAmount,
+  quoteSell,
+  SELL_VALUE,
+  withSlippage,
+} from '../lib/contracts';
+import { CONFIG, friendlyAddress } from '../lib/config';
+import { waitForToken } from '../lib/launchpadApi';
 import styles from './Buy.module.css';
 
-const NETWORK_FEE = 0.05;
-const TOKEN_DECIMALS = 9;
+type Phase = 'idle' | 'signing' | 'confirming';
 
 export function Sell() {
-  const { id } = useParams<{ id: string }>();
-  const token = getToken(id ?? '');
+  const { id = '' } = useParams<{ id: string }>();
   const { showToast } = useToast();
-  const { connected, connect, sendTransaction } = useWallet();
-  const [amount, setAmount] = useState('1000');
-  const [submitting, setSubmitting] = useState(false);
+  const { connected, connect, sendTransaction, address } = useWallet();
+  const { token, balance, status, refresh } = useToken(id, address);
+  const [amount, setAmount] = useState('');
+  const [phase, setPhase] = useState<Phase>('idle');
 
-  const tokenAmount = useMemo(() => {
-    const n = parseFloat(amount);
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  }, [amount]);
-
-  const tokenNano = useMemo(() => {
-    if (tokenAmount <= 0) return 0n;
-    return BigInt(Math.floor(tokenAmount * 10 ** TOKEN_DECIMALS));
-  }, [tokenAmount]);
-
-  const quote = useMemo(() => {
-    if (tokenNano <= 0n) return null;
-    return quoteSell(tokenNano);
-  }, [tokenNano]);
-
-  const estimated = quote ? formatTon(quote.tonOut) : '0';
-  const amountDisplay = tokenAmount ? tokenAmount.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '0';
+  const tokensIn = parseAmount(amount);
+  const held = balance ?? 0n;
+  const inputError =
+    tokensIn === null || tokensIn === 0n
+      ? 'Enter an amount'
+      : connected && balance !== null && tokensIn > held
+        ? 'More than you hold'
+        : null;
+  const quote = token?.reserves && tokensIn && !inputError ? quoteSell(tokensIn, token.reserves) : null;
 
   async function confirm() {
-    if (!token) return;
-    if (tokenAmount <= 0) { showToast('Enter a token amount'); return; }
-    if (!connected) { connect(); return; }
-
-    const curveAddress = token.curveAddress ?? token.id;
-    setSubmitting(true);
+    if (!token || !quote || !tokensIn) return;
+    if (!connected || !address) {
+      connect();
+      return;
+    }
+    if (quote.tonOut <= 0n) {
+      showToast('Amount too small to sell');
+      return;
+    }
+    const owner = Address.parse(address);
+    const wallet = await computeWalletAddress(owner, Address.parse(token.id));
+    const before = token.tradeCount ?? 0;
+    setPhase('signing');
     try {
-      // Jetton transfer to curve with sell notification — simplified V1 via TON message
+      // The wallet app shows this as a burn: selling returns tokens to the curve for TON.
       await sendTransaction({
-        to: curveAddress,
-        amount: toNano('0.05').toString(),
-        payload: undefined,
+        to: friendlyAddress(wallet),
+        amount: SELL_VALUE.toString(),
+        payload: buildSellBody(tokensIn, withSlippage(quote.tonOut), owner).toBoc().toString('base64'),
       });
-      showToast(`Sold ~${amountDisplay} ${token.ticker} for ~${estimated} TON`);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Sell failed');
-    } finally {
-      setSubmitting(false);
+      setPhase('idle');
+      showToast(err instanceof Error && /reject|cancel/i.test(err.message) ? 'Transaction cancelled' : 'Wallet did not send the transaction');
+      return;
+    }
+    setPhase('confirming');
+    const done = await waitForToken(token.id, (l) => l.token.tradeCount > before, address);
+    setPhase('idle');
+    if (done) {
+      showToast(`Sold for ~${formatTon(quote.tonOut)} TON`);
+      setAmount('');
+      void refresh();
+    } else {
+      showToast('Not confirmed yet. If the price moved more than 1%, your tokens were returned.');
     }
   }
 
+  if (status === 'loading') {
+    return <div className="page page--no-nav"><p className="muted" style={{ marginTop: 48, textAlign: 'center' }}>Loading…</p></div>;
+  }
   if (!token) {
     return (
       <div className="page page--no-nav">
         <Link to="/" className="btn-ghost"><IconBack /> Back</Link>
-        <p style={{ marginTop: 24 }} className="muted">Token not found.</p>
+        <p style={{ marginTop: 24 }} className="muted">{status === 'error' ? 'Could not load this token. Try again shortly.' : 'Token not found.'}</p>
+      </div>
+    );
+  }
+  if (token.source !== 'launchpad' || token.graduated) {
+    return (
+      <div className="page page--no-nav">
+        <Link to={`/token/${token.id}`} className="btn-ghost"><IconBack /> Back</Link>
+        <p style={{ marginTop: 24 }} className="muted">This token trades on STON.fi now.</p>
+        <a className="btn-primary" href={`https://app.ston.fi/swap?ft=${token.id}&tt=TON`} target="_blank" rel="noopener noreferrer">Open STON.fi</a>
       </div>
     );
   }
 
+  const busy = phase !== 'idle';
   return (
     <div className={`page page--no-nav ${styles.page}`}>
       <header className={styles.header}>
@@ -77,38 +108,48 @@ export function Sell() {
           <Link to={`/token/${token.id}`} className={styles.back} aria-label="Back"><IconBack size={22} /></Link>
           <h1>Sell</h1>
         </div>
-        <div className={styles.headerRight}>
-          <button type="button" className={styles.iconBtn} aria-label="Share"><IconTelegram size={20} /></button>
-          <button type="button" className={styles.iconBtn} aria-label="Menu"><IconMenu size={20} /></button>
-        </div>
       </header>
 
       <div className={`card ${styles.card}`}>
-        <label className={styles.label} htmlFor="sell-amount">Amount ({token.ticker})</label>
+        <label className={styles.label} htmlFor="sell-amount">
+          Amount ({token.ticker}){connected && balance !== null ? ` · you hold ${formatTokens(held)}` : ''}
+        </label>
         <div className={styles.amountRow}>
-          <input id="sell-amount" className={styles.amountInput} value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))} inputMode="decimal" />
+          <input id="sell-amount" className={styles.amountInput} value={amount} placeholder="0" onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))} inputMode="decimal" />
           <span className={styles.tonSide}>{token.ticker}<TokenAvatar emoji={token.emoji} color={token.color} size={24} imageUrl={token.imageUrl} /></span>
         </div>
+        {connected && held > 0n && (
+          <button type="button" className="btn-ghost" style={{ fontSize: 12, alignSelf: 'flex-end' }} onClick={() => setAmount(formatUnits(held, 9, 9).replace(/,/g, ''))}>
+            Max
+          </button>
+        )}
+        {amount && inputError && <p className="negative" style={{ fontSize: 12 }}>{inputError}</p>}
         <div className={styles.row}>
           <span className={styles.rowLabel}>Estimated TON received <IconInfo size={13} /></span>
-          <span className={styles.est}><strong>{estimated}</strong><span className={styles.estTicker}>TON</span></span>
+          <span className={styles.est}><strong>{quote ? formatTon(quote.tonOut) : '0'}</strong><span className={styles.estTicker}>TON</span></span>
         </div>
         {quote && (
-          <div className={styles.row}>
-            <span className={styles.rowLabel}>Protocol fee ({CONFIG.tradeFeePercent}%)</span>
-            <span className={styles.fee}>{(Number(quote.fee) / 1e9).toFixed(4)} TON</span>
-          </div>
+          <>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Minimum received (1% slippage)</span>
+              <span className={styles.fee}>{formatTon(withSlippage(quote.tonOut))} TON</span>
+            </div>
+            <div className={styles.row}>
+              <span className={styles.rowLabel}>Trading fee ({CONFIG.tradeFeePercent}%)</span>
+              <span className={styles.fee}>{formatTon(quote.fee)} TON</span>
+            </div>
+          </>
         )}
         <hr className={styles.sep} />
         <div className={styles.row}>
-          <span className={styles.rowLabel}>Network fee <IconInfo size={13} /></span>
-          <span className={styles.fee}>{NETWORK_FEE.toFixed(2)} TON <IconCheck size={14} /></span>
+          <span className={styles.rowLabel}>Network fee (unused part refunded)</span>
+          <span className={styles.fee}>{formatTon(SELL_VALUE)} TON <IconCheck size={14} /></span>
         </div>
       </div>
 
-      <p className={styles.secure}><IconShield size={15} /> Secure transaction on TON Blockchain</p>
-      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={submitting}>
-        {submitting ? 'Confirming...' : `Confirm sell · ${amountDisplay} ${token.ticker}`}
+      <p className={styles.secure}><IconShield size={15} /> Your wallet will show this as a token burn; the curve pays you TON for it.</p>
+      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote}>
+        {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? `Confirm sell · ${amount || '0'} ${token.ticker}` : 'Connect wallet'}
       </button>
     </div>
   );

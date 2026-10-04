@@ -53,9 +53,9 @@ export default function App() {
     <TonConnectUIProvider
       manifestUrl={CONFIG.manifestUrl}
       uiPreferences={{ theme: THEME.DARK }}
-      actionsConfiguration={{
-        twaReturnUrl: CONFIG.twaReturnUrl as `${string}://${string}`,
-      }}
+      actionsConfiguration={
+        CONFIG.twaReturnUrl ? { twaReturnUrl: CONFIG.twaReturnUrl as `${string}://${string}` } : undefined
+      }
       walletsListConfiguration={{
         includeWallets: [
           {

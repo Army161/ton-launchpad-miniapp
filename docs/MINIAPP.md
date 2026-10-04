@@ -31,7 +31,11 @@ TELEGRAM_BOT_TOKEN=
 VITE_TWA_RETURN_URL=https://t.me/YourBot/yourapp
 ```
 
+Server checks (`api/_lib/telegram.ts`, tested in `tests/telegram-auth.test.ts`): HMAC with a constant-time compare,
+`auth_date` at most 24 h old and not in the future, `initData` at most 4096 characters, a `user` field present.
+Outside Telegram the dev-only guest fallback applies only in `npm run dev`; production builds never create a fake session.
+
 ## TODO
 
 - [ ] Set actual bot username once confirmed by founder
-- [ ] Test initData validation on production URL
+- [ ] Test initData validation on production URL (`docs/LAUNCH.md` smoke test)
