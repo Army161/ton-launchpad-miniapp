@@ -12,10 +12,15 @@ contracts/node_modules
 dist
 dist-ssr
 *.local
+# Environment files: never commit real values. Only the template is tracked.
 .env
-.env.local
+.env.*
+!.env.example
+*.pem
+*.key
+mnemonic*.txt
 api/data/store.json
-contracts/deployed.json
+contracts/deployed*.json
 
 # Editor directories and files
 .vscode/*

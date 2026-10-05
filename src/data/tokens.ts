@@ -1,31 +1,31 @@
-import type { LaunchpadToken } from '../lib/tonapi';
+import { useCallback, useEffect, useState } from 'react';
+import type { CurveReserves } from '../lib/contracts';
+import { spotPriceTon } from '../lib/contracts';
 import { CONFIG } from '../lib/config';
+import { fetchLaunchpadToken, type TokenView } from '../lib/launchpadApi';
 
 export type Token = {
   id: string;
   name: string;
   ticker: string;
+  description?: string;
+  telegram?: string;
+  creator?: string;
   priceUsd: number;
   priceTon: number;
   change24h: number | null;
-  priceDeltaUsd?: number;
   marketCapTon: number;
-  marketCapUsd: number;
-  holders: number;
-  holdersDelta1h: number;
   curveProgress: number;
   curveRaisedTon: number;
   curveTargetTon: number;
+  tradeCount?: number;
+  reserves?: CurveReserves;
   emoji: string;
   color: string;
   imageUrl?: string;
-  demo?: boolean;
   graduated?: boolean;
-  curveAddress?: string;
-  source?: 'launchpad' | 'stonfi';
+  source: 'launchpad' | 'stonfi';
 };
-
-export const DEMO_TOKENS: Token[] = [];
 
 const liveById = new Map<string, Token>();
 
@@ -33,27 +33,33 @@ export function registerLiveTokens(tokens: Token[]): void {
   for (const t of tokens) liveById.set(t.id, t);
 }
 
-export function launchpadToToken(lp: LaunchpadToken): Token {
-  const progress = Math.min(100, lp.progressBps / 100);
+export function getToken(id: string): Token | undefined {
+  return liveById.get(id);
+}
+
+export function launchpadToToken(v: TokenView): Token {
+  const reserves = { virtualTon: BigInt(v.virtualTon), virtualTokens: BigInt(v.virtualTokens) };
+  const priceTon = spotPriceTon(reserves);
   return {
-    id: lp.jettonAddress,
-    name: lp.name,
-    ticker: lp.symbol,
+    id: v.address,
+    name: v.name || 'Unnamed',
+    ticker: v.symbol || '???',
+    description: v.description,
+    telegram: v.telegram,
+    creator: v.creator,
     priceUsd: 0,
-    priceTon: lp.raisedTon > 0 ? lp.raisedTon / 1_000_000 : 0,
+    priceTon,
     change24h: null,
-    marketCapTon: lp.raisedTon,
-    marketCapUsd: 0,
-    holders: 0,
-    holdersDelta1h: 0,
-    curveProgress: progress,
-    curveRaisedTon: lp.raisedTon,
-    curveTargetTon: CONFIG.graduationTarget,
+    marketCapTon: priceTon * 1e9,
+    curveProgress: Math.min(100, v.progressBps / 100),
+    curveRaisedTon: Number(BigInt(v.realTonRaised)) / 1e9,
+    curveTargetTon: Number(BigInt(v.graduationTarget)) / 1e9,
+    tradeCount: v.tradeCount,
+    reserves,
     emoji: '🚀',
     color: '#30A1F5',
-    imageUrl: undefined,
-    graduated: lp.graduated,
-    curveAddress: lp.curveAddress,
+    imageUrl: v.image || undefined,
+    graduated: v.graduated,
     source: 'launchpad',
   };
 }
@@ -75,9 +81,6 @@ export function liveTokenFromCard(card: {
     priceTon: 0,
     change24h: card.change24h,
     marketCapTon: 0,
-    marketCapUsd: 0,
-    holders: 0,
-    holdersDelta1h: 0,
     curveProgress: 100,
     curveRaisedTon: CONFIG.graduationTarget,
     curveTargetTon: CONFIG.graduationTarget,
@@ -89,18 +92,39 @@ export function liveTokenFromCard(card: {
   };
 }
 
-export function getToken(id: string): Token | undefined {
-  return liveById.get(id) ?? DEMO_TOKENS.find((t) => t.id === id);
-}
+/**
+ * Loads a token by address. Launchpad tokens are always refetched so quotes use
+ * live reserves; deep links work without visiting the home page first.
+ */
+export function useToken(id: string, holder?: string | null) {
+  const [token, setToken] = useState<Token | undefined>(() => getToken(id));
+  const [balance, setBalance] = useState<bigint | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'not-found' | 'error'>(() =>
+    getToken(id) ? 'ready' : 'loading',
+  );
 
-/** @deprecated Use quoteBuy from lib/contracts */
-export function estimateTokens(tonAmount: number, ticker: string): string {
-  const raw = tonAmount * 123.456;
-  return `${raw.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${ticker}`;
-}
+  const refresh = useCallback(async () => {
+    const cached = getToken(id);
+    if (cached?.source === 'stonfi') {
+      setToken(cached);
+      setStatus('ready');
+      return;
+    }
+    const l = await fetchLaunchpadToken(id, holder);
+    if (l.status === 'ok') {
+      const t = launchpadToToken(l.token);
+      registerLiveTokens([t]);
+      setToken(t);
+      setBalance(l.balance);
+      setStatus('ready');
+    } else if (!cached) {
+      setStatus(l.status);
+    }
+  }, [id, holder]);
 
-/** @deprecated Use quoteSell from lib/contracts */
-export function estimateTonOut(tokenAmount: number, priceTon: number): string {
-  const raw = tokenAmount * priceTon * 0.98;
-  return raw.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { token, balance, status, refresh };
 }
