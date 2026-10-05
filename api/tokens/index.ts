@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { listLaunchAddresses, mapLimit, readLaunchpadToken, serverFactory, type TokenView } from '../_lib/chain';
-import { serverError } from '../_lib/http';
+import { listLaunchAddresses, mapLimit, readLaunchpadToken, serverFactory, type TokenView } from '../_lib/chain.js';
+import { serverError } from '../_lib/http.js';
 
 // Tokens are discovered from the factory's on-chain history, not from a
 // user-writable registry, so nothing unverified can be listed.

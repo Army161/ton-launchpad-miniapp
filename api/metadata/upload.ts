@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { put } from '@vercel/blob';
 import { randomUUID } from 'crypto';
-import { requireAuth, serverError } from '../_lib/http';
+import { requireAuth, serverError } from '../_lib/http.js';
 
 export const config = { api: { bodyParser: false } };
 

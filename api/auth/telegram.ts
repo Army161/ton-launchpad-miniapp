@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateInitData } from '../_lib/telegram';
-import { signJwt } from '../_lib/jwt';
+import { validateInitData } from '../_lib/telegram.js';
+import { signJwt } from '../_lib/jwt.js';
 
 // Sessions are stateless: the JWT carries the Telegram id, nothing is stored.
 export default function handler(req: VercelRequest, res: VercelResponse) {
