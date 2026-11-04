@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { CHAIN, useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
-import { CONFIG } from '../lib/config';
+import { CONFIG, walletDisplayAddress } from '../lib/config';
 
 type WalletContextValue = {
   connected: boolean;
@@ -33,7 +33,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const wallet = useTonWallet();
 
   const rawAddress = wallet?.account.address ?? null;
-  const friendlyAddress = rawAddress ? truncateAddress(rawAddress) : null;
+  const friendlyAddress = rawAddress ? truncateAddress(walletDisplayAddress(rawAddress)) : null;
 
   const connect = useCallback(() => {
     tonConnectUI.openModal();
