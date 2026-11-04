@@ -1,4 +1,4 @@
-import type { Address } from '@ton/core';
+import { Address } from '@ton/core';
 
 const origin =
   typeof window !== 'undefined' ? window.location.origin : 'https://ton-launchpad-miniapp.vercel.app';
@@ -24,6 +24,15 @@ export function isConfigured(): boolean {
 /** User-facing bounceable address for the configured network. */
 export function friendlyAddress(a: Address): string {
   return a.toString({ bounceable: true, testOnly: CONFIG.network === 'testnet' });
+}
+
+/** Wallet address in the non-bounceable UQ… form wallets show; falls back to the input if it cannot be parsed. */
+export function walletDisplayAddress(raw: string): string {
+  try {
+    return Address.parse(raw).toString({ bounceable: false, testOnly: CONFIG.network === 'testnet' });
+  } catch {
+    return raw;
+  }
 }
 
 export function explorerUrl(address: string): string {
