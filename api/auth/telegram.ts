@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateInitData } from '../_lib/telegram.js';
+import { checkInitData } from '../_lib/telegram.js';
 import { signJwt } from '../_lib/jwt.js';
 
 // Sessions are stateless: the JWT carries the Telegram id, nothing is stored.
@@ -13,8 +13,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   const initData = (req.body as { initData?: unknown } | undefined)?.initData;
   if (typeof initData !== 'string' || !initData) return res.status(400).json({ error: 'initData required' });
 
-  const tgUser = validateInitData(initData, botToken);
-  if (!tgUser) return res.status(401).json({ error: 'Invalid initData' });
+  const result = checkInitData(initData, botToken);
+  if (!('user' in result)) {
+    // bad_hash almost always means TELEGRAM_BOT_TOKEN is not the current token of the bot that opened the app.
+    console.warn(`telegram auth rejected: ${result.reason}`);
+    return res.status(401).json({ error: 'Invalid initData' });
+  }
+  const tgUser = result.user;
 
   return res.status(200).json({
     token: signJwt(tgUser.id, jwtSecret),

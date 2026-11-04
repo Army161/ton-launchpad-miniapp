@@ -23,6 +23,18 @@ type AuthContextValue = {
   isTelegram: boolean;
 };
 
+type UnsafeTelegramUser = {
+  id: number;
+  username?: string;
+  first_name?: string;
+  photo_url?: string;
+};
+
+/** Telegram sends snake_case fields; map them to the app's user shape. Unverified, display only. */
+function fromUnsafe(u: UnsafeTelegramUser): AuthUser {
+  return { id: u.id, username: u.username, firstName: u.first_name, photoUrl: u.photo_url };
+}
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -63,11 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null);
         // Fallback to unsafe data for UI (no API in dev)
         const unsafe = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        if (unsafe) setUser({ ...unsafe, photoUrl: unsafe.photo_url });
+        if (unsafe) setUser(fromUnsafe(unsafe));
       }
     } catch {
       const unsafe = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      if (unsafe) setUser({ ...unsafe, photoUrl: unsafe.photo_url });
+      if (unsafe) setUser(fromUnsafe(unsafe));
     } finally {
       setLoading(false);
     }

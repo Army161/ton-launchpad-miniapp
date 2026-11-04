@@ -72,4 +72,4 @@ jobs:
             echo "::notice::Skipping CLI deploy (no Vercel secrets); the Vercel Git integration deploys pushes."
             exit 0
           fi
-          npx vercel@latest deploy --prod --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
+          npx vercel@latest deploy --prod --token "$VERCEL_TOKEN" --yes

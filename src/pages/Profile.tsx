@@ -2,6 +2,7 @@ import { ConnectButton } from '../components/ConnectButton';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
+import { Address } from '@ton/core';
 import { CONFIG } from '../lib/config';
 
 export function Profile() {
@@ -45,7 +46,7 @@ export function Profile() {
         <div style={{ width: '100%' }}>
           <p className="muted" style={{ fontSize: 12 }}>Wallet</p>
           <p style={{ fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all' }}>
-            {connected ? address : 'Not connected'}
+            {connected && address ? displayAddress(address) : 'Not connected'}
           </p>
         </div>
 
@@ -70,4 +71,13 @@ export function Profile() {
       </div>
     </div>
   );
+}
+
+/** Wallet addresses in the familiar non-bounceable UQ… form (what wallets show). */
+function displayAddress(raw: string): string {
+  try {
+    return Address.parse(raw).toString({ bounceable: false, testOnly: CONFIG.network === 'testnet' });
+  } catch {
+    return raw;
+  }
 }

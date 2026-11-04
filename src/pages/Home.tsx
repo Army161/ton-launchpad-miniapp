@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ConnectButton } from '../components/ConnectButton';
-import { Sparkline } from '../components/Sparkline';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { liveTokenFromCard, registerLiveTokens, launchpadToToken } from '../data/tokens';
 import { fetchChange24hMap } from '../lib/dexscreener';
@@ -191,7 +190,6 @@ export function Home() {
                   Curve {card.curveProgress.toFixed(0)}% · {CONFIG.graduationTarget} TON
                 </div>
               )}
-              {card.source === 'stonfi' && <Sparkline color={card.color} />}
               <div className="token-card-bottom">
                 <span className="token-card-price">
                   {card.priceUsd > 0

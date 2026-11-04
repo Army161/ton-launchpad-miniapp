@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { describe, expect, it } from 'vitest';
-import { validateInitData } from '../api/_lib/telegram';
+import { checkInitData, validateInitData } from '../api/_lib/telegram';
 import { signJwt, verifyJwt } from '../api/_lib/jwt';
 
 const BOT_TOKEN = '123456789:AAHtestTokenForUnitTestsOnly_abcdefghij';
@@ -22,6 +22,18 @@ describe('Telegram initData', () => {
     const u = validateInitData(signInitData({ auth_date: authDate, query_id: 'q', user }), BOT_TOKEN, NOW);
     expect(u?.id).toBe(42);
     expect(u?.username).toBe('ada');
+  });
+
+  it('accepts a bot token pasted with surrounding whitespace', () => {
+    const u = validateInitData(signInitData({ auth_date: authDate, user }), ` ${BOT_TOKEN}\n`, NOW);
+    expect(u?.id).toBe(42);
+  });
+
+  it('reports why it rejected', () => {
+    expect(checkInitData(signInitData({ auth_date: authDate, user }, '999:other'), BOT_TOKEN, NOW)).toEqual({ reason: 'bad_hash' });
+    const old = String(Math.floor(NOW / 1000) - 2 * 86400);
+    expect(checkInitData(signInitData({ auth_date: old, user }), BOT_TOKEN, NOW)).toEqual({ reason: 'expired' });
+    expect(checkInitData('', BOT_TOKEN, NOW)).toEqual({ reason: 'malformed' });
   });
 
   it('rejects a tampered user field', () => {
