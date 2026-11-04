@@ -1,5 +1,5 @@
 import type { FormEvent, ChangeEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Address } from '@ton/core';
 import { IconBack } from '../components/Icons';
@@ -39,6 +39,21 @@ export function Create() {
   const [initialBuy, setInitialBuy] = useState('0');
   const [imageUri, setImageUri] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadAvailable, setUploadAvailable] = useState(false);
+
+  // Only offer file upload when the server has image storage configured.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/health')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h: { imageUploadConfigured?: boolean } | null) => {
+        if (!cancelled) setUploadAvailable(Boolean(h?.imageUploadConfigured));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [phase, setPhase] = useState<Phase>('idle');
 
   const initialBuyTon = parseAmount(initialBuy || '0');
@@ -174,10 +189,12 @@ export function Create() {
           <span className="muted" style={{ fontSize: 13 }}>Token image URL (https)</span>
           <input className="input" value={imageUri} onChange={(e) => setImageUri(e.target.value)} placeholder="https://…/logo.png" maxLength={METADATA_LIMITS.url} />
         </label>
-        <label>
-          <span className="muted" style={{ fontSize: 13 }}>…or upload an image {uploading ? '(uploading…)' : ''}</span>
-          <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImage} style={{ marginTop: 4 }} disabled={uploading} />
-        </label>
+        {uploadAvailable && (
+          <label>
+            <span className="muted" style={{ fontSize: 13 }}>…or upload an image {uploading ? '(uploading…)' : ''}</span>
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImage} style={{ marginTop: 4 }} disabled={uploading} />
+          </label>
+        )}
         <label>
           <span className="muted" style={{ fontSize: 13 }}>Initial buy (TON, 0–{formatTon(MAX_INITIAL_BUY)})</span>
           <input className="input" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder="0" />
