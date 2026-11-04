@@ -16,10 +16,13 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   const result = checkInitData(initData, botToken);
   if (!('user' in result)) {
     // bad_hash almost always means TELEGRAM_BOT_TOKEN is not the current token of the bot that opened the app.
-    console.warn(`telegram auth rejected: ${result.reason}`);
+    // Token shape only (never the value): catches a pasted label, quotes or a truncated token.
+    const shapeOk = /^\d{5,}:[A-Za-z0-9_-]{30,}$/.test(botToken.trim());
+    console.warn(`telegram auth rejected: ${result.reason} (token shape ${shapeOk ? 'ok' : 'INVALID'})`);
     return res.status(401).json({ error: 'Invalid initData' });
   }
   const tgUser = result.user;
+  console.info('telegram auth ok');
 
   return res.status(200).json({
     token: signJwt(tgUser.id, jwtSecret),
