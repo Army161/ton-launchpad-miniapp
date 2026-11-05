@@ -1,21 +1,21 @@
 /**
- * Graduation keeper. For a graduated launchpad token:
- *   1. sends the permissionless Migrate, which moves the curve's TON and the
- *      remaining supply to the liquidity manager wallet;
- *   2. seeds a STON.fi v2 TON/jetton pool from that wallet.
+ * Graduation trigger (ADR-009). Migrate is permissionless: any wallet can send
+ * it, and the token contract itself seeds the STON.fi v2 pool and sends the LP
+ * to the zero address. This script sends it from KEEPER_MNEMONIC (default:
+ * DEPLOY_MNEMONIC); the app's Migrate button does the same from any wallet.
  *
- *   npm run graduate -- <testnet|mainnet> <jettonAddress> [--ton=<amount>] [--execute]
+ *   npm run graduate -- <testnet|mainnet> <jettonAddress> [--execute]
+ *
+ * Fallback only, when STON.fi refunded a provision to the liquidity manager
+ * (for example a pool someone created before graduation at another price):
+ *
+ *   npm run graduate -- <testnet|mainnet> <jettonAddress> --fallback --ton=<amount> [--execute]
  *   npm run graduate -- <testnet|mainnet> --lock-lp --pool=<poolAddress> [--execute]
  *
- * --lock-lp sends every LP token the keeper holds for that pool to the zero
- * address, which locks the liquidity permanently (irreversible).
+ * --fallback seeds the pool from the liquidity manager wallet; --lock-lp then
+ * sends its LP to the zero address (irreversible).
  *
- * The TON side of the pool is the curve reserve moved by Migrate. If Migrate
- * already ran in an earlier invocation, pass it with --ton=<amount>.
- *
- * Without --execute it only prints the plan. The liquidity manager must be the
- * wallet behind KEEPER_MNEMONIC (default: DEPLOY_MNEMONIC, which is also the
- * default liquidity manager chosen at factory deploy).
+ * Without --execute it only prints the plan.
  */
 import { Address, beginCell, toNano } from '@ton/core';
 import { StonApiClient } from '@ston-fi/api';
@@ -25,7 +25,7 @@ import { JettonWallet } from '../build/Launchpad_JettonWallet';
 import { JettonMaster, JettonWallet as TonJettonWallet } from '@ton/ton';
 import { friendly, openWallet, parseNetwork, waitFor, type Network } from './lib/wallet';
 
-const MIGRATE_GAS = toNano('0.15');
+const MIGRATE_GAS = toNano('0.1');
 /** TON kept back in the keeper wallet for the STON.fi message fees. */
 const KEEPER_GAS_RESERVE = toNano('1');
 
@@ -78,7 +78,7 @@ async function main() {
 
     const keeper = await openWallet(network, process.env.KEEPER_MNEMONIC ? 'KEEPER_MNEMONIC' : 'DEPLOY_MNEMONIC');
     const jetton = keeper.client.open(LaunchpadJetton.fromAddress(jettonAddress));
-    let state = await jetton.getGetCurveState();
+    const state = await jetton.getGetCurveState();
 
     console.log(`Token:              ${friendly(jettonAddress, network)}`);
     console.log(`Raised:             ${Number(state.realTonRaised) / 1e9} TON of ${Number(state.graduationTarget) / 1e9}`);
@@ -89,17 +89,12 @@ async function main() {
         console.log('Not graduated yet; nothing to do.');
         return;
     }
-    if (!state.liquidityManager.equals(keeper.address)) {
-        throw new Error('This keeper wallet is not the token\'s liquidity manager; it cannot seed the pool.');
-    }
+    const fallback = process.argv.includes('--fallback');
+    console.log(`STON.fi router:     ${friendly(state.dex.router, network)}`);
 
-    const tonArg = process.argv.find((a) => a.startsWith('--ton='));
-    let tonUnits = tonArg ? toNano(tonArg.slice(6)) : state.migrated ? 0n : state.realTonRaised;
-    if (tonUnits === 0n) throw new Error('Already migrated: pass the pool TON amount with --ton=<amount>.');
-
-    // ── 1. Migrate ──────────────────────────────────────────────────────────
+    // ── Migrate: the contract seeds STON.fi itself ──────────────────────────
     if (!state.migrated) {
-        console.log(`Step 1: Migrate (${Number(state.realTonRaised) / 1e9} TON, ${Number(state.virtualTokens) / 1e9} tokens → liquidity manager)`);
+        console.log(`Migrate: ${Number(state.realTonRaised) / 1e9} TON and ${Number(state.virtualTokens) / 1e9} tokens → STON.fi pool, LP locked`);
         if (!execute) {
             console.log('Dry run: re-run with --execute to send.');
             return;
@@ -111,10 +106,23 @@ async function main() {
         if (!(await waitFor(async () => (await jetton.getGetCurveState()).migrated))) {
             throw new Error('Migrate not visible yet; re-run to continue.');
         }
-        state = await jetton.getGetCurveState();
+        console.log('Migrated. Check the pool on STON.fi and that the LP sits at the zero address.');
+        return;
+    }
+    if (!fallback) {
+        console.log('Already migrated. Use --fallback only if STON.fi refunded the liquidity to the liquidity manager.');
+        return;
     }
 
-    // ── 2. Seed STON.fi ─────────────────────────────────────────────────────
+    // ── Fallback: seed STON.fi from the liquidity manager ───────────────────
+    if (!state.liquidityManager.equals(keeper.address)) {
+        throw new Error('This keeper wallet is not the token\'s liquidity manager; it cannot seed the pool.');
+    }
+    const tonArg = process.argv.find((a) => a.startsWith('--ton='));
+    if (!tonArg) throw new Error('--fallback needs --ton=<amount refunded to the liquidity manager>.');
+    let tonUnits = toNano(tonArg.slice(6));
+
+    // ── Seed STON.fi ─────────────────────────────────────────────────────
     const lmWallet = keeper.client.open(JettonWallet.fromAddress(await jetton.getGetWalletAddress(keeper.address)));
     const jettonUnits = (await lmWallet.getGetWalletData()).balance;
     const spendable = (await keeper.balance()) - KEEPER_GAS_RESERVE;

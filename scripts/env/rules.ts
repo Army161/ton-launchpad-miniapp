@@ -97,6 +97,8 @@ export async function validate(profile: Profile, env: Env): Promise<Finding[]> {
 
   if (profile === 'deploy-testnet' || profile === 'deploy-mainnet') {
     findings.push(await checkMnemonic('DEPLOY_MNEMONIC', env.DEPLOY_MNEMONIC));
+    findings.push(checkTonAddress('STON_ROUTER_ADDRESS', env.STON_ROUTER_ADDRESS, network));
+    if (env.STON_PTON_WALLET_ADDRESS) findings.push(checkTonAddress('STON_PTON_WALLET_ADDRESS', env.STON_PTON_WALLET_ADDRESS, network));
     if (profile === 'deploy-mainnet' && env.MAINNET_GO_LIVE_APPROVED !== 'yes') {
       findings.push(fail('MAINNET_GO_LIVE_APPROVED', 'must be "yes" after the founder approves go-live'));
     }

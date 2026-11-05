@@ -11,7 +11,7 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled | build log | PASS |
 | Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no diff | CI step "Generated wrappers match" | PASS |
 | Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors | | PASS |
-| Contract tests | sandbox | `cd contracts && npm test` | all pass | 57/57 | jest output | PASS |
+| Contract tests | sandbox | `cd contracts && npm test` | all pass | 60/60 | jest output | PASS |
 | App lint | oxlint | `npm run lint` | 0 errors | 0 errors, 5 warnings (fast-refresh/effect style) | | PASS |
 | App + API tests | vitest | `npm test` | all pass | 63/63 | vitest output | PASS |
 | Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |
@@ -66,6 +66,6 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Testnet deploy, create, buy, sell, fees, refunds | `docs/EXECUTION.md` testnet gate | BLOCKED_HUMAN | funded testnet deployer wallet; network access |
 | TON Connect in Telegram (Tonkeeper, Wallet), return URL | manual in Telegram | BLOCKED_HUMAN | bot + Mini App short name |
 | Telegram auth on production | manual | BLOCKED_HUMAN | bot token + JWT secret in Vercel |
-| STON.fi seeding + LP lock | keeper on testnet/mainnet | BLOCKED_HUMAN | a graduated token (testnet) and founder sign-off (ADR-005) |
+| STON.fi seeding + LP lock | sandbox: "seeds STON.fi straight from the curve…", "sets min_lp_out…", "if the DEX legs bounce…" (exact messages); testnet: real pool | PASS (sandbox) / BLOCKED_HUMAN (testnet) | a graduated testnet token (ADR-009) |
 | Mainnet factory deploy + smoke test | `launch-production.sh` | BLOCKED_HUMAN | testnet gate + "MAINNET GO-LIVE APPROVED" |
 | Design pixel pass | — | DEFERRED | `DESIGN_PIXEL_PASS = WAITING_FOR_FOUNDER_ASSET` |

@@ -14,6 +14,7 @@ contract LaunchpadJetton {
     initialized: Bool;
     treasury: Address;
     liquidityManager: Address;
+    dex: DexConfig;
     content: Cell;
 
     totalSupply: Int as coins;
@@ -35,6 +36,7 @@ contract LaunchpadJetton {
         // Placeholders until the factory's JettonSetup arrives.
         self.treasury = factory;
         self.liquidityManager = factory;
+        self.dex = DexConfig{ router: factory, ptonWallet: factory };
         self.content = emptyCell();
         self.totalSupply = 0;
         self.virtualTon = VIRTUAL_TON;
@@ -68,6 +70,7 @@ contract LaunchpadJetton {
         self.initialized = true;
         self.treasury = msg.treasury;
         self.liquidityManager = msg.liquidityManager;
+        self.dex = msg.dex;
         self.content = msg.content;
 
         emit(TokenLaunched{
@@ -237,15 +240,21 @@ contract LaunchpadJetton {
         });
     }
 
-    // ── Graduation → liquidity migration (permissionless) ───────────────────
+    // ── Graduation → STON.fi pool (permissionless, ADR-009) ────────────────
+    // Sends both legs of a STON.fi v2 provide_lp straight to the router: the
+    // remaining supply is minted to the router's jetton wallet and the curve's
+    // TON goes through the router's pTON wallet. LP tokens go to the zero
+    // address, so nobody ever holds the pool's liquidity. STON.fi refunds to the
+    // liquidity manager only if it rejects the provision (min_lp_out not met).
     receive(msg: Migrate) {
         let ctx: Context = context();
         require(self.graduated, "Not graduated");
         require(!self.migrated, "Already migrated");
         require(ctx.value >= MIGRATE_GAS, "Insufficient TON attached");
 
-        let tonLiquidity: Int = self.realTonRaised;
+        let tonLiquidity: Int = self.realTonRaised - DEX_MIGRATION_COST;
         let tokenLiquidity: Int = self.virtualTokens;
+        let lpFloor: Int = minLpOut(tonLiquidity, tokenLiquidity);
         self.migrated = true;
         self.realTonRaised = 0;
         self.virtualTokens = 0;
@@ -253,20 +262,106 @@ contract LaunchpadJetton {
 
         emit(MigratedEvent{
             queryId: msg.queryId,
-            liquidityManager: self.liquidityManager,
+            router: self.dex.router,
             tonLiquidity: tonLiquidity,
             tokenLiquidity: tokenLiquidity,
+            minLpOut: lpFloor,
         }.toCell());
 
+        let routerJettonWallet: Address = contractAddress(initOf JettonWallet(self.dex.router, myAddress()));
+        let deadline: Int = now() + DEX_DEADLINE;
+
         nativeReserve(MINTER_MIN_STORAGE, ReserveExact);
-        self.mint(self.liquidityManager, tokenLiquidity, msg.queryId, SendPayGasSeparately, ton("0.05"));
+
+        // Jetton leg: mint straight to the router, notification carries provide_lp.
+        let init: StateInit = initOf JettonWallet(self.dex.router, myAddress());
         send(SendParameters{
-            to: self.liquidityManager,
+            to: routerJettonWallet,
+            value: DEX_JETTON_SIDE_VALUE,
+            mode: SendPayGasSeparately,
+            bounce: true,
+            body: JettonTransferInternal{
+                queryId: msg.queryId,
+                amount: tokenLiquidity,
+                sender: myAddress(),
+                responseDestination: self.treasury,
+                forwardTonAmount: DEX_JETTON_SIDE_FWD,
+                forwardPayload: beginCell()
+                    .storeBool(true)
+                    .storeRef(self.provideLpBody(self.dex.ptonWallet, lpFloor, deadline))
+                    .asSlice(),
+            }.toCell(),
+            code: init.code,
+            data: init.data,
+        });
+
+        // TON leg: pTON ton_transfer to the router's pTON wallet.
+        send(SendParameters{
+            to: self.dex.ptonWallet,
+            value: tonLiquidity + DEX_TON_SIDE_FWD + DEX_PTON_GAS,
+            mode: SendPayGasSeparately,
+            bounce: true,
+            body: beginCell()
+                .storeUint(PTON_TON_TRANSFER_OP, 32)
+                .storeUint(msg.queryId, 64)
+                .storeCoins(tonLiquidity)
+                .storeAddress(self.liquidityManager)
+                .storeBool(true)
+                .storeRef(self.provideLpBody(routerJettonWallet, lpFloor, deadline))
+                .endCell(),
+        });
+
+        // What is left (caller's gas plus the unused DEX budget) returns to the caller.
+        send(SendParameters{
+            to: ctx.sender,
             value: 0,
             mode: SendRemainingBalance,
             bounce: false,
-            body: "Graduation liquidity".asComment(),
+            body: JettonExcesses{ queryId: msg.queryId }.toCell(),
         });
+    }
+
+    // A DEX leg that bounces (wrong router config) must not strand the
+    // liquidity: it is forwarded to the liquidity manager, the documented fallback.
+    bounced(msg: bounced<JettonTransferInternal>) {
+        if (self.migrated) {
+            self.mint(self.liquidityManager, msg.amount, msg.queryId, SendRemainingValue, 0);
+        }
+    }
+
+    // The TON leg bouncing (pTON wallet missing) returns the curve's TON; it goes
+    // on to the liquidity manager instead of sitting in the minter.
+    bounced(msg: Slice) {
+        if (self.migrated) {
+            nativeReserve(MINTER_MIN_STORAGE, ReserveExact);
+            send(SendParameters{
+                to: self.liquidityManager,
+                value: 0,
+                mode: SendRemainingBalance,
+                bounce: false,
+                body: "Graduation liquidity (DEX bounced)".asComment(),
+            });
+        }
+    }
+
+    // Jetton-wallet excesses addressed to the minter are accepted and kept.
+    receive(msg: JettonExcesses) {}
+
+    fun provideLpBody(otherRouterWallet: Address, lpFloor: Int, deadline: Int): Cell {
+        return beginCell()
+            .storeUint(STON_PROVIDE_LP_OP, 32)
+            .storeAddress(otherRouterWallet)
+            .storeAddress(self.liquidityManager)   // refund address
+            .storeAddress(self.treasury)           // excesses address
+            .storeUint(deadline, 64)
+            .storeRef(beginCell()
+                .storeCoins(lpFloor)
+                .storeAddress(newAddress(0, 0))    // LP receiver: zero address = locked
+                .storeUint(1, 1)                   // both_positive
+                .storeCoins(0)
+                .storeMaybeRef(null)
+                .endCell())
+            .endCell();
     }
 
     // ── TEP-89 ──────────────────────────────────────────────────────────────
@@ -381,6 +476,7 @@ contract LaunchpadJetton {
             salt: self.salt,
             treasury: self.treasury,
             liquidityManager: self.liquidityManager,
+            dex: self.dex,
             initialized: self.initialized,
             virtualTon: self.virtualTon,
             virtualTokens: self.virtualTokens,

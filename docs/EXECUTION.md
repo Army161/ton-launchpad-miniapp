@@ -53,12 +53,20 @@ The script validates configuration, rebuilds and tests contracts, deploys or re-
 runtime configuration (including the live manifest), writes Vercel variables with `--force` and deploys. Re-running it
 is safe. See `docs/LAUNCH.md` for the founder's steps and the smoke test.
 
-## Graduation keeper
+## Graduation trigger
+
+`Migrate` is permissionless; the contract seeds STON.fi and locks the LP itself (ADR-009).
 
 ```bash
 cd contracts
 npm run graduate -- mainnet <tokenAddress>                    # plan only
 MAINNET_GO_LIVE_APPROVED=yes npm run graduate -- mainnet <tokenAddress> --execute
+```
+
+Fallback only if STON.fi refunded the provision to the liquidity manager:
+
+```bash
+MAINNET_GO_LIVE_APPROVED=yes npm run graduate -- mainnet <tokenAddress> --fallback --ton=<refunded TON> --execute
 MAINNET_GO_LIVE_APPROVED=yes npm run graduate -- mainnet --lock-lp --pool=<pool> --execute
 ```
 

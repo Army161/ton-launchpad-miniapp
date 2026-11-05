@@ -8,7 +8,8 @@ machine or into Vercel's secret fields. Public values (addresses, bot username, 
 | Item | Public? | How |
 |---|---|---|
 | Treasury address (receives the 0.05 TON launch fee and 40% of trade fees) | yes | any wallet you control; a hardware or multisig wallet is best |
-| Liquidity manager (receives graduated liquidity until the STON.fi pool is seeded) | yes | default: the deployer wallet. See ADR-005 in `docs/DECISIONS.md` |
+| Liquidity manager (receives graduated liquidity only if STON.fi refunds a provision) | yes | default: the deployer wallet. See ADR-009 in `docs/DECISIONS.md` |
+| STON.fi v2 router (`STON_ROUTER_ADDRESS`) | yes | public; from the STON.fi API for each network; fixed in the factory |
 | Bot username and Mini App short name | yes | BotFather: `/newbot`, then `/newapp` with URL `https://ton-launchpad-miniapp.vercel.app` |
 | Deployer wallet | the address is | a **new** wallet used only for deploys; W5 (Tonkeeper default) or v4 |
 
@@ -67,8 +68,8 @@ The script refuses to run without the approval flag, validates everything, rebui
 
 ## 7. At graduation (1,500 TON raised)
 
-Run the keeper from the liquidity manager wallet (`docs/EXECUTION.md` → "Graduation keeper"): it calls `Migrate`,
-seeds the STON.fi pool and then, with `--lock-lp`, sends the LP tokens to the zero address.
+Anyone sends `Migrate` (`docs/EXECUTION.md` → "Graduation trigger"); the token contract seeds the STON.fi pool and
+the LP goes to the zero address. Check on tonviewer that the pool exists and the LP holder is the zero address.
 
 ## Custom domain (later)
 

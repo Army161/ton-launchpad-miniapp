@@ -73,9 +73,15 @@ describe('env rules', () => {
 
   it('deploy-mainnet requires the go-live flag', async () => {
     const words = (await mnemonicNew()).join(' ');
-    const base = { PLATFORM_TREASURY_ADDRESS: MAINNET_ADDR, DEPLOY_MNEMONIC: words };
+    const base = { PLATFORM_TREASURY_ADDRESS: MAINNET_ADDR, DEPLOY_MNEMONIC: words, STON_ROUTER_ADDRESS: MAINNET_ADDR };
     expect((await validate('deploy-mainnet', base)).some((f) => f.name === 'MAINNET_GO_LIVE_APPROVED' && !f.ok)).toBe(true);
     expect((await validate('deploy-mainnet', { ...base, MAINNET_GO_LIVE_APPROVED: 'yes' })).every((f) => f.ok)).toBe(true);
+  });
+
+  it('deploys require the STON.fi router graduation seeds', async () => {
+    const words = (await mnemonicNew()).join(' ');
+    const findings = await validate('deploy-mainnet', { PLATFORM_TREASURY_ADDRESS: MAINNET_ADDR, DEPLOY_MNEMONIC: words, MAINNET_GO_LIVE_APPROVED: 'yes' });
+    expect(findings.some((f) => f.name === 'STON_ROUTER_ADDRESS' && !f.ok)).toBe(true);
   });
 
   it('manifest check handles success, bad JSON and network failure', async () => {

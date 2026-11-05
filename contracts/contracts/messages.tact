@@ -28,12 +28,28 @@ const MAX_INITIAL_BUY: Int = ton("100");
 const CREATE_GAS: Int = ton("0.15");      // factory → jetton deploy + setup + first mint
 const BUY_GAS: Int = ton("0.1");          // curve → fee sends + wallet deploy + mint
 const SELL_GAS: Int = ton("0.05");        // curve → fee sends + payout
-const MIGRATE_GAS: Int = ton("0.15");     // curve → LP mint + liquidity send
+const MIGRATE_GAS: Int = ton("0.05");     // caller → curve compute; the DEX gas comes from the reserve
 const MINTER_MIN_STORAGE: Int = ton("0.05");
 
 const WALLET_MIN_STORAGE: Int = ton("0.01");
 const WALLET_GAS: Int = ton("0.015");
 const BURN_MIN_VALUE: Int = ton("0.07");  // wallet refuses a burn that cannot pay for the sell
+
+// ─── STON.fi v2 liquidity provision (graduation, ADR-009) ─────────────────────
+// Layouts match @ston-fi/sdk 2.7 (RouterV2_1 createProvideLiquidityBody, PtonV2_1).
+const STON_PROVIDE_LP_OP: Int = 0x37c096df;
+const PTON_TON_TRANSFER_OP: Int = 0x01f3835d;
+const DEX_JETTON_SIDE_VALUE: Int = ton("0.3");   // mint to the router's jetton wallet
+const DEX_JETTON_SIDE_FWD: Int = ton("0.235");   // forwarded with the transfer notification
+const DEX_TON_SIDE_FWD: Int = ton("0.3");        // pTON forward gas for provide_lp
+const DEX_PTON_GAS: Int = ton("0.01");           // pTON wallet's own gas
+// Taken from the curve reserve to pay both DEX legs and their forward fees.
+const DEX_MIGRATION_COST: Int = ton("0.65");
+const DEX_DEADLINE: Int = 900;                   // seconds STON.fi has to pair both legs
+// min_lp_out = 99% of what a fresh pool mints (sqrt(ton * tokens)). A pool someone
+// created before graduation at a different price mints less, so STON.fi refunds
+// both legs to the liquidity manager instead of selling the liquidity cheap.
+const LP_MIN_OUT_BPS: Int = 9900;
 
 // Tag at the start of the burn custom payload that marks a curve sell.
 const SELL_PAYLOAD_OP: Int = 0x53454c4c; // "SELL"
@@ -116,6 +132,7 @@ message(0x4c500002) JettonSetup {
     queryId: Int as uint64;
     treasury: Address;
     liquidityManager: Address;
+    dex: DexConfig;
     content: Cell;
     launchFee: Int as coins;
     initialBuyTon: Int as coins;
@@ -131,7 +148,14 @@ message(0x4c500003) Buy {
     referrer: Address?;
 }
 
-// Anyone → graduated jetton. Moves liquidity to the liquidity manager.
+// STON.fi v2 router and its pTON wallet, fixed at factory deploy.
+struct DexConfig {
+    router: Address;
+    ptonWallet: Address;
+}
+
+// Anyone → graduated jetton. Seeds the STON.fi pool with the curve's liquidity
+// and sends the LP tokens to the zero address (locked for good).
 message(0x4c500004) Migrate {
     queryId: Int as uint64;
 }
@@ -175,9 +199,10 @@ message(0x4c500103) GraduatedEvent {
 
 message(0x4c500104) MigratedEvent {
     queryId: Int as uint64;
-    liquidityManager: Address;
+    router: Address;
     tonLiquidity: Int as coins;
     tokenLiquidity: Int as coins;
+    minLpOut: Int as coins;
 }
 
 // ─── Getter structs ──────────────────────────────────────────────────────────
@@ -203,6 +228,7 @@ struct CurveState {
     salt: Int as uint64;
     treasury: Address;
     liquidityManager: Address;
+    dex: DexConfig;
     initialized: Bool;
     virtualTon: Int as coins;
     virtualTokens: Int as coins;
@@ -236,6 +262,7 @@ struct FactoryInfo {
     owner: Address;
     treasury: Address;
     liquidityManager: Address;
+    dex: DexConfig;
     launchCount: Int as uint32;
     launchFee: Int as coins;
     graduationTarget: Int as coins;
@@ -260,4 +287,23 @@ inline fun creatorShare(fee: Int): Int {
 inline fun referrerShare(fee: Int): Int {
     let cut: Int = fee * REFERRER_FEE_BPS / BPS;
     return cut >= REFERRAL_DUST ? cut : 0;
+}
+
+// Integer square root (floor), Newton's method from a power-of-two upper bound.
+fun isqrt(n: Int): Int {
+    if (n <= 0) {
+        return 0;
+    }
+    let x: Int = 1 << ((log2(n) / 2) + 1);
+    let y: Int = (x + n / x) / 2;
+    while (y < x) {
+        x = y;
+        y = (x + n / x) / 2;
+    }
+    return x;
+}
+
+// LP-out floor for seeding a fresh STON.fi pool with these amounts.
+fun minLpOut(tonAmount: Int, tokenAmount: Int): Int {
+    return isqrt(tonAmount * tokenAmount) * LP_MIN_OUT_BPS / BPS;
 }

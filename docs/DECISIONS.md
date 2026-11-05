@@ -22,7 +22,7 @@ Revisit when V1.1 needs history, search or more than the ~100 most recent factor
 Fee = ceil(2%); payouts round down. This moves at most a nanoton per trade toward the pool and makes insolvency
 through repeated tiny trades impossible (tested). Not an economics change.
 
-## ADR-005 Graduation via a liquidity manager wallet (custodial window)
+## ADR-005 Graduation via a liquidity manager wallet (custodial window) — superseded by ADR-009
 
 On-chain STON.fi seeding from Tact could not be verified in the sandbox. V1 sends graduated liquidity to a liquidity
 manager fixed at factory deploy (default: the deployer wallet); the keeper script seeds the STON.fi v2 pool and can
@@ -48,3 +48,21 @@ The creator's income never changes. Sells, self-referrals and cuts below `REFERR
 the cut stays with the platform. The threshold comes from sandbox measurements: a fee message costs about
 0.00008 TON (forward + receive), so smaller payouts would be mostly gas. Added before the contract freeze because
 changing `Buy` after deploy would need a new factory.
+
+## ADR-009 Graduation seeds STON.fi on-chain; LP locked; no custodial window
+
+Decided by the founder on 2026-11-05 (option "Build on-chain"), replacing ADR-005 before any factory deploy.
+`Migrate` sends both legs of a STON.fi v2 `provide_lp` from the token contract: the remaining supply is minted to
+the router's jetton wallet (`transfer_notification` carries the payload) and the reserve goes through the router's
+pTON wallet (`ton_transfer`, op 0x01f3835d). Layouts follow `@ston-fi/sdk` 2.7 (`RouterV2_1`, `PtonV2_1`). The router
+and its pTON wallet are fixed at factory deploy (`DexConfig`); the deploy script checks the router is v2
+constant-product with pool creation on and that the pTON master maps the router to that pTON wallet.
+
+- LP goes to the zero address, so the pool's liquidity is locked from the moment it exists.
+- `min_lp_out` is 99% of a fresh pool's `sqrt(ton × tokens)`. A pool someone created before graduation at a different
+  price mints less, so STON.fi refunds both legs instead of donating the difference to that pool's owner.
+- Refunds and bounced legs go to the liquidity manager, the only remaining trust point, used only on that failure
+  path (`graduate.ts --fallback`).
+- 0.65 TON of the reserve pays the DEX gas, so the trigger needs only 0.05 TON and anyone can run it.
+- The sandbox has no STON.fi contracts, so tests check the exact messages sent; the testnet rehearsal must show a real
+  pool with LP at the zero address before mainnet (`docs/VERIFICATION.md`).

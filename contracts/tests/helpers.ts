@@ -17,7 +17,28 @@ export const MIN_TRADE = toNano('0.01');
 export const MAX_INITIAL_BUY = toNano('100');
 export const CREATE_GAS = toNano('0.15');
 export const BUY_GAS = toNano('0.1');
-export const MIGRATE_GAS = toNano('0.15');
+export const MIGRATE_GAS = toNano('0.05');
+export const DEX_MIGRATION_COST = toNano('0.65');
+export const DEX_JETTON_SIDE_FWD = toNano('0.235');
+export const DEX_TON_SIDE_FWD = toNano('0.3');
+export const DEX_PTON_GAS = toNano('0.01');
+export const LP_MIN_OUT_BPS = 9900n;
+export const STON_PROVIDE_LP_OP = 0x37c096df;
+export const PTON_TON_TRANSFER_OP = 0x01f3835d;
+
+/** Floor integer square root, the reference for the contract's isqrt. */
+export function isqrt(n: bigint): bigint {
+    if (n < 2n) return n;
+    let x = n;
+    let y = (x + 1n) / 2n;
+    while (y < x) {
+        x = y;
+        y = (x + n / x) / 2n;
+    }
+    return x;
+}
+
+export const expectedMinLpOut = (ton: bigint, tokens: bigint) => (isqrt(ton * tokens) * LP_MIN_OUT_BPS) / BPS;
 export const MINTER_MIN_STORAGE = toNano('0.05');
 export const BURN_MIN_VALUE = toNano('0.07');
 export const SELL_PAYLOAD_OP = 0x53454c4c;

@@ -3,7 +3,7 @@
  * TON sandbox: no maths is checked without the chain agreeing.
  */
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { Address, beginCell, toNano } from '@ton/core';
+import { Address, beginCell, Cell, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { findTransaction } from '@ton/test-utils';
 import { LaunchpadFactory, LaunchpadFactory_errors_backward as FE } from '../build/Launchpad_LaunchpadFactory';
@@ -20,7 +20,15 @@ import {
     GRADUATION_TARGET,
     LAUNCH_FEE,
     MAX_INITIAL_BUY,
+    DEX_JETTON_SIDE_FWD,
+    DEX_MIGRATION_COST,
+    DEX_PTON_GAS,
+    DEX_TON_SIDE_FWD,
+    expectedMinLpOut,
+    isqrt,
     MIGRATE_GAS,
+    PTON_TON_TRANSFER_OP,
+    STON_PROVIDE_LP_OP,
     MIN_TRADE,
     MINTER_MIN_STORAGE,
     OP,
@@ -46,6 +54,8 @@ describe('Launchpad', () => {
     let alice: SandboxContract<TreasuryContract>;
     let bob: SandboxContract<TreasuryContract>;
     let mallory: SandboxContract<TreasuryContract>;
+    let stonRouter: SandboxContract<TreasuryContract>;
+    let ptonWallet: SandboxContract<TreasuryContract>;
     let factory: SandboxContract<LaunchpadFactory>;
 
     beforeEach(async () => {
@@ -57,9 +67,15 @@ describe('Launchpad', () => {
         alice = await blockchain.treasury('alice', { balance: toNano('10000') });
         bob = await blockchain.treasury('bob', { balance: toNano('10000') });
         mallory = await blockchain.treasury('mallory');
+        // Stand-ins for the STON.fi v2 router and its pTON wallet: they accept
+        // whatever arrives, so the tests check exactly what the curve sends them.
+        stonRouter = await blockchain.treasury('ston-router');
+        ptonWallet = await blockchain.treasury('ston-pton-wallet');
 
         factory = blockchain.openContract(
-            await LaunchpadFactory.fromInit(owner.address, treasury.address, liquidityManager.address),
+            await LaunchpadFactory.fromInit(owner.address, treasury.address, liquidityManager.address, {
+                $$type: 'DexConfig', router: stonRouter.address, ptonWallet: ptonWallet.address,
+            }),
         );
         const deploy = await factory.send(owner.getSender(), { value: toNano('0.1') }, null);
         expect(deploy.transactions).toHaveTransaction({ to: factory.address, deploy: true, success: true });
@@ -136,6 +152,8 @@ describe('Launchpad', () => {
             expect(info.owner.equals(owner.address)).toBe(true);
             expect(info.treasury.equals(treasury.address)).toBe(true);
             expect(info.liquidityManager.equals(liquidityManager.address)).toBe(true);
+            expect(info.dex.router).toEqualAddress(stonRouter.address);
+            expect(info.dex.ptonWallet).toEqualAddress(ptonWallet.address);
             expect(info.launchFee).toBe(LAUNCH_FEE);
             expect(info.graduationTarget).toBe(GRADUATION_TARGET);
             expect(info.tradeFeeBps).toBe(200n);
@@ -157,6 +175,8 @@ describe('Launchpad', () => {
             expect(s.salt).toBe(42n);
             expect(s.treasury).toEqualAddress(treasury.address);
             expect(s.liquidityManager).toEqualAddress(liquidityManager.address);
+            expect(s.dex.router).toEqualAddress(stonRouter.address);
+            expect(s.dex.ptonWallet).toEqualAddress(ptonWallet.address);
             expect(s.totalSupply).toBe(0n);
             expect(s.realTonRaised).toBe(0n);
 
@@ -221,6 +241,7 @@ describe('Launchpad', () => {
                     queryId: 0n,
                     treasury: mallory.address,
                     liquidityManager: mallory.address,
+                    dex: { $$type: 'DexConfig', router: mallory.address, ptonWallet: mallory.address },
                     content: CONTENT,
                     launchFee: 0n,
                     initialBuyTon: 0n,
@@ -481,6 +502,7 @@ describe('Launchpad', () => {
             const s = await curve(jetton);
             expect(s.treasury).toEqualAddress(treasury.address);
             expect(s.liquidityManager).toEqualAddress(liquidityManager.address);
+            expect(s.dex.router).toEqualAddress(stonRouter.address);
         });
     });
 
@@ -741,17 +763,87 @@ describe('Launchpad', () => {
             await expectSolvent(jetton);
         });
 
-        it('migrates liquidity exactly once to the fixed liquidity manager', async () => {
+        /** Parses a STON.fi v2 provide_lp body (layout of @ston-fi/sdk RouterV2_1). */
+        function parseProvideLp(cell: Cell) {
+            const p = cell.beginParse();
+            const op = p.loadUint(32);
+            const otherRouterWallet = p.loadAddress();
+            const refund = p.loadAddress();
+            const excesses = p.loadAddress();
+            const deadline = p.loadUintBig(64);
+            const extra = p.loadRef().beginParse();
+            const minLp = extra.loadCoins();
+            const receiver = extra.loadAddress();
+            const bothPositive = extra.loadUint(1);
+            const customFwd = extra.loadCoins();
+            const custom = extra.loadMaybeRef();
+            return { op, otherRouterWallet, refund, excesses, deadline, minLp, receiver, bothPositive, customFwd, custom };
+        }
+
+        async function graduateAndMigrate() {
             const { jetton } = await launch();
             await raiseTo(jetton, GRADUATION_TARGET);
             const before = await curve(jetton);
             const lmBefore = await tonBalance(liquidityManager.address);
+            const res = await jetton.send(mallory.getSender(), { value: MIGRATE_GAS }, { $$type: 'Migrate', queryId: 9n });
+            return { jetton, before, lmBefore, res };
+        }
 
-            // Permissionless trigger: a random account can start it, funds go to the manager.
-            const res = await jetton.send(mallory.getSender(), { value: MIGRATE_GAS }, { $$type: 'Migrate', queryId: 0n });
-            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: liquidityManager.address, value: (v) => v! >= before.realTonRaised });
-            expect(await tonBalance(liquidityManager.address) - lmBefore).toBeGreaterThanOrEqual(before.realTonRaised);
-            expect(await balanceOf(jetton, liquidityManager.address)).toBe(before.virtualTokens);
+        it('seeds STON.fi straight from the curve, exactly once, with nobody holding the liquidity', async () => {
+            const { jetton, before, lmBefore, res } = await graduateAndMigrate();
+            const tonLiquidity = before.realTonRaised - DEX_MIGRATION_COST;
+            const tokenLiquidity = before.virtualTokens;
+            const lpFloor = expectedMinLpOut(tonLiquidity, tokenLiquidity);
+            const routerJettonWallet = await jetton.getGetWalletAddress(stonRouter.address);
+
+            // TON leg: pTON ton_transfer with the curve reserve to the router's pTON wallet.
+            const tonLeg = findTransaction(res.transactions, { from: jetton.address, to: ptonWallet.address, success: true });
+            expect(tonLeg).toBeDefined();
+            const tonMsg = tonLeg!.inMessage!;
+            expect(tonMsg.info.type === 'internal' && tonMsg.info.value.coins).toBe(tonLiquidity + DEX_TON_SIDE_FWD + DEX_PTON_GAS);
+            const t = tonMsg.body.beginParse();
+            expect(t.loadUint(32)).toBe(PTON_TON_TRANSFER_OP);
+            expect(t.loadUintBig(64)).toBe(9n);
+            expect(t.loadCoins()).toBe(tonLiquidity);
+            expect(t.loadAddress()).toEqualAddress(liquidityManager.address);
+            expect(t.loadBit()).toBe(true);
+            const tonLp = parseProvideLp(t.loadRef());
+            expect(tonLp.op).toBe(STON_PROVIDE_LP_OP);
+            expect(tonLp.otherRouterWallet).toEqualAddress(routerJettonWallet);
+
+            // Jetton leg: the remaining supply minted to the router, notification carries provide_lp.
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(tokenLiquidity);
+            const note = findTransaction(res.transactions, { from: routerJettonWallet, to: stonRouter.address, op: 0x7362d09c, success: true });
+            expect(note).toBeDefined();
+            const nm = note!.inMessage!;
+            expect(nm.info.type === 'internal' && nm.info.value.coins).toBe(DEX_JETTON_SIDE_FWD);
+            const n = nm.body.beginParse();
+            n.loadUint(32);
+            expect(n.loadUintBig(64)).toBe(9n);
+            expect(n.loadCoins()).toBe(tokenLiquidity);
+            expect(n.loadAddress()).toEqualAddress(jetton.address);
+            expect(n.loadBit()).toBe(true);
+            const jetLp = parseProvideLp(n.loadRef());
+            expect(jetLp.otherRouterWallet).toEqualAddress(ptonWallet.address);
+
+            // Both legs name the same pairing terms; LP goes to the zero address.
+            for (const lp of [tonLp, jetLp]) {
+                expect(lp.op).toBe(STON_PROVIDE_LP_OP);
+                expect(lp.refund).toEqualAddress(liquidityManager.address);
+                expect(lp.excesses).toEqualAddress(treasury.address);
+                expect(lp.minLp).toBe(lpFloor);
+                expect(lp.receiver).toEqualAddress(new Address(0, Buffer.alloc(32)));
+                expect(lp.bothPositive).toBe(1);
+                expect(lp.customFwd).toBe(0n);
+                expect(lp.custom).toBeNull();
+                expect(lp.deadline).toBeGreaterThan(BigInt(Math.floor(Date.now() / 1000) - 60));
+            }
+            expect(tonLp.deadline).toBe(jetLp.deadline);
+
+            // The liquidity manager receives nothing on the happy path.
+            expect(res.transactions).not.toHaveTransaction({ from: jetton.address, to: liquidityManager.address });
+            expect(await tonBalance(liquidityManager.address)).toBe(lmBefore);
+            expect(await balanceOf(jetton, liquidityManager.address)).toBe(0n);
 
             const after = await curve(jetton);
             expect(after.migrated).toBe(true);
@@ -759,9 +851,53 @@ describe('Launchpad', () => {
             expect(after.totalSupply).toBe(TOTAL_SUPPLY_NANO);
             expect((await jetton.getGetJettonData()).mintable).toBe(false);
             expect(await tonBalance(jetton.address)).toBeLessThanOrEqual(MINTER_MIN_STORAGE + toNano('0.01'));
+            // The caller gets back its gas plus the unused part of the DEX budget.
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: mallory.address, value: (v) => v! > 0n && v! < toNano('0.1') });
 
             const again = await jetton.send(mallory.getSender(), { value: MIGRATE_GAS }, { $$type: 'Migrate', queryId: 0n });
             expect(again.transactions).toHaveTransaction({ to: jetton.address, success: false, exitCode: JE['Already migrated'] });
+        });
+
+        it('sets min_lp_out to 99% of what a fresh pool mints', async () => {
+            const { before, res } = await graduateAndMigrate();
+            const tonLiquidity = before.realTonRaised - DEX_MIGRATION_COST;
+            const tonLeg = findTransaction(res.transactions, { to: ptonWallet.address })!;
+            const t = tonLeg.inMessage!.body.beginParse();
+            t.skip(32 + 64); t.loadCoins(); t.loadAddress(); t.loadBit();
+            const lp = parseProvideLp(t.loadRef());
+            const fresh = isqrt(tonLiquidity * before.virtualTokens);
+            expect(lp.minLp).toBe((fresh * 9900n) / 10000n);
+            expect(lp.minLp).toBeGreaterThan(0n);
+        });
+
+        it('a migration with too little gas changes nothing', async () => {
+            const { jetton } = await launch();
+            await raiseTo(jetton, GRADUATION_TARGET);
+            const res = await jetton.send(mallory.getSender(), { value: MIGRATE_GAS - 1n }, { $$type: 'Migrate', queryId: 0n });
+            expect(res.transactions).toHaveTransaction({ to: jetton.address, success: false, exitCode: JE['Insufficient TON attached'] });
+            expect((await curve(jetton)).migrated).toBe(false);
+        });
+
+        it('if the DEX legs bounce, the liquidity falls back to the liquidity manager', async () => {
+            // Misconfigured DEX: both addresses are uninitialised, so both legs bounce.
+            const deadRouter = new Address(0, Buffer.alloc(32, 7));
+            const deadPton = new Address(0, Buffer.alloc(32, 8));
+            const badFactory = blockchain.openContract(
+                await LaunchpadFactory.fromInit(owner.address, treasury.address, liquidityManager.address, {
+                    $$type: 'DexConfig', router: deadRouter, ptonWallet: deadPton,
+                }),
+            );
+            await badFactory.send(owner.getSender(), { value: toNano('0.1') }, null);
+            await badFactory.send(creator.getSender(), { value: LAUNCH_FEE + CREATE_GAS },
+                { $$type: 'CreateToken', queryId: 0n, salt: 5n, content: CONTENT, initialBuyTon: 0n });
+            const jetton = blockchain.openContract(await LaunchpadJetton.fromInit(badFactory.address, creator.address, 5n));
+            await raiseTo(jetton, GRADUATION_TARGET);
+            const before = await curve(jetton);
+            const lmBefore = await tonBalance(liquidityManager.address);
+            await jetton.send(mallory.getSender(), { value: MIGRATE_GAS }, { $$type: 'Migrate', queryId: 0n });
+            // The pTON leg goes to an empty account and bounces; the curve forwards the TON.
+            expect(await tonBalance(liquidityManager.address) - lmBefore).toBeGreaterThan(before.realTonRaised - DEX_MIGRATION_COST - toNano('0.1'));
+            expect(await tonBalance(jetton.address)).toBeLessThanOrEqual(MINTER_MIN_STORAGE + toNano('0.01'));
         });
 
         it('allows plain burns after graduation', async () => {

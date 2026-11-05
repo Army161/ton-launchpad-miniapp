@@ -53,8 +53,9 @@ A sell is a burn from the seller's own jetton wallet; the curve pays TON for it.
 ## Graduation
 
 - Proven by deterministic sandbox tests (below / at / above target, exactly once, curve closed afterwards).
-- After graduation anyone can trigger `Migrate`, which sends the reserve and remaining supply to the liquidity
-  manager fixed at factory deploy. The keeper script seeds a STON.fi v2 pool and can lock the LP (ADR-005).
+- After graduation anyone can trigger `Migrate`, which seeds a STON.fi v2 pool with the reserve and the remaining
+  supply straight from the token contract and locks the LP at the zero address (ADR-009). The liquidity manager only
+  receives liquidity if STON.fi refunds the provision.
 - The founder is not required to spend 1,500 TON on mainnet to test it.
 
 ## External feeds
