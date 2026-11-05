@@ -13,7 +13,7 @@ mainnet deploy are waiting on founder actions. See [docs/STATUS.md](docs/STATUS.
 |---------|--------|
 | Tact contracts: factory, jetton minter + bonding curve, jetton wallet (TEP-74) | Built, 46 sandbox tests |
 | 2% trading fee (60% creator / 40% platform) | On-chain, tested to the nanoton |
-| Graduation at 1,500 TON → STON.fi with locked LP | Contract tested; keeper script (ADR-005) |
+| Graduation at 1,500 TON → STON.fi with locked LP | Contract seeds STON.fi on-chain, LP locked (ADR-009); testnet proof pending |
 | Telegram Mini App + initData auth | Built, tested |
 | TON Connect (Wallet, Tonkeeper) | Built; live check pending |
 | Create / Buy / Sell with on-chain quotes and confirmation | Built |

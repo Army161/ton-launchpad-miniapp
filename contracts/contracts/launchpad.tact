@@ -9,12 +9,14 @@ contract LaunchpadFactory {
     owner: Address;
     treasury: Address;
     liquidityManager: Address;
+    dex: DexConfig;
     launchCount: Int as uint32;
 
-    init(owner: Address, treasury: Address, liquidityManager: Address) {
+    init(owner: Address, treasury: Address, liquidityManager: Address, dex: DexConfig) {
         self.owner = owner;
         self.treasury = treasury;
         self.liquidityManager = liquidityManager;
+        self.dex = dex;
         self.launchCount = 0;
     }
 
@@ -39,6 +41,7 @@ contract LaunchpadFactory {
                 queryId: msg.queryId,
                 treasury: self.treasury,
                 liquidityManager: self.liquidityManager,
+                dex: self.dex,
                 content: msg.content,
                 launchFee: LAUNCH_FEE,
                 initialBuyTon: msg.initialBuyTon,
@@ -68,6 +71,7 @@ contract LaunchpadFactory {
             owner: self.owner,
             treasury: self.treasury,
             liquidityManager: self.liquidityManager,
+            dex: self.dex,
             launchCount: self.launchCount,
             launchFee: LAUNCH_FEE,
             graduationTarget: GRADUATION_TARGET,

@@ -33,9 +33,11 @@ Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator
 
 | Variable | Purpose |
 |---|---|
-| `DEPLOY_MNEMONIC` | 24-word seed of the dedicated deployer wallet; also the default liquidity manager / keeper |
+| `DEPLOY_MNEMONIC` | 24-word seed of the dedicated deployer wallet; also the default liquidity manager (refund fallback) |
 | `DEPLOY_WALLET_VERSION` | `v5r1` (default, Tonkeeper/Telegram Wallet) or `v4` |
-| `LIQUIDITY_MANAGER_ADDRESS` | optional; defaults to the deployer wallet |
+| `LIQUIDITY_MANAGER_ADDRESS` | optional; defaults to the deployer wallet. Receives liquidity only if STON.fi refunds a graduation (ADR-009) |
+| `STON_ROUTER_ADDRESS` | required for deploys: STON.fi v2 constant-product router for the network; fixed in the factory |
+| `STON_PTON_WALLET_ADDRESS` | optional override; default read from the STON.fi API and checked against the pTON master on-chain |
 | `KEEPER_MNEMONIC` | optional; wallet running `npm run graduate` if not the deployer |
 | `MAINNET_GO_LIVE_APPROVED` | `yes` only after the founder's written approval |
 | `STONFI_API_URL` | optional STON.fi API base for the keeper |

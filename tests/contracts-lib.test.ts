@@ -56,7 +56,7 @@ describe('message encoding matches the compiled contract ABI', () => {
   it('computes the same jetton address as the factory would', async () => {
     const expected = await LaunchpadJetton.fromInit(A, B, 1234n);
     expect((await computeJettonAddress(A, B, 1234n)).equals(expected.address)).toBe(true);
-    const factory = await LaunchpadFactory.fromInit(A, A, A);
+    const factory = await LaunchpadFactory.fromInit(A, A, A, { $$type: 'DexConfig', router: B, ptonWallet: B });
     expect(factory.address.workChain).toBe(0);
   });
 });

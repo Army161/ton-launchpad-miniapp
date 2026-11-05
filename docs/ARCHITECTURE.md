@@ -43,10 +43,14 @@ contract balance ≥ `realTonRaised` + storage buffer.
 ### Graduation
 
 The buy that brings `realTonRaised` to ≥ 1,500 TON sets `graduated`; buys and curve sells then fail (and refund).
-`Migrate` (permissionless) mints the remaining curve inventory (`virtualTokens`, ≈ 19.6M tokens at exactly 1,500 TON)
-to the liquidity manager and sends it the reserve. The final curve price and the pool's opening price match to
-within ~2%. `contracts/scripts/graduate.ts` then seeds the STON.fi v2 pool and can lock the LP by sending it to the
-zero address. The liquidity manager is trusted between `Migrate` and pool creation (ADR-005).
+`Migrate` (permissionless, anyone can send it with 0.05 TON) seeds the STON.fi v2 pool from the contract itself
+(ADR-009): it mints the remaining curve inventory (`virtualTokens`, ≈ 19.6M tokens at exactly 1,500 TON) straight to
+the router's jetton wallet and sends the reserve minus 0.65 TON of DEX gas to the router's pTON wallet. Both legs
+carry the same STON.fi `provide_lp` payload: LP receiver = the zero address (locked for good), `min_lp_out` = 99% of
+`sqrt(ton × tokens)`, refund address = the liquidity manager, excesses = the treasury, 15-minute deadline. Nobody
+holds the liquidity on the normal path. The final curve price and the pool's opening price match to within ~2%.
+If STON.fi refunds the provision (a pool created earlier at another price fails `min_lp_out`) or a leg bounces, the
+liquidity goes to the liquidity manager, which seeds manually with `graduate.ts --fallback`.
 
 ## API (`api/`, Vercel functions)
 

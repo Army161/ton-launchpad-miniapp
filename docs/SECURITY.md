@@ -27,7 +27,7 @@ needs rotation.
 | 8 | MEDIUM | JSON-file store on Vercel `/tmp` (lost on cold start) | FIXED (removed, ADR-003) |
 | 9 | MEDIUM | `VITE_TONAPI_KEY` exposed a key to browsers | FIXED (removed) |
 | 10 | MEDIUM | Launch script: `add \|\| rm && add` precedence bug; repeated runs failed or duplicated | FIXED (rewritten, idempotent) |
-| 11 | MEDIUM | Graduated liquidity is held by the liquidity manager until the keeper seeds STON.fi | ACCEPTED for V1, needs founder sign-off (ADR-005) |
+| 11 | MEDIUM | Graduated liquidity was held by the liquidity manager until the keeper seeded STON.fi | FIXED in contract (ADR-009): `Migrate` seeds STON.fi and locks LP on-chain; liquidity manager only on refund/bounce. Needs testnet proof |
 | 12 | MEDIUM | Contracts have not had an independent audit | OPEN — recommended before mainnet with real volume |
 | 13 | LOW | Upload endpoint has no per-user rate limit (Blob storage cost) | OPEN |
 | 14 | LOW | JWT kept in `localStorage` (XSS exposure; token only authorizes image upload) | ACCEPTED |
@@ -43,5 +43,6 @@ No unresolved CRITICAL or HIGH findings. Finding 12 is a risk the founder should
 - Only a holder's own wallet can burn/transfer its jettons; only the minter or a sibling wallet can credit a wallet.
 - Only a burn notification from the wallet derived for `(sender, minter)` can release TON.
 - Treasury and liquidity manager are immutable per token; no message changes them.
-- `Migrate` is permissionless but only after graduation, only once, and only to the fixed liquidity manager.
+- `Migrate` is permissionless but only after graduation and only once; it pays only the STON.fi router fixed at
+  factory deploy, LP goes to the zero address, and `min_lp_out` blocks seeding a pre-created pool at a worse price.
 - Factory owner can only withdraw TON stranded in the factory by bounced deploys; user reserves never sit there.

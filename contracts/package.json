@@ -8,7 +8,9 @@
     "deploy:mainnet": "ts-node scripts/deploy.ts mainnet",
     "deploy:testnet": "ts-node scripts/deploy.ts testnet",
     "graduate": "ts-node scripts/graduate.ts",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "build:rehearsal": "node scripts/build-rehearsal.mjs",
+    "rehearse:graduation": "npm run build:rehearsal && ts-node scripts/rehearse-graduation.ts"
   },
   "devDependencies": {
     "@ston-fi/api": "^0.32.0",

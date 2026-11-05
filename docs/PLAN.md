@@ -15,7 +15,7 @@ Engineering status is tracked in `docs/STATUS.md`; evidence in `docs/VERIFICATIO
 - [x] TON Connect wallet integration (network pinned, return URL)
 - [x] Telegram initData auth (no signup form)
 - [x] 2% trading fee → 60% creator / 40% platform, on-chain
-- [x] Graduation at 1,500 TON; keeper seeds STON.fi and locks LP (ADR-005)
+- [x] Graduation at 1,500 TON; contract seeds STON.fi and locks LP on-chain (ADR-009)
 - [x] Live feeds: STON.fi, DexScreener, CoinGecko, TonAPI (fail safe)
 - [ ] Testnet gate (founder wallet)
 - [ ] Mainnet factory deploy (after "MAINNET GO-LIVE APPROVED")

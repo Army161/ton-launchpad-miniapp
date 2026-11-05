@@ -12,7 +12,7 @@ network access is done and passing. The testnet gate and every live check are bl
 | Build (app, API, scripts) | PASS | `npm run build` |
 | Lint | PASS | `npm run lint` (0 errors) |
 | Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
-| Contract tests | PASS | 57/57 sandbox tests against the compiled contracts |
+| Contract tests | PASS | 61/61 sandbox tests against the compiled contracts |
 | App/API tests | PASS | 63/63 vitest |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
@@ -30,7 +30,8 @@ network access is done and passing. The testnet gate and every live check are bl
 | Factory address (mainnet) | none yet (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY` disables launches in the UI) |
 | Production URL | https://ton-launchpad-miniapp.vercel.app (serves `main`; this branch is not merged yet) |
 | Treasury address | not provided yet |
-| Liquidity manager | not decided (ADR-005); defaults to the deployer wallet |
+| Liquidity manager | refund fallback only (ADR-009); defaults to the deployer wallet |
+| STON.fi router | chosen at deploy (`STON_ROUTER_ADDRESS`); graduation seeds it on-chain |
 
 ## Human blockers (in order)
 
@@ -38,7 +39,7 @@ network access is done and passing. The testnet gate and every live check are bl
 2. Provide the treasury address (public, can be shared in chat).
 3. Create the bot and Mini App in BotFather; share the bot username and short name (public).
 4. Enter `TELEGRAM_BOT_TOKEN` and `JWT_SECRET` into Vercel → Settings → Environment Variables (never in chat).
-5. Decide the liquidity manager wallet and confirm LP is locked at graduation (ADR-005).
+5. Graduation is decided (ADR-009: on-chain STON.fi, LP locked); set `STON_ROUTER_ADDRESS` for the deploy.
 6. Create and fund a testnet deployer wallet; run the testnet gate locally (`docs/EXECUTION.md`).
 7. Optional: enable Vercel Blob (image upload) and add `TONCENTER_API_KEY` to Vercel.
 8. After the testnet gate: write "MAINNET GO-LIVE APPROVED", then run the launch (`docs/LAUNCH.md`).
@@ -53,10 +54,10 @@ network access is done and passing. The testnet gate and every live check are bl
 | Rate limit on `/api/metadata/upload` | P2 | SECURITY #13 |
 | Bundle size (1.05 MB, mostly TON libraries) | P2 | code-split the trading pages |
 | Independent contract audit | P1 before real volume | SECURITY #12 |
-| Trustless on-chain STON.fi migration | P1 before audit | ADR-005; keeper wallet custody is the largest open risk |
+| Prove on-chain STON.fi graduation on testnet | P0 | ADR-009 built and sandbox-tested; needs a real pool with LP at the zero address |
 | Short referral deep links (`startapp`, 64-char limit) | P1 | contract side done (ADR-008); needs launch id + referral code mapping in the API and the Buy page reading `start_param` |
 
 ## Verified at
 
-`62f0c4e`: contracts build + typecheck + 46/46 tests, wrappers in sync, lint 0 errors, 62/62 app tests, build, bundle
+2026-11-05, on-chain graduation branch (ADR-009): contracts build + typecheck + 61/61 tests, wrappers in sync, lint 0 errors, 67/67 app tests, build, bundle
 secret scan clean, no tracked env files. Re-run `/verify` before trusting this table on a later commit.

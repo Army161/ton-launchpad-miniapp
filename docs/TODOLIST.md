@@ -6,7 +6,7 @@ Current state and evidence: `docs/STATUS.md`, `docs/VERIFICATION.md`. Founder st
 
 - [x] Contracts rewritten on TEP-74 with a solvent bonding curve (46 sandbox tests)
 - [x] Buy mints to the buyer; sell burns from the seller's wallet and pays TON; 2% fee split 60/40 on every trade
-- [x] Graduation at 1,500 TON, curve closed, one-time `Migrate`; keeper seeds STON.fi and can lock LP
+- [x] Graduation at 1,500 TON, curve closed, one-time `Migrate`; contract seeds STON.fi and locks LP on-chain (ADR-009)
 - [x] Create / Buy / Sell pages send real transactions and wait for on-chain confirmation
 - [x] API lists tokens from the chain, verified against the factory; no JSON-file store
 - [x] Telegram initData and JWT hardened and tested
@@ -20,7 +20,7 @@ Current state and evidence: `docs/STATUS.md`, `docs/VERIFICATION.md`. Founder st
 - [ ] Share the treasury address (public)
 - [ ] BotFather: create bot and Mini App; share bot username and short name (public)
 - [ ] Enter `TELEGRAM_BOT_TOKEN` and `JWT_SECRET` in Vercel (never in chat)
-- [ ] Decide the liquidity manager wallet and confirm LP lock (ADR-005)
+- [x] Graduation decided: on-chain STON.fi with LP locked (ADR-009); prove it on testnet
 - [ ] Fund a testnet deployer wallet and run the testnet gate (`docs/EXECUTION.md`)
 - [ ] Optional: enable Vercel Blob; add `TONCENTER_API_KEY` in Vercel
 - [ ] Write "MAINNET GO-LIVE APPROVED", then run the launch script locally
