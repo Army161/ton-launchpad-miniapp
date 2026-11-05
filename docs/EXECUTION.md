@@ -38,7 +38,13 @@ Needs: a testnet deployer wallet (Tonkeeper → Settings → Dev mode → Testne
 6. On https://testnet.tonviewer.com check for each trade: creator got 1.2% and treasury 0.8% of the TON side;
    the curve balance never dropped below its reserve; the seller received TON.
 7. Try a sell with too little TON attached and a buy with a stale quote (edit amount after quote): both must refund.
-8. Record factory, token and transaction hashes in `docs/STATUS.md` and mark rows in `docs/VERIFICATION.md`.
+8. Graduation rehearsal (ADR-009): a 1,500 TON graduation cannot be bought with faucet TON, so a testnet-only
+   build graduates at 1.5 TON. With ~3 TON in the deployer and `STON_ROUTER_ADDRESS` set to the STON.fi testnet v2
+   router (plus `STONFI_API_URL` for the testnet API, or `STON_PTON_WALLET_ADDRESS`):
+   `cd contracts && npm run rehearse:graduation -- --execute`. It deploys a rehearsal factory, launches a token,
+   buys past the target, sends `Migrate` and prints the pool and the zero-address LP wallet. PASS = the pool shows
+   both reserves and the LP sits at the zero address. The rehearsal factory is never used by the app.
+9. Record factory, token and transaction hashes in `docs/STATUS.md` and mark rows in `docs/VERIFICATION.md`.
 
 Any failure → stop, fix, re-run the whole gate.
 

@@ -12,7 +12,7 @@ network access is done and passing. The testnet gate and every live check are bl
 | Build (app, API, scripts) | PASS | `npm run build` |
 | Lint | PASS | `npm run lint` (0 errors) |
 | Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
-| Contract tests | PASS | 60/60 sandbox tests against the compiled contracts |
+| Contract tests | PASS | 61/61 sandbox tests against the compiled contracts |
 | App/API tests | PASS | 63/63 vitest |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
@@ -59,5 +59,5 @@ network access is done and passing. The testnet gate and every live check are bl
 
 ## Verified at
 
-2026-11-05, on-chain graduation branch (ADR-009): contracts build + typecheck + 60/60 tests, wrappers in sync, lint 0 errors, 67/67 app tests, build, bundle
+2026-11-05, on-chain graduation branch (ADR-009): contracts build + typecheck + 61/61 tests, wrappers in sync, lint 0 errors, 67/67 app tests, build, bundle
 secret scan clean, no tracked env files. Re-run `/verify` before trusting this table on a later commit.
