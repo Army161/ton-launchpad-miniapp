@@ -1,12 +1,16 @@
-// automatically generated from `@stdlib/std/stdlib.fc` `/workspace/contracts/build/Launchpad_LaunchpadFactory.fc` 
+// automatically generated from `@stdlib/std/stdlib.fc` `/home/claude/ton-launchpad-miniapp/contracts/build/Launchpad_LaunchpadFactory.fc` 
 PROGRAM{
   DECLPROC __tact_context_get
-  DECLPROC $Buy$_store
-  DECLPROC $Buy$_store_cell
+  DECLPROC __tact_context_get_sender
+  DECLPROC $DexConfig$_store
+  DECLPROC $DexConfig$_load
+  DECLPROC $JettonSetup$_store
+  DECLPROC $JettonSetup$_store_cell
+  DECLPROC $JettonSetup$_load_bounced
   DECLPROC $LaunchpadFactory$_store
   DECLPROC $LaunchpadFactory$_load
   DECLPROC $FactoryInfo$_to_external
-  DECLPROC $BondingCurve$init$_store
+  DECLPROC $LaunchpadJetton$init$_store
   DECLPROC $LaunchpadFactory$init$_load
   DECLPROC $LaunchpadFactory$_contract_init
   DECLPROC $LaunchpadFactory$_contract_load
@@ -15,13 +19,15 @@ PROGRAM{
   DECLPROC $global_newAddress
   DECLPROC $global_contractAddressExt
   DECLPROC $global_contractAddress
-  DECLPROC $BondingCurve$_init_child
-  DECLPROC $FactoryInfo$_constructor_owner_platformTreasury_launchCount_launchFee_graduationTarget_tradeFeeBps
+  DECLPROC $LaunchpadJetton$_init_child
+  DECLPROC $SendParameters$_constructor_to_value_mode_bounce_body
+  DECLPROC $SendParameters$_constructor_to_value_mode_bounce_body_code_data
+  DECLPROC $FactoryInfo$_constructor_owner_treasury_liquidityManager_dex_launchCount_launchFee_graduationTarget_tradeFeeBps_creatorFeeBps_referrerFeeBps
   DECLPROC $LaunchpadFactory$_fun_get_factory_info
-  DECLPROC $SendParameters$_constructor_to_value_mode_body
-  DECLPROC $SendParameters$_constructor_to_value_mode_code_data_body
-  DECLPROC $Buy$_constructor_queryId_minTokensOut
+  DECLPROC $LaunchpadFactory$_fun_get_jetton_address
+  DECLPROC $JettonSetup$_constructor_queryId_treasury_liquidityManager_dex_content_launchFee_initialBuyTon
   112759 DECLMETHOD %get_factory_info
+  118368 DECLMETHOD %get_jetton_address
   DECLPROC recv_internal
   65535 DECLMETHOD __tact_selector_hack
   DECLGLOBVAR __tact_context
@@ -32,59 +38,102 @@ PROGRAM{
     __tact_context GETGLOB
     4 UNTUPLE
   }>
-  $Buy$_store PROCINLINE:<{
-    2 PUSHINT
-    s0 s3 XCHG2
-    32 STU
-    64 STU
-    SWAP
-    STVARUINT16
+  __tact_context_get_sender PROCINLINE:<{
+    __tact_context_sender GETGLOB
   }>
-  $Buy$_store_cell PROCINLINE:<{
+  $DexConfig$_store PROCINLINE:<{
+    s0 s2 XCHG
+    STSLICE
+    STSLICE
+  }>
+  $DexConfig$_load PROCINLINE:<{
+    LDMSGADDR
+    LDMSGADDR
     -ROT
-    $Buy$_store INLINECALLDICT
+  }>
+  $JettonSetup$_store PROCINLINE:<{
+    1280311298 PUSHINT
+    s0 s9 XCHG2
+    32 STU
+    s1 s7 XCHG
+    64 STU
+    s1 s5 XCHG
+    STSLICE
+    s1 s3 XCHG
+    STSLICE
+    NEWC
+    s0 s0 s3 XCHG3
+    $DexConfig$_store INLINECALLDICT
+    s1 s2 XCHG
+    STREF
+    ROT
+    STVARUINT16
+    ROT
+    STVARUINT16
+    STBREFR
+  }>
+  $JettonSetup$_store_cell PROCINLINE:<{
+    8 -ROLL
+    $JettonSetup$_store INLINECALLDICT
     ENDC
   }>
-  $LaunchpadFactory$_store PROCINLINE:<{
-    s3 s4 XCHG2
-    STSLICE
-    STSLICE
-    32 STU
+  $JettonSetup$_load_bounced PROCINLINE:<{
+    64 LDU
     SWAP
-    STVARUINT16
+  }>
+  $LaunchpadFactory$_store PROCINLINE:<{
+    s5 s6 XCHG2
+    STSLICE
+    s1 s3 XCHG
+    STSLICE
+    STSLICE
+    NEWC
+    s0 s0 s3 XCHG3
+    $DexConfig$_store INLINECALLDICT
+    s1 s2 XCHG
+    32 STU
+    STBREFR
   }>
   $LaunchpadFactory$_load PROCINLINE:<{
     LDMSGADDR
     LDMSGADDR
+    LDMSGADDR
+    LDREF
+    SWAP
+    CTOS
+    $DexConfig$_load INLINECALLDICT
+    s0 s2 XCHG
     32 LDU
-    LDVARUINT16
-    4 -ROLL
+    DROP
+    s3 s6 XCHG
+    s3 s5 XCHG
+    s3 s4 XCHG
+    s1 s2 XCHG
   }>
   $FactoryInfo$_to_external PROCINLINE:<{
   }>
-  $BondingCurve$init$_store PROCINLINE:<{
-    s4 s5 XCHG2
-    STSLICE
-    s1 s2 XCHG
+  $LaunchpadJetton$init$_store PROCINLINE:<{
+    s2 s3 XCHG2
     STSLICE
     STSLICE
-    SWAP
-    NEWC
-    STSLICE
-    STBREFR
-    SWAP
-    NEWC
-    STSLICE
-    STBREFR
+    257 PUSHINT
+    STIX
   }>
   $LaunchpadFactory$init$_load PROCINLINE:<{
     LDMSGADDR
     LDMSGADDR
-    -ROT
+    LDMSGADDR
+    LDREF
+    SWAP
+    CTOS
+    $DexConfig$_load INLINECALLDICT
+    s2 POP
+    s2 s5 XCHG
+    s2 s4 XCHG
+    s3 s0 s0 XCHG3
   }>
   $LaunchpadFactory$_contract_init PROCINLINE:<{
     0 PUSHINT
-    50000000 PUSHINT
   }>
   $LaunchpadFactory$_contract_load PROCINLINE:<{
     c4 PUSH
@@ -93,12 +142,12 @@ PROGRAM{
     SWAP
     IF:<{
       $LaunchpadFactory$_load INLINECALLDICT
-      1 4 BLKDROP2
+      1 6 BLKDROP2
     }>ELSE<{
       $LaunchpadFactory$init$_load INLINECALLDICT
-      s0 s2 XCHG
+      s0 s5 XCHG
       ENDS
-      SWAP
+      4 ROLL
       $LaunchpadFactory$_contract_init INLINECALLDICT
     }>
   }>
@@ -107,7 +156,7 @@ PROGRAM{
     TRUE
     SWAP
     1 STI
-    4 -ROLL
+    6 -ROLL
     $LaunchpadFactory$_store INLINECALLDICT
     ENDC
     c4 POP
@@ -150,47 +199,63 @@ PROGRAM{
     -ROT
     $global_contractAddressExt INLINECALLDICT
   }>
-  $BondingCurve$_init_child PROCREF:<{
-        B{b5ee9c7201021901000633000228ff008e88f4a413f4bcf2c80bed5320e303ed43d90102020271030402f83001d072d721d200d200fa4021103450666f04f86102f862ed44d0d200018e2afa40fa40fa40d401d001d401d0d401d001fa00fa00fa00fa00d200fa00fa0030108c108b108a10896c1c8e2bfa40fa40fa40d401d001d401d01514433005d15503821806fc23ac0082300de0b6b3a76400007020705311e20de3020b0a0b01d1bedc1f6a268690000c7157d207d207d206a00e800ea00e86a00e800fd007d007d007d0069007d007d00180846084588450844b60e4715fd207d207d206a00e800ea00e80a8a219802e8aa81c10c037e11d600411806f05b59d3b200003810382988f12a85ed9e36624050201200607004a5376a85272a0a9045270a1208100c8a8812710a90420811770a8812710a9045ca15132a10301d1bb4c3ed44d0d200018e2afa40fa40fa40d401d001d401d0d401d001fa00fa00fa00fa00d200fa00fa0030108c108b108a10896c1c8e2bfa40fa40fa40d401d001d401d01514433005d15503821806fc23ac0082300de0b6b3a76400007020705311e2550bdb3c6cc480801e5ba48ced44d0d200018e2afa40fa40fa40d401d001d401d0d401d001fa00fa00fa00fa00d200fa00fa0030108c108b108a10896c1c8e2bfa40fa40fa40d401d001d401d01514433005d15503821806fc23ac0082300de0b6b3a76400007020705311e2db3c3d3d3d3d3d3d3d3d3d3d3d3d55b0809004c208100c8a8812710a90466a15387a85292a0a9045270a121811770a8812710a9045320a11023004882195d3ef7980025812710a821a9042d544c302c544c302c544c302c544c302c59546cc000045f0d02d4d70d1ff2e08221c002e30221c006e30230c0048e4f8200ba9401b3f2f48200a5c12282195d3ef79800bef2f4108a55177f59c87f01ca0055b050bcce19ce17ce05c8ce15cdc804c8ce14cd58fa0201fa0258fa0258fa0212ca0058fa0258fa02cdc9ed54e05f0cf2c0820c0d03fe31d33f31fa00308200ba9422b3f2f4f8416f243032815b0a22c200f2f4218100c8a8812710a90420811770a8812710a9045ca15042a15398a851a1a051aaa9045199a1208200a23907be16f2f48137ff5375a082300de0b6b3a7640000bbf2f45064a05063a051d1a051e4a021c2009131e30d23c2009133e30df8276f10200e0f1004fe31d33f31fa00fa40f8416f2410235f038200ba9425b3f2f42281114d02c705f2f45376a85173a05177a9045188a1208100c8a8812710a90420811770a8812710a9045ca15233a18200a23905fa00305210be15f2f45075a15077a151e3a051f5a023c2009133e30d24c2009134e30d7188102310255a6d6d40037fc8cf858013141516017871882e0344445a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0017017871882c0346665a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001802d28208989680bc8ec082084c4b40a1718810365a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00923033e22a82195d3ef79800be92307fde109b108a1079106810571046103540331112001e000000006275795f737563636573730064c87f01ca0055b050bcce19ce17ce05c8ce15cdc804c8ce14cd58fa0201fa0258fa0258fa0212ca0058fa0258fa02cdc9ed54017871882f0346665a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0017017871882d0347775a6d6d40037fc8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001800200000000073656c6c5f7375636365737300dcca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00109b108a107910681057104610354033c87f01ca0055b050bcce19ce17ce05c8ce15cdc804c8ce14cd58fa0201fa0258fa0258fa0212ca0058fa0258fa02cdc9ed54001e0000000063726561746f725f666565002000000000706c6174666f726d5f666565} B>boc PUSHREF
+  $LaunchpadJetton$_init_child PROCREF:<{
+        B{b5ee9c72010258010018d600022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d90102020271030404d401d072d721d200d200fa4021103450666f04f86102f862ed44d0d200018eb5fa40fa40810101d700552003d15822705474448870821806fc23ac0082300de0b6b3a7640000227070547222200f11120f10ef10dee30d1114e3021112d70d1ff2e0822182104c500002ba1718060703bfbedc1f6a268690000c75afd207d20408080eb802a9001e8ac11382a3a224438410c037e11d600411806f05b59d3b200001138382a391110078889078877886f718688890889888908888889088888880888888807888807aa876d9e3662363a41718050201200e0f0104db3c2f03f011128020d7217021d749c21f953020d70b1fde8210178d4519bae30230228ec7820afaf08070fb0270830670882f553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00de1110111211100f11110f0e11100e551d080957043ce3022182104c500003bae3022182107bdd97debae3022182104c500004ba0a0b0c0d02d28020d721d33ffa005932248ec91112111411121111111311111110111211100f11110f0e11100e8040702f11120f11110f0e11100e10df10ce10bd10ac109b108a107910681057065530db3c111201111101111055d1915be21110111211100f11110f0e11100e551d2b57004c0000000047726164756174696f6e206c6971756964697479202844455820626f756e6365642903fc31d33ffa40fa40d430d0fa40fa405902d4fa00fa0030f8416f245b812e0c32561ac705f2f456158f525f0870804270885613553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001110111211100f11110f0e11100e551de057101a571b01fc31d33ffa00fa00d72c01916d93fa4001e231f8416f243032811de95614f2f48200e4232ab3f2f48200e7eb258208989680bef2f481769425821005f5e100a013be12f2f41115111711151114111611141113111511131112111411121111111311111110111211100f11110f0e11100e10df10ce10bd10ac109b108a10792003fe31d33ffa00fa40d72c01916d93fa4001e201f40430f8416f243032f8285250db3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d012c705f2f4216ee302328200e42329b3f2f481769402820afaf080be12f2f4206ef2d080d08200bd1401d31f442d2e04f68ff731d33f30f8416f2430328200f49227f2f48151db06b316f2f481769401820afaf080bef2f405821026be3680a15306db3c7f705450caa05479f453d6c8554082104c5001045006cb1f14cb3f12ce01fa0201fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb00f828561001db3ce02139443a3b020120101103e7ba48ced44d0d200018eb5fa40fa40810101d700552003d15822705474448870821806fc23ac0082300de0b6b3a7640000227070547222200f11120f10ef10dee30ddb3c5714571457145714571457145714571457145714571457145714571457145714571457145714111311121111111055e08171819020158121303bfb6987da89a1a400031d6bf481f481020203ae00aa4007a2b044e0a8e88910e104300df847580104601bc16d674ec8000044e0e0a8e444401e22241e21de21bdc61a2224222622242222222422222220222222201e22201eaa1db678d988d8e9017181603c3adbcf6a268690000c75afd207d20408080eb802a9001e8ac11382a3a224438410c037e11d600411806f05b59d3b200001138382a391110078889078877886f718688890889888908888889088888880888888807888807aa876d9e2b882f87b618c0171814038faf16f6a268690000c75afd207d20408080eb802a9001e8ac11382a3a224438410c037e11d600411806f05b59d3b200001138382a391110078889078877886f7186ed9e367ab622c01718150162f828db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d044011e24b36df828f828db3c302c552052e0440104db3c22000000acfa40fa40d33fd200fa40d401d0fa40fa40fa405902d4fa00d430d0fa00fa00fa00d200d200fa00fa00d31ffa00300e11130e0e11120e0e11110e0e11100e10ef10bc57131111111211111110111111100f11100f550e008e82195d3ef798008127105380a822a904b60856140256140256140256130256130256130256130256180256120256120256120256160256130256130256130156130156130156130052000000004c61756e636820726566756e6465643a20746f6b656e20616c72656164792065786973747302fc571057105710571057107f22561356132ec8553082104c5001015005cb1f13cb3fcecb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0071708824041110552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c9011c1d001c000000004c61756e63682066656504fcfb002ac2008f37111211141112706d561311161113111511130e11140e0311130311101111111010ce10bd10ac109b108a1079106810570610355044db3ce03a820afaf08070fb027083067003c8018210d53276db58cb1fcb3fc95613504410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb08a21571e1f00065bcf8101e48ae2f400c901fb001110111211100f11110f0e11100e109f108e10bc5517c87f01ca00111311121111111055e0011112011113ce01111001ce1ecb3f1cca001ace08c8ce407602cece13cc01fa02c858fa0258fa0258fa0213ca0013ca005003fa025003fa0213cb1f5003fa02cdcdc9ed543701b8106810575044db3cc87f01ca00111311121111111055e0011112011113ce01111001ce1ecb3f1cca001ace08c8ce407602cece13cc01fa02c858fa0258fa0258fa0213ca0013ca005003fa025003fa0213cb1f5003fa02cdcdc9ed542104f61112111711121111111611111110111511100f11140f0e11130e0d11170d0c11160c0b11150b0a11140a09111309081117080711160706111506051114050411130403111703021116020111150111145617db3c8200e7eb24c200f2f4238200a239111cbe01111b01f2f47056186eb39170e30de300111a561aa122232425004a208100c8812710a98620811770a8812710a9045121a152b0a0546bb0a98652a0a15312a11300185618206ef2d0805618c705b3002c30218107d0a8812710a90420820807a120be923070df01fa561b5003a151cca051b3a150aca051c2a05169a05151a0035619a004a42c82195d3ef79800be8e30387f56182dc85982104c5001035003cb1fcb3f01fa02c9c88258c000000000000000000000000101cb67ccc970fb0008de2c820afaf080a070fb021112111511121111111411111110111311100f11150f0e11140e2603fa0d11130d0c11150c0b11140b0a11130a10690811130807111407061115060511130504111404031113030211130201111456155615db3c5619c2009457175718e30d7f5617045616431402111b0256140201111701111628c8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c931272802d45617206ef2d080717088561d552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001117206ef2d080561802561701111bc8553082104c5001055005cb1f13cb3fcece01fa02c9292a0188c88258c000000000000000000000000101cb67ccc970fb000d11150d0c11140c0b11130b0a11120a0911110908111008107f106e105d104c103b4a18439658830670db3c2b002000000000526566657272616c206665650030c88258c000000000000000000000000101cb67ccc970fb0002f4f8285250db3c5c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d07ff8287070c8ca00c9d01059104a1023102bc855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec910565e22401310465522c8cf8580442c0058ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0001ec5b8108ff28f2f450b2a1216eb3963a206ef2d080923109e27080427004c8018210d53276db58cb1fcb3fc91034413010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001110111211100f11110f0e11100e551d5702fc01821053454c4cba12f2f4fa00301112111411121111111311111110111411100f11130f0e11140e0d11130d0c11140c0b11130b0a11140a09111309081114080711130706111406051113050411140403111303021114020111150111165614db3c5233a08200e7eb24c200f2f4813fc3531bbbf2f4038200a239111bbe2f30004a5280a0546990a9865290a1208100c8812710a98620811770a8812710a9045121a15312a11302fa01111a01f2f451a1a1095616a05181a10b5616a1055618a0514aa003a42b820afaf080a070fb021112111411121111111311111110111411100f11130f0e11140e0d11130d0c11140c0b11130b0a11140a1059105810570611130604111304031113030211130201111356185615db3c041115047056185045031115033132029e21c2008ec071708856160405552010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb009131e220c2009130e30d333403fe0211180201111a01111628c8557082104c5001025009cb1f17cb3f15ce13ca0001fa0201fa0201fa0201fa0201fa02c9c88258c000000000000000000000000101cb67ccc970fb0070830670880411160410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf818ae2f400c901fb000c11120c363738001e0000000043726561746f7220666565017c7170885612553010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0035002000000000506c6174666f726d2066656500220000000053656c6c2070726f6365656473001a58cf8680cf8480f400f400cf8100d40b11110b0a11100a109f108e107d106c555510344013c87f01ca00111311121111111055e0011112011113ce01111001ce1ecb3f1cca001ace08c8ce407602cece13cc01fa02c858fa0258fa0258fa0213ca0013ca005003fa025003fa0213cb1f5003fa02cdcdc9ed540118a8db3c8126aca8812710a9043c02fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d0f823810384a0820afaf08024fb02f828561201db3c821011e1a300717ff82856191111111e11111110111d11100f111c0f0e111b0e0d111a0d0c11190c0b11180b82100e01d0c056180c0b11180b0a11180a443d02fa8210d53276dbba8e655b1110111211100f11110f0e11100e551dc87f01ca00111311121111111055e0011112011113ce01111001ce1ecb3f1cca001ace08c8ce407602cece13cc01fa02c858fa0258fa0258fa0213ca0013ca005003fa025003fa0213cb1f5003fa02cdcdc9ed54e00182102c76b973bae3025f0f5f054243005620c101923070e02020f285b603a5ab00a4ae5ca9045210a0ab00935301b999315ca9045210a0ab00e8303102fc0911160908111708070611200605111a0504111e0403111d0302112102011122011119561b5617db3c7fc8ca00ccc9d05614050411160403111e0302112202112301c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec956140605111d050411170403111b0312011114011116403e01fe10465522c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00225613821011e1a300a08208989680a00b11130b0a11120a0911110908111008107f106e105d104c103b102a08111808102706111606102504111a041023021115020111190111187111163f02ec7f1118db3c7fc88209f3835d01cb1f561c01cb3f011116fa022fcf1601111501ca0001111401ccc90411180403111703021114020111150110246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00708306701117c8404100a26dc85003fa028d0860000000000000000000000000000000000000000000000000000000000000000004cf167101cb0070fa0212f400c9c8821037c096df01cb1f5003cf165610cf165611cf16cb3fccc901c6018210d53276db58cb1fcb3fc90411140441300111170110246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000b11120b0a11110a09111009108f107e55661655045702f2d33ffa40d2003021fa44306d018eb430f8285220db3c705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d0dff842708040700596c85006cf16c992356de24630c855208210d17354005004cb1f12cb3f01206e9430cf84809201cee2f400c9433044450006f2c082011688c87001ca005a02cecec946018e10246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb001110111211100f11110f0e11100e551d57022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d947480149a65ec0bb513434800066be803e903e9015481b04e6be903e901640b4405c1678b6cf1b0d204904b401d072d721d200d200fa4021103450666f04f86102f862ed44d0d200019afa00fa40fa4055206c139afa40fa405902d1017059e204e30202d70d1ff2e0822182100f8a7ea5bae302218210178d4519bae302018210595f07bcba4a4b4c4d01125cdb3c3054633052305000b6028020d7217021d749c21f9430d31f01de208210178d4519ba8e1a30d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e082107bdd97deba8e19d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e05f0402f231d33ffa00fa40d72c01916d93fa4001e201f40431fa0023fa4430f2d08af8416f2481114d533cc705f2f48142a629c200f2f451a8a18200ca9721c2fff2f44330523bfa40fa0071d721fa00fa00306c6170f83a23c20091729171e281769402a85240a08209c9c380a08208989680a012bcf2f45138db3c5c504e04fc31d33ffa00fa40d72c01916d93fa4001e201fa00f8416f24532cc705b38ebc537cdb3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d05240c705f2f4de51a8a021f8276f1021a1820898968066b608a18208e4e1c0a0a126c200e30f236eb350515253010ee3025f04f2c0825401fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d050767080407f2c48135079c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec9105610451034401310465522c8cf8580ca00cf8440ce01fa028069cf40025c6e014f00586eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed540018f82ac87001ca005a02cecec900e8504b4330fa40fa0071d721fa00fa00306c6170f83a5230a018a171702848135074c8553082107362d09c5005cb1f13cb3f01fa02cecec9284614505510246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0003000c107b50895f0800dc9321c2009170e28e5003206ef2d080727004c8018210d53276db58cb1fcb3fc9414010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00926c31e202c87f01ca0055205afa0212cecec9ed5401fed33ffa00d72c01916d93fa4001e201f40430f8416f24303281114d5118c705f2f48142a624c200f2f45153a18200ca9721c2fff2f4817694068210042c1d80be16f2f470504380407f544857c8554082107bdd97de5006cb1f14cb3f58fa02ce01206e9430cf84809201cee2f400c926444410246d50436d03c8cf8580ca0055017689cf16ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed545600011000a8c87f01ca00111311121111111055e0011112011113ce01111001ce1ecb3f1cca001ace08c8ce407602cece13cc01fa02c858fa0258fa0258fa0213ca0013ca005003fa025003fa0213cb1f5003fa02cdcdc9ed54} B>boc PUSHREF
     NEWC
     FALSE
     SWAP
     1 STI
-    5 2 BLKSWAP
-    $BondingCurve$init$_store INLINECALLDICT
+    3 2 BLKSWAP
+    $LaunchpadJetton$init$_store INLINECALLDICT
     ENDC
   }>
-  $FactoryInfo$_constructor_owner_platformTreasury_launchCount_launchFee_graduationTarget_tradeFeeBps PROCINLINE:<{
+  $SendParameters$_constructor_to_value_mode_bounce_body PROCINLINE:<{
+    s2 s4 XCHG
+    PUSHNULL
+    s4 s3 XCHG2
+    PUSHNULL
+    s0 s3 XCHG
+  }>
+  $SendParameters$_constructor_to_value_mode_bounce_body_code_data PROCINLINE:<{
+    s4 s6 XCHG
+    3 3 BLKSWAP
+  }>
+  $FactoryInfo$_constructor_owner_treasury_liquidityManager_dex_launchCount_launchFee_graduationTarget_tradeFeeBps_creatorFeeBps_referrerFeeBps PROCINLINE:<{
   }>
   $LaunchpadFactory$_fun_get_factory_info PROCREF:<{
+    50000000 PUSHINT
     1500000000000 PUSHINT
     200 PUSHINT
-    s5 PUSH
-    s5 s2 s(-1) PUXC2
-    s5 PUSH
-    s5 s2 s(-1) PUXC2
-    $FactoryInfo$_constructor_owner_platformTreasury_launchCount_launchFee_graduationTarget_tradeFeeBps INLINECALLDICT
+    6000 PUSHINT
+    2000 PUSHINT
+    s10 PUSH
+    s5 s10 XCPU
+    s5 s10 XCPU
+    s5 s10 XCPU
+    s5 s10 XCPU
+    s5 s10 XCPU
+    5 -ROLL
+    $FactoryInfo$_constructor_owner_treasury_liquidityManager_dex_launchCount_launchFee_graduationTarget_tradeFeeBps_creatorFeeBps_referrerFeeBps INLINECALLDICT
   }>
-  $SendParameters$_constructor_to_value_mode_body PROCINLINE:<{
-    2SWAP
-    PUSHNULL
-    PUSHNULL
-    s0 s0 s3 XCHG3
-    TRUE
+  $LaunchpadFactory$_fun_get_jetton_address PROCREF:<{
+        MYADDR
+    -ROT
+    $LaunchpadJetton$_init_child INLINECALLDICT
+    $global_contractAddress INLINECALLDICT
   }>
-  $SendParameters$_constructor_to_value_mode_code_data_body PROCINLINE:<{
-    s3 s5 XCHG
-    s1 s4 s4 XCHG3
-    s0 s3 XCHG
-    TRUE
-  }>
-  $Buy$_constructor_queryId_minTokensOut PROCINLINE:<{
+  $JettonSetup$_constructor_queryId_treasury_liquidityManager_dex_content_launchFee_initialBuyTon PROCINLINE:<{
   }>
   %get_factory_info PROC:<{
     $LaunchpadFactory$_contract_load INLINECALLDICT
     $LaunchpadFactory$_fun_get_factory_info INLINECALLDICT
-    4 6 BLKDROP2
+    6 11 BLKDROP2
     $FactoryInfo$_to_external INLINECALLDICT
+  }>
+  %get_jetton_address PROC:<{
+    $LaunchpadFactory$_contract_load INLINECALLDICT
+    2 6 BLKSWAP
+    $LaunchpadFactory$_fun_get_jetton_address INLINECALLDICT
+    6 1 BLKDROP2
   }>
   recv_internal PROC:<{
     SWAP
@@ -208,128 +273,109 @@ PROGRAM{
     s0 s2 XCHG
     __tact_context_sender SETGLOB
     $LaunchpadFactory$_contract_load INLINECALLDICT
-    s0 s5 XCHG
+    s0 s7 XCHG
     IFJMP:<{
-      5 BLKDROP
+      s0 s5 XCHG
+      32 PUSHINT
+      SDSKIPFIRST
+      0 PUSHINT
+      OVER
+      SBITS
+      31 GTINT
+      IF:<{
+        DROP
+        32 LDU
+        DROP
+      }>ELSE<{
+        NIP
+      }>
+      1280311298 PUSHINT
+      EQUAL
+      IFJMP:<{
+        s3 s5 XCHG
+        2 3 BLKSWAP
+        $LaunchpadFactory$_contract_store INLINECALLDICT
+      }>
+      6 BLKDROP
     }>
-    s0 s3 XCHG
-    32 LDUQ 130 THROWIFNOT
-    SWAP
-    1 EQINT
+    0 PUSHINT
+    s6 PUSH
+    SBITS
+    DUP
+    31 GTINT
+    IF:<{
+      NIP
+      s0 s6 XCHG
+      32 LDU
+      s0 s7 XCHG
+    }>
+    OVER
+    1280311297 PUSHINT
+    EQUAL
     IFJMP:<{
+      2DROP
+      s0 s5 XCHG
+      64 LDU
       64 LDU
       LDREF
-      SWAP
-      CTOS
-      SWAP
-      LDREF
-      SWAP
-      CTOS
-      SWAP
-      LDREF
-      DROP
-      CTOS
-      LDREF
-      NIP
-      LDREF
-      NIP
-      LDREF
-      NIP
       LDVARUINT16
       DROP
       __tact_context_get INLINECALLDICT
       DROP
       s2 POP
-      23701 PUSHINT
-      s2 s10 PUSH2
-      GEQ
+      10854 PUSHINT
+      s3 PUSH
+      0 EQINT
+      IF:<{
+        TRUE
+      }>ELSE<{
+        s3 PUSH
+        10000000 PUSHINT
+        GEQ
+      }>
       THROWANYIFNOT
-      s0 s8 XCHG
+      46558 PUSHINT
+      s3 PUSH
+      100000000000 PUSHINT
+      LEQ
+      THROWANYIFNOT
+      30356 PUSHINT
+      50000000 PUSHINT
+      s4 PUSH
+      ADD
+      150000000 PUSHINT
+      ADD
+      s1 s3 XCHG
+      GEQ
+      s1 s2 XCHG
+      THROWANYIFNOT
+      s0 s10 XCHG
       INC
-      1 PUSHINT
-          B{b5ee9c7241010101001000001c000000006c61756e63685f66656578cea391} B>boc PUSHREF
-      s8 PUSH
-      s12 s2 s(-1) PUXC2
-      $SendParameters$_constructor_to_value_mode_body INLINECALLDICT
-          NEWC
-          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
-          1 STI               // store `bounce`
-          b{000} STSLICECONST // store bounced = false and src = addr_none
-          STSLICE             // store `to`
-          SWAP
-          STGRAMS             // store `value`
-          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
-          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
-          // → Stack state
-          // s0: Builder
-          // s1: `data`
-          // s2: `code`
-          // s3: `body`
-          // s4: `mode`
-          // Group 2: Placing the Builder after code and data, then checking those for nullability
-          s2 XCHG0
-          DUP2
-          ISNULL
-          SWAP
-          ISNULL
-          AND
-          // → Stack state
-          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
-          // s1: `code`
-          // s2: `data`
-          // s3: Builder
-          // s4: `body`
-          // s5: `mode`
-          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
-          <{
-              DROP2 // drop `data` and `code`, since either of those is null
-              b{0} STSLICECONST
-          }> PUSHCONT
-          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
-          <{
-              // _ split_depth:(Maybe (## 5))
-              //   special:(Maybe TickTock)
-              //   code:(Maybe ^Cell)
-              //   data:(Maybe ^Cell)
-              //   library:(Maybe ^Cell)
-              // = StateInit;
-              ROT                // place message Builder on top
-              b{10} STSLICECONST // store Maybe = true, Either = false
-              // Start composing inlined StateInit
-              b{00} STSLICECONST // store split_depth and special first
-              STDICT             // store code
-              STDICT             // store data
-              b{0} STSLICECONST  // store library
-          }> PUSHCONT
-          // Group 3: IFELSE that does the branching shown above
-          IFELSE
-          // → Stack state
-          // s0: Builder
-          // s1: null or StateInit
-          // s2: `body`
-          // s3: `mode`
-          // Group 4: Finalizing the message
-          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
-          ENDC
-          // → Stack state
-          // s0: Cell
-          // s1: `mode`
-          // Group 5: Sending the message, with `mode` on top
-          SWAP
-          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
           MYADDR
-      s9 PUSH
-      s3 s8 XCPU
-      s0 s3 XCHG
-      s7 s6 XCHG2
-      $BondingCurve$_init_child INLINECALLDICT
+      s0 s11 s4 XCHG3
+      $LaunchpadJetton$_init_child INLINECALLDICT
       2DUP
       $global_contractAddress INLINECALLDICT
-      100000000 PUSHINT
-      1 PUSHINT
-          B{b5ee9c72410101010012000020000000006465706c6f795f6375727665fa5a6990} B>boc PUSHREF
-      s5 s4 s(-2) PU2XC
-      $SendParameters$_constructor_to_value_mode_code_data_body INLINECALLDICT
+      0 PUSHINT
+      s0 s6 XCHG
+      64 PUSHINT
+      TRUE
+      50000000 PUSHINT
+      s12 PUSH
+      s3 s12 XCPU
+      s3 s12 XCPU
+      s0 s3 XCHG
+      17 s() PUSH
+      s11 s1 s3 XCHG3
+      s0 s12 XCHG
+      $JettonSetup$_constructor_queryId_treasury_liquidityManager_dex_content_launchFee_initialBuyTon INLINECALLDICT
+      NEWC
+      $JettonSetup$_store_cell INLINECALLDICT
+      s6 s2 XCHG2
+      s1 s5 XCHG
+      s1 s4 XCHG
+      s1 s3 XCHG
+      $SendParameters$_constructor_to_value_mode_bounce_body_code_data INLINECALLDICT
           NEWC
           b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
           1 STI               // store `bounce`
@@ -396,176 +442,113 @@ PROGRAM{
           // Group 5: Sending the message, with `mode` on top
           SWAP
           SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
-      s2 PUSH
-      0 GTINT
-      IF:<{
-        $global_contractAddress INLINECALLDICT
-        1 PUSHINT
-        s0 s5 XCHG
-        0 PUSHINT
-        $Buy$_constructor_queryId_minTokensOut INLINECALLDICT
-        NEWC
-        $Buy$_store_cell INLINECALLDICT
-        s2 s0 s1 XC2PU
-        s6 s6 XCHG2
-        $SendParameters$_constructor_to_value_mode_body INLINECALLDICT
-            NEWC
-            b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
-            1 STI               // store `bounce`
-            b{000} STSLICECONST // store bounced = false and src = addr_none
-            STSLICE             // store `to`
-            SWAP
-            STGRAMS             // store `value`
-            105 PUSHINT         // 1 + 4 + 4 + 64 + 32
-            STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
-            // → Stack state
-            // s0: Builder
-            // s1: `data`
-            // s2: `code`
-            // s3: `body`
-            // s4: `mode`
-            // Group 2: Placing the Builder after code and data, then checking those for nullability
-            s2 XCHG0
-            DUP2
-            ISNULL
-            SWAP
-            ISNULL
-            AND
-            // → Stack state
-            // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
-            // s1: `code`
-            // s2: `data`
-            // s3: Builder
-            // s4: `body`
-            // s5: `mode`
-            // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
-            <{
-                DROP2 // drop `data` and `code`, since either of those is null
-                b{0} STSLICECONST
-            }> PUSHCONT
-            // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
-            <{
-                // _ split_depth:(Maybe (## 5))
-                //   special:(Maybe TickTock)
-                //   code:(Maybe ^Cell)
-                //   data:(Maybe ^Cell)
-                //   library:(Maybe ^Cell)
-                // = StateInit;
-                ROT                // place message Builder on top
-                b{10} STSLICECONST // store Maybe = true, Either = false
-                // Start composing inlined StateInit
-                b{00} STSLICECONST // store split_depth and special first
-                STDICT             // store code
-                STDICT             // store data
-                b{0} STSLICECONST  // store library
-            }> PUSHCONT
-            // Group 3: IFELSE that does the branching shown above
-            IFELSE
-            // → Stack state
-            // s0: Builder
-            // s1: null or StateInit
-            // s2: `body`
-            // s3: `mode`
-            // Group 4: Finalizing the message
-            STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
-            ENDC
-            // → Stack state
-            // s0: Cell
-            // s1: `mode`
-            // Group 5: Sending the message, with `mode` on top
-            SWAP
-            SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
-      }>ELSE<{
-        2DROP
-        s3 POP
-      }>
-      s1 s6 XCPU
-      SUB
-      150000000 PUSHINT
-      SUB
-      ROT
-      SUB
-      DUP
-      0 GTINT
-      IF:<{
-        1 PUSHINT
-            B{b5ee9c7241010101000c00001400000000726566756e647b1f4f15} B>boc PUSHREF
-        s3 s6 XCHG
-        $SendParameters$_constructor_to_value_mode_body INLINECALLDICT
-            NEWC
-            b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
-            1 STI               // store `bounce`
-            b{000} STSLICECONST // store bounced = false and src = addr_none
-            STSLICE             // store `to`
-            SWAP
-            STGRAMS             // store `value`
-            105 PUSHINT         // 1 + 4 + 4 + 64 + 32
-            STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
-            // → Stack state
-            // s0: Builder
-            // s1: `data`
-            // s2: `code`
-            // s3: `body`
-            // s4: `mode`
-            // Group 2: Placing the Builder after code and data, then checking those for nullability
-            s2 XCHG0
-            DUP2
-            ISNULL
-            SWAP
-            ISNULL
-            AND
-            // → Stack state
-            // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
-            // s1: `code`
-            // s2: `data`
-            // s3: Builder
-            // s4: `body`
-            // s5: `mode`
-            // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
-            <{
-                DROP2 // drop `data` and `code`, since either of those is null
-                b{0} STSLICECONST
-            }> PUSHCONT
-            // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
-            <{
-                // _ split_depth:(Maybe (## 5))
-                //   special:(Maybe TickTock)
-                //   code:(Maybe ^Cell)
-                //   data:(Maybe ^Cell)
-                //   library:(Maybe ^Cell)
-                // = StateInit;
-                ROT                // place message Builder on top
-                b{10} STSLICECONST // store Maybe = true, Either = false
-                // Start composing inlined StateInit
-                b{00} STSLICECONST // store split_depth and special first
-                STDICT             // store code
-                STDICT             // store data
-                b{0} STSLICECONST  // store library
-            }> PUSHCONT
-            // Group 3: IFELSE that does the branching shown above
-            IFELSE
-            // → Stack state
-            // s0: Builder
-            // s1: null or StateInit
-            // s2: `body`
-            // s3: `mode`
-            // Group 4: Finalizing the message
-            STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
-            ENDC
-            // → Stack state
-            // s0: Cell
-            // s1: `mode`
-            // Group 5: Sending the message, with `mode` on top
-            SWAP
-            SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
-      }>ELSE<{
-        DROP
-        s3 POP
-      }>
-      s0 s0 s3 XCHG3
+      s3 s5 XCHG
+      2 3 BLKSWAP
       $LaunchpadFactory$_contract_store INLINECALLDICT
     }>
-    5 BLKDROP
+    s7 POP
+    DUP
+    1280311301 PUSHINT
+    EQUAL
+    IFJMP:<{
+      DROP
+      s5 POP
+      35499 PUSHINT
+      __tact_context_get_sender INLINECALLDICT
+      s5 PUSH
+      SDEQ
+      THROWANYIFNOT
+      50000000 PUSHINT
+      0 PUSHINT
+          RAWRESERVE
+      0 PUSHINT
+      7 PUSHPOW2
+      FALSE
+          B{b5ee9c7241010101001600002800000000466163746f72792077697468647261777a72fa08} B>boc PUSHREF
+      s7 PUSH
+      4 -ROLL
+      $SendParameters$_constructor_to_value_mode_bounce_body INLINECALLDICT
+          NEWC
+          b{01} STSLICECONST  // store tag = $0 and ihr_disabled = true
+          1 STI               // store `bounce`
+          b{000} STSLICECONST // store bounced = false and src = addr_none
+          STSLICE             // store `to`
+          SWAP
+          STGRAMS             // store `value`
+          105 PUSHINT         // 1 + 4 + 4 + 64 + 32
+          STZEROES            // store currency_collection, ihr_fee, fwd_fee, created_lt and created_at
+          // → Stack state
+          // s0: Builder
+          // s1: `data`
+          // s2: `code`
+          // s3: `body`
+          // s4: `mode`
+          // Group 2: Placing the Builder after code and data, then checking those for nullability
+          s2 XCHG0
+          DUP2
+          ISNULL
+          SWAP
+          ISNULL
+          AND
+          // → Stack state
+          // s0: -1 (true) if `data` and `code` are both null, 0 (false) otherwise
+          // s1: `code`
+          // s2: `data`
+          // s3: Builder
+          // s4: `body`
+          // s5: `mode`
+          // Group 3: Left branch of the IFELSE, executed if s0 is -1 (true)
+          <{
+              DROP2 // drop `data` and `code`, since either of those is null
+              b{0} STSLICECONST
+          }> PUSHCONT
+          // Group 3: Right branch of the IFELSE, executed if s0 is 0 (false)
+          <{
+              // _ split_depth:(Maybe (## 5))
+              //   special:(Maybe TickTock)
+              //   code:(Maybe ^Cell)
+              //   data:(Maybe ^Cell)
+              //   library:(Maybe ^Cell)
+              // = StateInit;
+              ROT                // place message Builder on top
+              b{10} STSLICECONST // store Maybe = true, Either = false
+              // Start composing inlined StateInit
+              b{00} STSLICECONST // store split_depth and special first
+              STDICT             // store code
+              STDICT             // store data
+              b{0} STSLICECONST  // store library
+          }> PUSHCONT
+          // Group 3: IFELSE that does the branching shown above
+          IFELSE
+          // → Stack state
+          // s0: Builder
+          // s1: null or StateInit
+          // s2: `body`
+          // s3: `mode`
+          // Group 4: Finalizing the message
+          STDICT // store `body` as ref with an extra Maybe bit, since `body` might be null
+          ENDC
+          // → Stack state
+          // s0: Cell
+          // s1: `mode`
+          // Group 5: Sending the message, with `mode` on top
+          SWAP
+          SENDRAWMSG // https://github.com/tact-lang/tact/issues/1558
+      s3 s5 XCHG
+      2 3 BLKSWAP
+      $LaunchpadFactory$_contract_store INLINECALLDICT
+    }>
+    0 EQINT
+    s0 s6 XCHG
+    33 LESSINT
+    s1 s6 XCHG
+    AND
+    IFJMP:<{
+      s3 s5 XCHG
+      2 3 BLKSWAP
+      $LaunchpadFactory$_contract_store INLINECALLDICT
+    }>
+    6 BLKDROP
     130 THROW
   }>
   __tact_selector_hack PROC:<{

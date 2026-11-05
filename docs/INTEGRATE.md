@@ -21,16 +21,22 @@
 ## TonAPI
 
 - **Endpoint:** `https://tonapi.io/v2/*`
-- **Use:** Wallet balances, tx status, account events
+- **Use:** Wallet jetton balances (My Tokens)
 - **File:** `src/lib/tonapi.ts`
-- **Auth:** Optional `TONAPI_KEY` for higher rate limits
+- **Auth:** none. The browser uses the public tier; no key is ever shipped to clients (`VITE_TONAPI_KEY` was removed).
 
-## On-chain (TON Connect + @ton/ton)
+## On-chain
 
-- Factory / curve getters for quotes and graduation state
-- **File:** `src/lib/contracts.ts`
+- **Server:** `/api/tokens*` read the factory's transactions and each jetton's `get_curve_state` / `get_jetton_data`
+  through toncenter (`api/_lib/chain.ts`; `TONCENTER_API_KEY` optional, server-only).
+- **Client:** `src/lib/contracts.ts` builds messages for TON Connect and computes quotes from the live reserves.
+
+## Failure behaviour
+
+Every feed resolves to an empty list, `null` or "—" on network errors, HTTP errors and malformed JSON, and never
+invents data (`tests/external-feeds.test.ts`).
 
 ## TODO
 
-- [ ] Add rate-limit backoff for CoinGecko demo tier
+- [ ] Add rate-limit backoff for CoinGecko demo tier (a 60 s cache exists)
 - [ ] Cache TonAPI responses (30s TTL)

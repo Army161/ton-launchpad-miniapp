@@ -9,35 +9,57 @@ export type TelegramUser = {
   photo_url?: string;
 };
 
-/** Validate Telegram WebApp initData per official spec */
-export function validateInitData(initData: string, botToken: string): TelegramUser | null {
-  if (!initData || !botToken) return null;
+export const INIT_DATA_MAX_AGE_SECONDS = 86400;
+const MAX_INIT_DATA_LENGTH = 4096;
+const CLOCK_SKEW_SECONDS = 60;
+
+/**
+ * Validates Telegram Mini App initData per
+ * https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+ */
+export function validateInitData(initData: string, botToken: string, now = Date.now()): TelegramUser | null {
+  const result = checkInitData(initData, botToken, now);
+  return 'user' in result ? result.user : null;
+}
+
+export type InitDataRejection = 'malformed' | 'bad_hash' | 'bad_auth_date' | 'expired' | 'no_user';
+
+/** Same as validateInitData, but says why it rejected. The reason is safe to log; it holds no user data or secrets. */
+export function checkInitData(
+  initData: string,
+  botToken: string,
+  now = Date.now(),
+): { user: TelegramUser } | { reason: InitDataRejection } {
+  botToken = typeof botToken === 'string' ? botToken.trim() : '';
+  if (!initData || !botToken || typeof initData !== 'string' || initData.length > MAX_INIT_DATA_LENGTH) return { reason: 'malformed' };
 
   const params = new URLSearchParams(initData);
   const hash = params.get('hash');
-  if (!hash) return null;
-
+  if (!hash || !/^[0-9a-f]{64}$/.test(hash)) return { reason: 'malformed' };
   params.delete('hash');
 
   const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([k, v]) => `${k}=${v}`)
     .join('\n');
 
   const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
-  const computed = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+  const computed = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest();
+  if (!crypto.timingSafeEqual(computed, Buffer.from(hash, 'hex'))) return { reason: 'bad_hash' };
 
-  if (computed !== hash) return null;
-
-  const authDate = parseInt(params.get('auth_date') ?? '0', 10);
-  if (Date.now() / 1000 - authDate > 86400) return null;
+  const authDate = Number(params.get('auth_date'));
+  const nowSec = Math.floor(now / 1000);
+  if (!Number.isInteger(authDate) || authDate <= 0) return { reason: 'bad_auth_date' };
+  if (authDate > nowSec + CLOCK_SKEW_SECONDS) return { reason: 'bad_auth_date' };
+  if (nowSec - authDate > INIT_DATA_MAX_AGE_SECONDS) return { reason: 'expired' };
 
   const userStr = params.get('user');
-  if (!userStr) return null;
-
+  if (!userStr) return { reason: 'no_user' };
   try {
-    return JSON.parse(userStr) as TelegramUser;
+    const user = JSON.parse(userStr) as TelegramUser;
+    if (typeof user.id !== 'number' || !Number.isSafeInteger(user.id) || user.id <= 0) return { reason: 'no_user' };
+    return { user };
   } catch {
-    return null;
+    return { reason: 'no_user' };
   }
 }

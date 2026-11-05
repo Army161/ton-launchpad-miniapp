@@ -14,13 +14,21 @@ import {
   IconVerified,
   IconWallet,
 } from '../components/Icons';
-import { getToken } from '../data/tokens';
-import { CONFIG } from '../lib/config';
+import { useToken } from '../data/tokens';
+import { CONFIG, explorerUrl } from '../lib/config';
 import styles from './TokenDetail.module.css';
 
 export function TokenDetail() {
-  const { id } = useParams<{ id: string }>();
-  const token = getToken(id ?? '');
+  const { id = '' } = useParams<{ id: string }>();
+  const { token, status } = useToken(id);
+
+  if (status === 'loading') {
+    return (
+      <div className="page page--no-nav">
+        <p className="muted" style={{ marginTop: 48, textAlign: 'center' }}>Loading…</p>
+      </div>
+    );
+  }
 
   if (!token) {
     return (
@@ -29,18 +37,17 @@ export function TokenDetail() {
           <IconBack /> Back
         </Link>
         <p style={{ marginTop: 24 }} className="muted">
-          Token not found.
+          {status === 'error' ? 'Could not load this token. Try again shortly.' : 'Token not found.'}
         </p>
       </div>
     );
   }
 
   const change24h = token.change24h;
-  const priceDelta =
-    token.priceDeltaUsd ??
-    (change24h == null ? 0 : Number(((token.priceUsd * change24h) / 100).toFixed(2)));
+  const priceDelta = change24h == null ? 0 : Number(((token.priceUsd * change24h) / 100).toFixed(2));
+  const onCurve = token.source === 'launchpad' && !token.graduated;
 
-  const tonviewerUrl = `https://tonviewer.com/${token.id}`;
+  const tonviewerUrl = explorerUrl(token.id);
   const dexscreenerUrl = `https://dexscreener.com/ton/${token.id}`;
   const stonfiUrl = `https://app.ston.fi/swap?ft=${token.id}&tt=TON`;
 
@@ -82,7 +89,7 @@ export function TokenDetail() {
         </button>
       </div>
 
-      {!token.graduated && (
+      {onCurve && (
         <BondingCurve
           progress={token.curveProgress}
           raised={token.curveRaisedTon}
@@ -97,10 +104,10 @@ export function TokenDetail() {
           </div>
           <span className={styles.statLabel}>Price</span>
           <strong>
-            {token.priceUsd > 0 ? `$${token.priceUsd.toFixed(4)}` : token.priceTon > 0 ? `${token.priceTon.toFixed(4)} TON` : '—'}
+            {token.priceUsd > 0 ? `$${token.priceUsd.toFixed(4)}` : token.priceTon > 0 ? `${token.priceTon.toPrecision(3)} TON` : '—'}
           </strong>
           <span className={styles.statDelta}>
-            {change24h == null ? '—' : `+$${priceDelta.toFixed(2)} (+${change24h.toFixed(2)}%)`}
+            {change24h == null ? '—' : `${priceDelta >= 0 ? '+' : '-'}$${Math.abs(priceDelta).toFixed(2)} (${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%)`}
           </span>
         </div>
         <div className={`card ${styles.stat}`}>
@@ -108,20 +115,18 @@ export function TokenDetail() {
             <IconChart size={13} />
           </div>
           <span className={styles.statLabel}>Market Cap</span>
-          <strong>{token.marketCapTon > 0 ? `${token.marketCapTon.toLocaleString()} TON` : '—'}</strong>
+          <strong>{token.marketCapTon > 0 ? `${Math.round(token.marketCapTon).toLocaleString()} TON` : '—'}</strong>
           <span className={styles.statSub}>
-            {token.marketCapUsd > 0 ? `~$${token.marketCapUsd.toLocaleString()}` : `Graduation: ${CONFIG.graduationTarget} TON`}
+            {`Graduation: ${CONFIG.graduationTarget} TON`}
           </span>
         </div>
         <div className={`card ${styles.stat}`}>
           <div className={`${styles.statIcon} ${styles.statIconOutline}`}>
             <IconPeople size={13} />
           </div>
-          <span className={styles.statLabel}>Holders</span>
-          <strong>{token.holders > 0 ? token.holders.toLocaleString() : '—'}</strong>
-          <span className={styles.statSub}>
-            {token.holdersDelta1h > 0 ? `+${token.holdersDelta1h} in 1h` : `Fee: ${CONFIG.tradeFeePercent}%`}
-          </span>
+          <span className={styles.statLabel}>Trades</span>
+          <strong>{token.tradeCount != null ? token.tradeCount.toLocaleString() : '—'}</strong>
+          <span className={styles.statSub}>{`Fee: ${CONFIG.tradeFeePercent}%`}</span>
         </div>
       </div>
 
@@ -139,15 +144,26 @@ export function TokenDetail() {
         )}
       </div>
 
+      {token.description && <p className="muted" style={{ fontSize: 13 }}>{token.description}</p>}
+
       <div className={styles.actions}>
-        <Link to={`/buy/${token.id}`} className={`btn-primary ${styles.actionBtn}`}>
-          <IconWallet size={18} />
-          Buy ${token.ticker}
-        </Link>
-        <Link to={`/sell/${token.id}`} className={`btn-secondary ${styles.actionBtn} ${styles.sellBtn}`}>
-          <IconArrowDown size={18} />
-          Sell ${token.ticker}
-        </Link>
+        {onCurve ? (
+          <>
+            <Link to={`/buy/${token.id}`} className={`btn-primary ${styles.actionBtn}`}>
+              <IconWallet size={18} />
+              Buy ${token.ticker}
+            </Link>
+            <Link to={`/sell/${token.id}`} className={`btn-secondary ${styles.actionBtn} ${styles.sellBtn}`}>
+              <IconArrowDown size={18} />
+              Sell ${token.ticker}
+            </Link>
+          </>
+        ) : (
+          <a href={stonfiUrl} target="_blank" rel="noopener noreferrer" className={`btn-primary ${styles.actionBtn}`}>
+            <IconWallet size={18} />
+            {token.source === 'launchpad' && token.graduated ? 'Graduated · trade on STON.fi' : 'Trade on STON.fi'}
+          </a>
+        )}
       </div>
     </div>
   );

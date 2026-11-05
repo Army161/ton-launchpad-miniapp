@@ -1,46 +1,36 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateInitData } from '../_lib/telegram';
-import { signJwt } from '../_lib/jwt';
-import { upsertUser } from '../_lib/store';
+import { checkInitData } from '../_lib/telegram.js';
+import { signJwt } from '../_lib/jwt.js';
 
+// Sessions are stateless: the JWT carries the Telegram id, nothing is stored.
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const jwtSecret = process.env.JWT_SECRET;
+  if (!botToken || !jwtSecret) return res.status(503).json({ error: 'Server not configured' });
 
-  if (!botToken || !jwtSecret) {
-    return res.status(503).json({ error: 'Server not configured' });
-  }
+  const initData = (req.body as { initData?: unknown } | undefined)?.initData;
+  if (typeof initData !== 'string' || !initData) return res.status(400).json({ error: 'initData required' });
 
-  const { initData } = req.body as { initData?: string };
-  if (!initData) {
-    return res.status(400).json({ error: 'initData required' });
-  }
-
-  const tgUser = validateInitData(initData, botToken);
-  if (!tgUser) {
+  const result = checkInitData(initData, botToken);
+  if (!('user' in result)) {
+    // bad_hash almost always means TELEGRAM_BOT_TOKEN is not the current token of the bot that opened the app.
+    // Token shape only (never the value): catches a pasted label, quotes or a truncated token.
+    const shapeOk = /^\d{5,}:[A-Za-z0-9_-]{30,}$/.test(botToken.trim());
+    console.warn(`telegram auth rejected: ${result.reason} (token shape ${shapeOk ? 'ok' : 'INVALID'})`);
     return res.status(401).json({ error: 'Invalid initData' });
   }
-
-  const user = upsertUser({
-    telegramId: tgUser.id,
-    username: tgUser.username,
-    firstName: tgUser.first_name,
-  });
-
-  const token = signJwt(tgUser.id, jwtSecret);
+  const tgUser = result.user;
+  console.info('telegram auth ok');
 
   return res.status(200).json({
-    token,
+    token: signJwt(tgUser.id, jwtSecret),
     user: {
       id: tgUser.id,
       username: tgUser.username,
       firstName: tgUser.first_name,
       photoUrl: tgUser.photo_url,
-      walletAddress: user.walletAddress ?? null,
     },
   });
 }

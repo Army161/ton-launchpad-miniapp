@@ -2,7 +2,7 @@ import { ConnectButton } from '../components/ConnectButton';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
-import { CONFIG } from '../lib/config';
+import { CONFIG, walletDisplayAddress } from '../lib/config';
 
 export function Profile() {
   const { user, isTelegram, loading } = useAuth();
@@ -45,7 +45,7 @@ export function Profile() {
         <div style={{ width: '100%' }}>
           <p className="muted" style={{ fontSize: 12 }}>Wallet</p>
           <p style={{ fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all' }}>
-            {connected ? address : 'Not connected'}
+            {connected && address ? walletDisplayAddress(address) : 'Not connected'}
           </p>
         </div>
 
@@ -71,3 +71,4 @@ export function Profile() {
     </div>
   );
 }
+

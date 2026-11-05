@@ -5,7 +5,6 @@ interface ImportMetaEnv {
   readonly VITE_TWA_RETURN_URL?: string;
   readonly VITE_FACTORY_ADDRESS?: string;
   readonly VITE_TONAPI_BASE?: string;
-  readonly VITE_TONAPI_KEY?: string;
   readonly VITE_NETWORK?: string;
 }
 
