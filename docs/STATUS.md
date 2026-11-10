@@ -2,8 +2,8 @@
 
 Updated: 2026-11-10 · Branch: `clawdbot-permanent` (GitHub default and Vercel production branch; `main` was merged into it by PR #3 and deleted)
 
-**Overall: NOT PRODUCTION READY.** All engineering that can be verified without the founder's wallets is merged,
-deployed to the live site and passing. What remains is the testnet gate and the mainnet deploy, both founder actions.
+**Overall: NOT PRODUCTION READY.** All engineering that can be verified without the founder's wallets is done and
+passing. The live site runs 6638371; the 2026-11-10 dependency and validator fixes go live when PR #8 merges. What remains is the testnet gate and the mainnet deploy, both founder actions.
 
 ## Gates
 
@@ -51,7 +51,7 @@ deployed to the live site and passing. What remains is the testnet gate and the 
 
 | Item | Priority | Notes |
 |---|---|---|
-| Record testnet evidence | P0 | after blocker 6: addresses and tx hashes here and in VERIFICATION |
+| Record testnet evidence | P0 | after blocker 2: addresses and tx hashes here and in VERIFICATION |
 | Pagination past the ~100 most recent factory transactions in `/api/tokens` | P1 | fine at launch volume; needs an indexer or DB later (ADR-003) |
 | Rate limit on `/api/metadata/upload` | P2 | SECURITY #13 |
 | Bundle size (1.05 MB, mostly TON libraries) | P2 | code-split the trading pages |

@@ -52,8 +52,11 @@ The script refuses to run without the approval flag, validates everything, rebui
 ## 5. BotFather
 
 ```
+Main App (link https://t.me/<bot>?startapp):
+/mybots → your bot → Bot Settings → Configure Mini App → URL https://ton-launchpad-miniapp.vercel.app
+Named app from /newapp (link https://t.me/<bot>/<app>):
 /myapps → your app → Edit Web App URL → https://ton-launchpad-miniapp.vercel.app
-/setmenubutton → your bot → same URL
+Both: /setmenubutton → your bot → same URL
 ```
 
 ## 6. Smoke test (smallest amounts)

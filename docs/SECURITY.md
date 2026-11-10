@@ -35,7 +35,7 @@ needs rotation.
 | 16 | INFO | Dev-only advisories in `@vercel/node` (types only) and polyfill plugin deps (not bundled) | ACCEPTED |
 | 17 | INFO | Contract toolchain pulled protobufjs 6 (critical advisory) | FIXED (override to 7.6.6, output byte-identical) |
 | 18 | LOW | 2026-11-10 audit: runtime advisories in `undici`, `follow-redirects` (API), `zod` 4 under `@vercel/blob`; contract toolchain `handlebars` (critical), `follow-redirects` | FIXED (`npm audit fix`; `zod` override to ^4.6.6 under `@vercel/cli-config`) |
-| 19 | LOW | `zod` 3.25 inside `@ton/ton` (GHSA-mrhx-c7xc-m3w5, memory on oversized collections); no patched 3.x. Contract dev toolchain (`@ton/blueprint`, `@tact-lang/compiler`, `@ston-fi/sdk`) carries advisories whose only fix is a major upgrade | ACCEPTED: `@ton/ton` only validates toncenter responses, not user input; the toolchain never ships to users. Revisit on the next `@ton/ton` / blueprint major |
+| 19 | LOW | `zod` 3.25 inside `@ton/ton` (GHSA-mrhx-c7xc-m3w5, memory on oversized collections); no patched 3.x. Low: `deepmerge` prototype poisoning via `@tonconnect/ui` (and `@tonconnect/ui-react`), no fixed release; it only merges the app's own static UI options. Contract dev toolchain (`@ton/blueprint`, `@tact-lang/compiler`, `@ston-fi/sdk`) carries advisories whose only fix is a major upgrade | ACCEPTED: `@ton/ton` only validates toncenter responses, not user input; the toolchain never ships to users. Revisit on the next `@ton/ton` / blueprint major |
 
 No unresolved CRITICAL or HIGH findings. Finding 12 is a risk the founder should weigh before mainnet.
 

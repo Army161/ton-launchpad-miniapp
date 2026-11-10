@@ -16,7 +16,7 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | App + API tests | vitest | `npm test` | all pass | 67/67 (2026-11-10) | vitest output | PASS |
 | Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |
 | No server secrets in bundle | grep dist | CI step | no matches | no matches | | PASS |
-| Dependency audit | npm audit | `npm audit --omit=dev`; `cd contracts && npm audit` | no unaccepted runtime vulns | app runtime: 2 high (zod 3 inside @ton/ton, accepted) + 3 low; contracts toolchain: 5 high + 9 low (dev only, major-upgrade fixes) | SECURITY #16–19 | PASS with notes |
+| Dependency audit | npm audit | `npm audit --omit=dev`; `cd contracts && npm audit` | no unaccepted runtime vulns | app runtime: 2 high (zod 3 inside @ton/ton) + 3 low (deepmerge via @tonconnect/ui), all accepted in SECURITY #19; contracts toolchain: 5 high + 9 low (dev only, major-upgrade fixes) | SECURITY #16–19 | PASS with notes |
 
 ## Economics and contract behaviour (sandbox, compiled code)
 

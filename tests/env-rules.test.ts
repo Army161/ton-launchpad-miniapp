@@ -44,6 +44,7 @@ describe('env rules', () => {
     expect(checkReturnUrl('U', 'https://t.me/TONLaunchpad_Bot?startapp=ref').ok).toBe(true);
     expect(checkReturnUrl('U', 'https://t.me/TONLaunchpad_Bot?start').ok).toBe(false);
     expect(checkReturnUrl('U', 'https://t.me/YourBot?startapp').ok).toBe(false);
+    expect(checkReturnUrl('U', 'https://t.me/TONLaunchpad_Bot?startapp=yourref').ok).toBe(true);
   });
 
   it('flags secrets in public VITE_ variables', () => {

@@ -55,9 +55,10 @@ export function checkJwtSecret(name: string, value: string | undefined): Finding
 
 export function checkReturnUrl(name: string, value: string | undefined): Finding {
   if (!value) return fail(name, 'missing');
-  if (PLACEHOLDER.test(value)) return fail(name, 'still a placeholder bot/app name');
   try {
     const u = new URL(value);
+    // Only the bot and app names can be placeholders; a startapp parameter such as "yourref" is real data.
+    if (PLACEHOLDER.test(u.pathname)) return fail(name, 'still a placeholder bot/app name');
     if (u.protocol !== 'https:' || u.hostname !== 't.me') return fail(name, 'must be https://t.me/<bot>/<app> or https://t.me/<bot>?startapp');
     const [bot, app] = u.pathname.split('/').filter(Boolean);
     if (!bot || !/bot$/i.test(bot)) return fail(name, 'must name the bot (ending in "bot")');
