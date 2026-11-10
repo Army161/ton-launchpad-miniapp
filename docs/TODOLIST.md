@@ -16,10 +16,10 @@ Current state and evidence: `docs/STATUS.md`, `docs/VERIFICATION.md`. Founder st
 
 ## Founder (only you can do these)
 
-- [ ] Merge `claude/project-thread-6o05dp` into `main`
+- [x] Merge the V1 work (PRs #1, #2, #4, #6, #7 and #3 into `clawdbot-permanent`, the production branch)
 - [ ] Share the treasury address (public)
-- [ ] BotFather: create bot and Mini App; share bot username and short name (public)
-- [ ] Enter `TELEGRAM_BOT_TOKEN` and `JWT_SECRET` in Vercel (never in chat)
+- [x] BotFather: bot @TONLaunchpad_Bot with Main App; `VITE_TWA_RETURN_URL=https://t.me/TONLaunchpad_Bot?startapp` (no short name needed)
+- [x] Enter `TELEGRAM_BOT_TOKEN` and `JWT_SECRET` in Vercel (`/api/health` shows `telegramAuthConfigured: true`)
 - [x] Graduation decided: on-chain STON.fi with LP locked (ADR-009); prove it on testnet
 - [ ] Fund a testnet deployer wallet and run the testnet gate (`docs/EXECUTION.md`)
 - [ ] Optional: enable Vercel Blob; add `TONCENTER_API_KEY` in Vercel

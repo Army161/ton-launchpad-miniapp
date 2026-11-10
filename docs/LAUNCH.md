@@ -10,7 +10,7 @@ machine or into Vercel's secret fields. Public values (addresses, bot username, 
 | Treasury address (receives the 0.05 TON launch fee and 40% of trade fees) | yes | any wallet you control; a hardware or multisig wallet is best |
 | Liquidity manager (receives graduated liquidity only if STON.fi refunds a provision) | yes | default: the deployer wallet. See ADR-009 in `docs/DECISIONS.md` |
 | STON.fi v2 router (`STON_ROUTER_ADDRESS`) | yes | public; from the STON.fi API for each network; fixed in the factory |
-| Bot username and Mini App short name | yes | BotFather: `/newbot`, then `/newapp` with URL `https://ton-launchpad-miniapp.vercel.app` |
+| Bot username and Mini App link | yes | BotFather: `/newbot`, then either set the bot's Main App (link `https://t.me/<bot>?startapp`) or `/newapp` with a short name (link `https://t.me/<bot>/<app>`); URL `https://ton-launchpad-miniapp.vercel.app` |
 | Deployer wallet | the address is | a **new** wallet used only for deploys; W5 (Tonkeeper default) or v4 |
 
 ## 2. Secrets (never in chat, never in git)
@@ -52,8 +52,11 @@ The script refuses to run without the approval flag, validates everything, rebui
 ## 5. BotFather
 
 ```
+Main App (link https://t.me/<bot>?startapp):
+/mybots → your bot → Bot Settings → Configure Mini App → URL https://ton-launchpad-miniapp.vercel.app
+Named app from /newapp (link https://t.me/<bot>/<app>):
 /myapps → your app → Edit Web App URL → https://ton-launchpad-miniapp.vercel.app
-/setmenubutton → your bot → same URL
+Both: /setmenubutton → your bot → same URL
 ```
 
 ## 6. Smoke test (smallest amounts)

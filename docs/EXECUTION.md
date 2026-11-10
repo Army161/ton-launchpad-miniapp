@@ -83,3 +83,18 @@ curl -fsS https://ton-launchpad-miniapp.vercel.app/api/health
 node scripts/validate-env.ts production --network     # with production values loaded
 curl -fsS https://ton-launchpad-miniapp.vercel.app/api/tokens | head -c 400
 ```
+
+## Claude on GitHub (PR review and merges)
+
+Two workflows run Claude through `anthropics/claude-code-action@v1`:
+
+- `.github/workflows/claude-code-review.yml` reviews every non-draft PR (contracts and fund safety first, then
+  secrets, tests, bugs, docs) and ends with "Ready to merge" or "Changes needed".
+- `.github/workflows/claude.yml` answers `@claude` in PR/issue comments. Only the repository owner's comments
+  trigger it. It can push fixes and, when the owner asks ("@claude merge this"), merges with `gh pr merge --merge`
+  after every check passes. It never deploys and never touches mainnet.
+
+Both need one repository secret, `CLAUDE_CODE_OAUTH_TOKEN` (run `claude setup-token` with a Claude subscription) or
+`ANTHROPIC_API_KEY`, at Settings → Secrets and variables → Actions. Without it they skip with a notice. The Claude
+GitHub App must be installed on the repository (https://github.com/apps/claude). A workflow edited inside a PR is
+not trusted by the action until it is on the default branch, so the first review runs on the PR after this one.
