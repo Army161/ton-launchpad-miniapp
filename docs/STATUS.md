@@ -14,6 +14,7 @@ deployed to the live site and passing. What remains is the testnet gate and the 
 | Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
 | Contract tests | PASS | 60/60 sandbox tests against the compiled contracts (+1 rehearsal-only suite skipped) |
 | App/API tests | PASS | 67/67 vitest |
+| Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code; dependency notes #18–19; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
@@ -40,10 +41,11 @@ deployed to the live site and passing. What remains is the testnet gate and the 
 
 1. Provide the treasury address (public, can be shared in chat).
 2. Create and fund a testnet deployer wallet; run the testnet gate and `npm run rehearse:graduation` locally (`docs/EXECUTION.md`).
-3. Optional: enable Vercel Blob (image upload) and add `TONCENTER_API_KEY` to Vercel.
-4. Optional, recommended before real volume: independent contract audit (SECURITY #12).
-5. After the testnet gate: write "MAINNET GO-LIVE APPROVED", then run the launch (`docs/LAUNCH.md`).
-6. Upload design mockups for the pixel pass.
+3. Add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret so Claude reviews PRs on GitHub (`docs/EXECUTION.md`).
+4. Optional: enable Vercel Blob (image upload) and add `TONCENTER_API_KEY` to Vercel.
+5. Optional, recommended before real volume: independent contract audit (SECURITY #12).
+6. After the testnet gate: write "MAINNET GO-LIVE APPROVED", then run the launch (`docs/LAUNCH.md`).
+7. Upload design mockups for the pixel pass.
 
 ## Remaining engineering work
 
