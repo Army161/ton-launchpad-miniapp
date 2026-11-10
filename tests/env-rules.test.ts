@@ -39,6 +39,11 @@ describe('env rules', () => {
     expect(checkReturnUrl('U', 'https://t.me/YourBot/yourapp').ok).toBe(false);
     expect(checkReturnUrl('U', 'http://t.me/SomeBot/app').ok).toBe(false);
     expect(checkReturnUrl('U', 'https://t.me/SomeBot').ok).toBe(false);
+    // Main Mini App link (BotFather "Main App"), no short name needed
+    expect(checkReturnUrl('U', 'https://t.me/TONLaunchpad_Bot?startapp').ok).toBe(true);
+    expect(checkReturnUrl('U', 'https://t.me/TONLaunchpad_Bot?startapp=ref').ok).toBe(true);
+    expect(checkReturnUrl('U', 'https://t.me/TONLaunchpad_Bot?start').ok).toBe(false);
+    expect(checkReturnUrl('U', 'https://t.me/YourBot?startapp').ok).toBe(false);
   });
 
   it('flags secrets in public VITE_ variables', () => {

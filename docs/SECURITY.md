@@ -32,8 +32,10 @@ needs rotation.
 | 13 | LOW | Upload endpoint has no per-user rate limit (Blob storage cost) | OPEN |
 | 14 | LOW | JWT kept in `localStorage` (XSS exposure; token only authorizes image upload) | ACCEPTED |
 | 15 | LOW | A mint that bounces (only possible if gas budgets are wrong) leaves supply counted but undelivered | ACCEPTED; gas budgets tested |
-| 16 | INFO | Dev-only advisories in `@vercel/node` (types only) and polyfill plugin deps (not bundled); runtime deps: 0 | ACCEPTED |
+| 16 | INFO | Dev-only advisories in `@vercel/node` (types only) and polyfill plugin deps (not bundled) | ACCEPTED |
 | 17 | INFO | Contract toolchain pulled protobufjs 6 (critical advisory) | FIXED (override to 7.6.6, output byte-identical) |
+| 18 | LOW | 2026-11-10 audit: runtime advisories in `undici`, `follow-redirects` (API), `zod` 4 under `@vercel/blob`; contract toolchain `handlebars` (critical), `follow-redirects` | FIXED (`npm audit fix`; `zod` override to ^4.6.6 under `@vercel/cli-config`) |
+| 19 | LOW | `zod` 3.25 inside `@ton/ton` (GHSA-mrhx-c7xc-m3w5, memory on oversized collections); no patched 3.x. Contract dev toolchain (`@ton/blueprint`, `@tact-lang/compiler`, `@ston-fi/sdk`) carries advisories whose only fix is a major upgrade | ACCEPTED: `@ton/ton` only validates toncenter responses, not user input; the toolchain never ships to users. Revisit on the next `@ton/ton` / blueprint major |
 
 No unresolved CRITICAL or HIGH findings. Finding 12 is a risk the founder should weigh before mainnet.
 

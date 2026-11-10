@@ -11,12 +11,12 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled | build log | PASS |
 | Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no diff | CI step "Generated wrappers match" | PASS |
 | Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors | | PASS |
-| Contract tests | sandbox | `cd contracts && npm test` | all pass | 61/61 | jest output | PASS |
-| App lint | oxlint | `npm run lint` | 0 errors | 0 errors, 5 warnings (fast-refresh/effect style) | | PASS |
-| App + API tests | vitest | `npm test` | all pass | 63/63 | vitest output | PASS |
+| Contract tests | sandbox | `cd contracts && npm test` | all pass | 60/60 + 1 skipped (rehearsal-build suite runs only after `npm run build:rehearsal`); 2026-11-10 on 6638371 + this change | jest output | PASS |
+| App lint | oxlint | `npm run lint` | 0 errors | 0 errors, warnings only (fast-refresh/effect style) | | PASS |
+| App + API tests | vitest | `npm test` | all pass | 67/67 (2026-11-10) | vitest output | PASS |
 | Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |
 | No server secrets in bundle | grep dist | CI step | no matches | no matches | | PASS |
-| Dependency audit | npm audit | `npm audit --omit=dev`; `cd contracts && npm audit` | no runtime vulns | 0 / 0 | SECURITY #16–17 | PASS |
+| Dependency audit | npm audit | `npm audit --omit=dev`; `cd contracts && npm audit` | no unaccepted runtime vulns | app runtime: 2 high (zod 3 inside @ton/ton, accepted) + 3 low; contracts toolchain: 5 high + 9 low (dev only, major-upgrade fixes) | SECURITY #16–19 | PASS with notes |
 
 ## Economics and contract behaviour (sandbox, compiled code)
 

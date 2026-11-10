@@ -58,9 +58,12 @@ export function checkReturnUrl(name: string, value: string | undefined): Finding
   if (PLACEHOLDER.test(value)) return fail(name, 'still a placeholder bot/app name');
   try {
     const u = new URL(value);
-    if (u.protocol !== 'https:' || u.hostname !== 't.me') return fail(name, 'must be https://t.me/<bot>/<app>');
+    if (u.protocol !== 'https:' || u.hostname !== 't.me') return fail(name, 'must be https://t.me/<bot>/<app> or https://t.me/<bot>?startapp');
     const [bot, app] = u.pathname.split('/').filter(Boolean);
-    if (!bot || !/bot$/i.test(bot) || !app) return fail(name, 'must name the bot (ending in "bot") and the Mini App short name');
+    if (!bot || !/bot$/i.test(bot)) return fail(name, 'must name the bot (ending in "bot")');
+    // https://t.me/<bot>?startapp opens the bot's Main Mini App (BotFather "Main App"); no short name needed.
+    if (!app && u.searchParams.has('startapp')) return pass(name, 'Telegram Main Mini App link');
+    if (!app) return fail(name, 'must name the Mini App short name, or use https://t.me/<bot>?startapp for the Main App');
     return pass(name, 'Telegram Mini App link');
   } catch {
     return fail(name, 'not a URL');

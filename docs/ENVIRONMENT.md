@@ -8,7 +8,7 @@ and exits non-zero on any failure.
 | Variable | Example | Rule |
 |---|---|---|
 | `VITE_MANIFEST_URL` | `https://ton-launchpad-miniapp.vercel.app/tonconnect-manifest.json` | https, reachable, valid JSON |
-| `VITE_TWA_RETURN_URL` | `https://t.me/<bot>/<app>` | https, `t.me`, real bot (ends in `bot`) and short name |
+| `VITE_TWA_RETURN_URL` | `https://t.me/<bot>/<app>` or `https://t.me/<bot>?startapp` (Main App) | https, `t.me`, real bot (ends in `bot`), and either a short name or `?startapp` |
 | `VITE_FACTORY_ADDRESS` | factory address | valid TON address; `PENDING_DEPLOY` disables launches |
 | `VITE_TONAPI_BASE` | `https://tonapi.io` | optional |
 | `VITE_NETWORK` | `mainnet` | `mainnet` or `testnet` |

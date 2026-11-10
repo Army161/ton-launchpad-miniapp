@@ -33,5 +33,10 @@
     "vite": "^8.3.0",
     "vite-plugin-node-polyfills": "^0.28.0",
     "vitest": "^5.0.1"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "^4.6.6"
+    }
   }
 }
