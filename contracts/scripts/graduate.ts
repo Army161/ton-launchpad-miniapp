@@ -148,6 +148,16 @@ async function main() {
         return;
     }
 
+    // ADR-010: the token's router wallet refuses liquidity deposits until DEX_LP_GUARD
+    // seconds after the graduation mint. A deposit sent earlier would only bounce.
+    if (Address.parse(sim.router.address).equals(state.dex.router)) {
+        const routerWallet = keeper.client.open(JettonWallet.fromAddress(await jetton.getGetWalletAddress(state.dex.router)));
+        const guard = await routerWallet.getGetDexGuard().catch(() => 0xffffffffn);
+        const now = BigInt(Math.floor(Date.now() / 1000));
+        if (guard === 0xffffffffn) throw new Error('The router wallet has not received the graduation mint yet; run without --fallback first.');
+        if (now < guard) throw new Error(`STON.fi liquidity opens for this token in ${guard - now} s; re-run after that.`);
+    }
+
     const { Router, pTON } = dexFactory(sim.router);
     const router = keeper.client.open(Router.create(sim.router.address));
     const proxyTon = pTON.create(sim.router.ptonMasterAddress);

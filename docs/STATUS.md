@@ -1,6 +1,6 @@
 # STATUS.md — current state
 
-Updated: 2026-11-10 · Branch: `clawdbot-permanent` (GitHub default and Vercel production branch; `main` was merged into it by PR #3 and deleted)
+Updated: 2026-11-12 · Branch: `clawdbot-permanent` (GitHub default and Vercel production branch; `main` was merged into it by PR #3 and deleted)
 
 **Overall: NOT PRODUCTION READY.** All engineering that can be verified without the founder's wallets is done and
 passing. The live site runs 6638371; the 2026-11-10 dependency and validator fixes go live when PR #8 merges. What remains is the testnet gate and the mainnet deploy, both founder actions.
@@ -12,11 +12,11 @@ passing. The live site runs 6638371; the 2026-11-10 dependency and validator fix
 | Build (app, API, scripts) | PASS | `npm run build` |
 | Lint | PASS | `npm run lint` (0 errors) |
 | Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
-| Contract tests | PASS | 60/60 sandbox tests against the compiled contracts (+1 rehearsal-only suite skipped) |
-| App/API tests | PASS | 67/67 vitest |
+| Contract tests | PASS | 75/75 sandbox tests against the compiled contracts (+1 rehearsal-only suite skipped), incl. the ADR-010 router wallet guard |
+| App/API tests | PASS | 68/68 vitest |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
-| Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code; dependency notes #18–19; no independent audit yet (#12) |
+| Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
 | Live site | PASS | production deploy of 6638371; `/api/health` ok, `telegramAuthConfigured: true`; no runtime errors in 7 days |
 | Telegram validation | DONE | @TONLaunchpad_Bot Main App, menu button, return URL `https://t.me/TONLaunchpad_Bot?startapp` |
