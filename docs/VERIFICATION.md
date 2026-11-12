@@ -11,7 +11,7 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled | build log | PASS |
 | Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no diff | CI step "Generated wrappers match" | PASS |
 | Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors | | PASS |
-| Contract tests | sandbox | `cd contracts && npm test` | all pass | 75/75 + 1 skipped (rehearsal-build suite runs only after `npm run build:rehearsal`); 2026-11-12 with ADR-010 | jest output | PASS |
+| Contract tests | sandbox | `cd contracts && npm test` | all pass | 76/76 + 1 skipped (rehearsal-build suite runs only after `npm run build:rehearsal`); 2026-11-12 with ADR-010 | jest output | PASS |
 | App lint | oxlint | `npm run lint` | 0 errors | 0 errors, warnings only (fast-refresh/effect style) | | PASS |
 | App + API tests | vitest | `npm test` | all pass | 68/68 (2026-11-12) | vitest output | PASS |
 | Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |

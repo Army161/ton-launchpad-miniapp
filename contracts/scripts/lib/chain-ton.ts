@@ -9,8 +9,8 @@
  * Secrets are read from the environment and never printed.
  */
 import { mnemonicToPrivateKey, mnemonicValidate } from '@ton/crypto';
-import { Address, internal, SendMode, WalletContractV4, WalletContractV5R1, type TonClient } from '@ton/ton';
-import type { Contract, OpenedContract, TupleItem } from '@ton/core';
+import { Address, beginCell, external, internal, SendMode, storeMessage, WalletContractV4, WalletContractV5R1, type TonClient } from '@ton/ton';
+import type { Cell, Contract, OpenedContract, TupleItem } from '@ton/core';
 import type { AccountStatus, Chain, OutMessage, Signer } from './chain';
 import { client as makeClient, sleep, type Network } from './wallet';
 
@@ -139,20 +139,24 @@ export async function mnemonicSigner(chain: TonChain, mnemonicEnv = 'DEPLOY_MNEM
 
     async function transfer(messages: OutMessage[], sendMode: SendMode) {
         const seqno = await chain.run(() => opened.getSeqno());
+        const args = {
+            seqno,
+            secretKey: keyPair.secretKey,
+            sendMode,
+            messages: messages.map((m) => internal({ to: m.to, value: m.value, body: m.body, init: m.init, bounce: m.bounce ?? true })),
+        };
+        const body: Cell = wallet instanceof WalletContractV4 ? wallet.createTransfer(args) : wallet.createTransfer(args);
         let sendError: unknown;
         try {
-            await chain.run(
-                () =>
-                    opened.sendTransfer({
-                        seqno,
-                        secretKey: keyPair.secretKey,
-                        sendMode,
-                        messages: messages.map((m) => internal({ to: m.to, value: m.value, body: m.body, init: m.init, bounce: m.bounce ?? true })),
-                    }),
-                // Retrying transport errors (e.g. HTTP 429) is safe: every attempt is signed
-                // for the same seqno, so the wallet accepts at most one of them.
-                true,
-            );
+            // Opening the wallet's own sendTransfer would make two requests back to back
+            // (deployment check, then the BOC), which a rate limit can refuse every time.
+            // Each goes through the queue on its own, so they are spaced like any other read.
+            // Retrying is safe: every attempt carries the same signed seqno, so the wallet
+            // accepts at most one of them.
+            const deployed = await chain.run(() => chain.client.isContractDeployed(wallet.address));
+            const ext = external({ to: wallet.address, init: deployed ? undefined : wallet.init, body });
+            const boc = beginCell().store(storeMessage(ext)).endCell().toBoc();
+            await chain.run(() => chain.client.sendFile(boc), true);
         } catch (e) {
             sendError = e; // the node may still have accepted it: the seqno decides
         }
