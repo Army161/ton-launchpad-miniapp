@@ -154,7 +154,7 @@ async function main() {
         const routerWallet = keeper.client.open(JettonWallet.fromAddress(await jetton.getGetWalletAddress(state.dex.router)));
         const guard = await routerWallet.getGetDexGuard().catch(() => 0xffffffffn);
         const now = BigInt(Math.floor(Date.now() / 1000));
-        if (guard === 0xffffffffn) throw new Error('The router wallet has not received the graduation mint yet; run without --fallback first.');
+        if (guard === 0xffffffffn) throw new Error('The router wallet has not received the graduation mint, so a deposit would bounce. Check `get_curve_state` and the Migrate transaction before going further.');
         if (now < guard) throw new Error(`STON.fi liquidity opens for this token in ${guard - now} s; re-run after that.`);
     }
 

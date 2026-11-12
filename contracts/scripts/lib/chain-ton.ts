@@ -120,7 +120,11 @@ export async function mnemonicSigner(chain: TonChain, mnemonicEnv = 'DEPLOY_MNEM
     const keyPair = await mnemonicToPrivateKey(words);
     words.fill('');
 
-    const version = (process.env[`${mnemonicEnv.replace(/_MNEMONIC$/, '')}_WALLET_VERSION`] ?? 'v5r1') === 'v4' ? 'v4' : 'v5r1';
+    const versionEnv = `${mnemonicEnv.replace(/_MNEMONIC$/, '')}_WALLET_VERSION`;
+    const configured = (process.env[versionEnv] ?? '').trim();
+    // Another version derives another address from the same words: never guess.
+    if (configured && configured !== 'v4' && configured !== 'v5r1') throw new Error(`${versionEnv} must be v4 or v5r1`);
+    const version: 'v4' | 'v5r1' = configured === 'v4' ? 'v4' : 'v5r1';
     const wallet =
         version === 'v4'
             ? WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey, walletId: 698983191 + subwallet })
@@ -145,7 +149,9 @@ export async function mnemonicSigner(chain: TonChain, mnemonicEnv = 'DEPLOY_MNEM
                         sendMode,
                         messages: messages.map((m) => internal({ to: m.to, value: m.value, body: m.body, init: m.init, bounce: m.bounce ?? true })),
                     }),
-                false,
+                // Retrying transport errors (e.g. HTTP 429) is safe: every attempt is signed
+                // for the same seqno, so the wallet accepts at most one of them.
+                true,
             );
         } catch (e) {
             sendError = e; // the node may still have accepted it: the seqno decides

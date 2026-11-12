@@ -22,19 +22,26 @@ export function parseEnvFile(text: string): Record<string, string> {
         if ((quote === '"' || quote === "'") && value.indexOf(quote, 1) > 0) {
             value = value.slice(1, value.indexOf(quote, 1));
         } else {
-            // Unquoted: a comment starts at whitespace followed by '#'.
-            value = value.replace(/\s+#.*$/, '').trim();
+            // Unquoted: a comment starts at '#' at the start or after whitespace.
+            value = value.replace(/(^|\s+)#.*$/, '').trim();
         }
         out[m[1]] = value;
     }
     return out;
 }
 
-/** Path given with `--env-file=<path>` (or `--env-file <path>`), or null. */
+/**
+ * Path given with `--env-file=<path>` (or `--env-file <path>`), or null when the
+ * flag is absent. A flag without a path throws: it must not fall back to the shell.
+ */
 export function envFileArg(argv: readonly string[] = process.argv): string | null {
     for (let i = 0; i < argv.length; i++) {
-        if (argv[i].startsWith('--env-file=')) return argv[i].slice('--env-file='.length) || null;
-        if (argv[i] === '--env-file') return argv[i + 1] ?? null;
+        let value: string | undefined;
+        if (argv[i].startsWith('--env-file=')) value = argv[i].slice('--env-file='.length);
+        else if (argv[i] === '--env-file') value = argv[i + 1];
+        else continue;
+        if (!value || value.startsWith('--')) throw new Error('--env-file needs a file path');
+        return value;
     }
     return null;
 }

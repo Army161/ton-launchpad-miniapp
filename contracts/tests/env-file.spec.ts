@@ -16,6 +16,7 @@ describe('--env-file loader', () => {
                 "SINGLE='four five'",
                 'WITH_COMMENT=v5r1   # trailing note',
                 'HASH_IN_VALUE=abc#def',
+                'ONLY_COMMENT=   # optional value',
                 'EMPTY=',
                 '# COMMENTED=out',
                 'not a pair',
@@ -29,6 +30,7 @@ describe('--env-file loader', () => {
             SINGLE: 'four five',
             WITH_COMMENT: 'v5r1',
             HASH_IN_VALUE: 'abc#def',
+            ONLY_COMMENT: '',
             EMPTY: '',
         });
     });
@@ -42,6 +44,9 @@ describe('--env-file loader', () => {
         expect(envFileArg(['node', 'x', '--env-file=.env.testnet'])).toBe('.env.testnet');
         expect(envFileArg(['node', 'x', '--env-file', 'a.env', '--execute'])).toBe('a.env');
         expect(envFileArg(['node', 'x', '--execute'])).toBeNull();
+        expect(() => envFileArg(['node', 'x', '--env-file='])).toThrow('needs a file path');
+        expect(() => envFileArg(['node', 'x', '--env-file'])).toThrow('needs a file path');
+        expect(() => envFileArg(['node', 'x', '--env-file', '--execute'])).toThrow('needs a file path');
     });
 
     it('loads the file without overriding what the environment already holds', () => {
