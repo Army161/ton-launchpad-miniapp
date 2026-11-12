@@ -24,6 +24,8 @@ export type Token = {
   color: string;
   imageUrl?: string;
   graduated?: boolean;
+  /** Launchpad tokens only: the STON.fi router, needed to derive holder wallets. */
+  dexRouter?: string;
   source: 'launchpad' | 'stonfi';
 };
 
@@ -60,6 +62,7 @@ export function launchpadToToken(v: TokenView): Token {
     color: '#30A1F5',
     imageUrl: v.image || undefined,
     graduated: v.graduated,
+    dexRouter: v.dexRouter,
     source: 'launchpad',
   };
 }

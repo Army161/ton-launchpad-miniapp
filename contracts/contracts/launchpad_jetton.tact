@@ -177,7 +177,7 @@ contract LaunchpadJetton {
     // ── Sell / burn ─────────────────────────────────────────────────────────
     receive(msg: JettonBurnNotification) {
         let ctx: Context = context();
-        let wallet: StateInit = initOf JettonWallet(msg.sender, myAddress());
+        let wallet: StateInit = initOf JettonWallet(msg.sender, myAddress(), self.dex.router);
         require(ctx.sender == contractAddress(wallet), "Invalid sender");
 
         if (msg.customPayload == null) {
@@ -244,8 +244,15 @@ contract LaunchpadJetton {
     // Sends both legs of a STON.fi v2 provide_lp straight to the router: the
     // remaining supply is minted to the router's jetton wallet and the curve's
     // TON goes through the router's pTON wallet. LP tokens go to the zero
-    // address, so nobody ever holds the pool's liquidity. STON.fi refunds to the
-    // liquidity manager only if it rejects the provision (min_lp_out not met).
+    // address, so nobody ever holds the pool's liquidity.
+    //
+    // The mint is also what opens the router's jetton wallet (ADR-010): before
+    // it nobody can put this token into the router, so the pool is empty when
+    // the two legs arrive. If STON.fi still rejects the provision, the liquidity
+    // ends up with the liquidity manager: as plain TON and jettons when the
+    // router refuses a leg (router locked, deadline passed, too little gas), or
+    // in the liquidity manager's LP account on the pool when the pool refuses
+    // the pair (min_lp_out not met). `npm run graduate -- status` tells which.
     receive(msg: Migrate) {
         let ctx: Context = context();
         require(self.graduated, "Not graduated");
@@ -268,13 +275,13 @@ contract LaunchpadJetton {
             minLpOut: lpFloor,
         }.toCell());
 
-        let routerJettonWallet: Address = contractAddress(initOf JettonWallet(self.dex.router, myAddress()));
+        let routerJettonWallet: Address = contractAddress(initOf JettonWallet(self.dex.router, myAddress(), self.dex.router));
         let deadline: Int = now() + DEX_DEADLINE;
 
         nativeReserve(MINTER_MIN_STORAGE, ReserveExact);
 
         // Jetton leg: mint straight to the router, notification carries provide_lp.
-        let init: StateInit = initOf JettonWallet(self.dex.router, myAddress());
+        let init: StateInit = initOf JettonWallet(self.dex.router, myAddress(), self.dex.router);
         send(SendParameters{
             to: routerJettonWallet,
             value: DEX_JETTON_SIDE_VALUE,
@@ -369,7 +376,7 @@ contract LaunchpadJetton {
         let ownerWorkchain: Int = parseStdAddress(msg.ownerAddress.asSlice()).workchain;
         let walletAddress: Address? = null;
         if (ownerWorkchain == 0) {
-            walletAddress = contractAddress(initOf JettonWallet(msg.ownerAddress, myAddress()));
+            walletAddress = contractAddress(initOf JettonWallet(msg.ownerAddress, myAddress(), self.dex.router));
         }
         send(SendParameters{
             to: context().sender,
@@ -407,7 +414,7 @@ contract LaunchpadJetton {
     }
 
     fun mint(to: Address, amount: Int, queryId: Int, mode: Int, value: Int) {
-        let init: StateInit = initOf JettonWallet(to, myAddress());
+        let init: StateInit = initOf JettonWallet(to, myAddress(), self.dex.router);
         send(SendParameters{
             to: contractAddress(init),
             value: value,
@@ -461,12 +468,12 @@ contract LaunchpadJetton {
             mintable: !self.migrated,
             adminAddress: null,
             content: self.content,
-            walletCode: initOf JettonWallet(myAddress(), myAddress()).code,
+            walletCode: initOf JettonWallet(myAddress(), myAddress(), self.dex.router).code,
         };
     }
 
     get fun get_wallet_address(owner: Address): Address {
-        return contractAddress(initOf JettonWallet(owner, myAddress()));
+        return contractAddress(initOf JettonWallet(owner, myAddress(), self.dex.router));
     }
 
     get fun get_curve_state(): CurveState {

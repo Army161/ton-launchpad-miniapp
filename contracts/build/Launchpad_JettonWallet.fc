@@ -48,10 +48,10 @@ builder $JettonExcesses$_store(builder build_0, (int) v) inline;
 cell $JettonExcesses$_store_cell((int) v, builder b) inline;
 
 ;; $JettonWallet$_store
-builder $JettonWallet$_store(builder build_0, (int, slice, slice) v) inline;
+builder $JettonWallet$_store(builder build_0, (int, slice, slice, slice, int) v) inline;
 
 ;; $JettonWallet$_load
-(slice, ((int, slice, slice))) $JettonWallet$_load(slice sc_0) inline;
+(slice, ((int, slice, slice, slice, int))) $JettonWallet$_load(slice sc_0) inline;
 
 ;; $StateInit$_get_code
 _ $StateInit$_get_code((cell, cell) v) inline;
@@ -60,19 +60,19 @@ _ $StateInit$_get_code((cell, cell) v) inline;
 (int, slice, slice, cell) $JettonWalletData$_to_external(((int, slice, slice, cell)) v) inline;
 
 ;; $JettonWallet$init$_store
-builder $JettonWallet$init$_store(builder build_0, (slice, slice) v) inline;
+builder $JettonWallet$init$_store(builder build_0, (slice, slice, slice) v) inline;
 
 ;; $JettonWallet$init$_load
-(slice, ((slice, slice))) $JettonWallet$init$_load(slice sc_0) inline;
+(slice, ((slice, slice, slice))) $JettonWallet$init$_load(slice sc_0) inline;
 
 ;; $JettonWallet$_contract_init
-(int, slice, slice) $JettonWallet$_contract_init(slice $owner, slice $minter) impure inline;
+(int, slice, slice, slice, int) $JettonWallet$_contract_init(slice $owner, slice $minter, slice $dexRouter) impure inline;
 
 ;; $JettonWallet$_contract_load
-(int, slice, slice) $JettonWallet$_contract_load() impure inline;
+(int, slice, slice, slice, int) $JettonWallet$_contract_load() impure inline;
 
 ;; $JettonWallet$_contract_store
-() $JettonWallet$_contract_store((int, slice, slice) v) impure inline;
+() $JettonWallet$_contract_store((int, slice, slice, slice, int) v) impure inline;
 
 ;; $Cell$_fun_asSlice
 slice $Cell$_fun_asSlice(cell $self) impure inline;
@@ -86,17 +86,29 @@ slice $global_contractAddressExt(int $chain, cell $code, cell $data) impure inli
 ;; $global_contractAddress
 slice $global_contractAddress((cell, cell) $s) impure inline;
 
+;; $global_carriesProvideLp
+int $global_carriesProvideLp(slice $payload) impure inline_ref;
+
 ;; $JettonWallet$_init_child
-(cell, cell) $JettonWallet$_init_child(slice $owner, slice $minter) inline_ref;
+(cell, cell) $JettonWallet$_init_child(slice $owner, slice $minter, slice $dexRouter) inline_ref;
+
+;; $SendParameters$_constructor_to_value_mode_bounce_body
+((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+
+;; $JettonExcesses$_constructor_queryId
+((int)) $JettonExcesses$_constructor_queryId(int $queryId) inline;
+
+;; $JettonWallet$_fun_refundBounce
+((int, slice, slice, slice, int), ()) $JettonWallet$_fun_refundBounce((int, slice, slice, slice, int) $self, int $queryId) impure inline_ref;
 
 ;; $JettonWalletData$_constructor_balance_owner_minter_code
 ((int, slice, slice, cell)) $JettonWalletData$_constructor_balance_owner_minter_code(int $balance, slice $owner, slice $minter, cell $code) inline;
 
 ;; $JettonWallet$_fun_get_wallet_data
-((int, slice, slice), (int, slice, slice, cell)) $JettonWallet$_fun_get_wallet_data((int, slice, slice) $self) impure inline_ref;
+((int, slice, slice, slice, int), (int, slice, slice, cell)) $JettonWallet$_fun_get_wallet_data((int, slice, slice, slice, int) $self) impure inline_ref;
 
-;; $SendParameters$_constructor_to_value_mode_bounce_body
-((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body(slice $to, int $value, int $mode, int $bounce, cell $body) inline;
+;; $JettonWallet$_fun_get_dex_guard
+((int, slice, slice, slice, int), int) $JettonWallet$_fun_get_dex_guard((int, slice, slice, slice, int) $self) impure inline_ref;
 
 ;; $SendParameters$_constructor_to_value_mode_bounce_body_code_data
 ((int, cell, cell, cell, int, slice, int)) $SendParameters$_constructor_to_value_mode_bounce_body_code_data(slice $to, int $value, int $mode, int $bounce, cell $body, cell $code, cell $data) inline;
@@ -106,9 +118,6 @@ slice $global_contractAddress((cell, cell) $s) impure inline;
 
 ;; $JettonNotification$_constructor_queryId_amount_sender_forwardPayload
 ((int, int, slice, slice)) $JettonNotification$_constructor_queryId_amount_sender_forwardPayload(int $queryId, int $amount, slice $sender, slice $forwardPayload) inline;
-
-;; $JettonExcesses$_constructor_queryId
-((int)) $JettonExcesses$_constructor_queryId(int $queryId) inline;
 
 ;; $JettonBurnNotification$_constructor_queryId_amount_sender_responseDestination_customPayload
 ((int, int, slice, slice, cell)) $JettonBurnNotification$_constructor_queryId_amount_sender_responseDestination_customPayload(int $queryId, int $amount, slice $sender, slice $responseDestination, cell $customPayload) inline;
@@ -291,6 +300,22 @@ int $global_myBalance() impure asm """
     REWRITESTDADDR DROP 138 THROWIF
 """;
 
+int $global_now() impure asm """
+    NOW
+""";
+
+int $Slice$_fun_refs(slice $self) impure asm """
+    SREFS
+""";
+
+cell $Slice$_fun_preloadRef(slice $self) impure asm """
+    PLDREF
+""";
+
+int $Slice$_fun_bits(slice $self) impure asm """
+    SBITS
+""";
+
 int $Context$_fun_readForwardFee((int, slice, int, slice) $self) impure asm """
     LDMSGADDR   // load dest:MsgAddressInt
     LDGRAMS     // load value:CurrencyCollection
@@ -460,58 +485,64 @@ cell $JettonExcesses$_store_cell((int) v, builder b) inline {
 
 ;;
 ;; Type: JettonWallet
-;; TLB: _ balance:coins owner:address minter:address = JettonWallet
+;; TLB: _ balance:coins owner:address minter:address dexRouter:address dexGuardUntil:uint32 = JettonWallet
 ;;
 
-builder $JettonWallet$_store(builder build_0, (int, slice, slice) v) inline {
-    var (v'balance, v'owner, v'minter) = v;
+builder $JettonWallet$_store(builder build_0, (int, slice, slice, slice, int) v) inline {
+    var (v'balance, v'owner, v'minter, v'dexRouter, v'dexGuardUntil) = v;
     build_0 = build_0.store_varuint16(v'balance);
     build_0 = build_0.store_slice(v'owner);
     build_0 = build_0.store_slice(v'minter);
+    build_0 = build_0.store_slice(v'dexRouter);
+    build_0 = build_0.store_uint(v'dexGuardUntil, 32);
     return build_0;
 }
 
-(slice, ((int, slice, slice))) $JettonWallet$_load(slice sc_0) inline {
+(slice, ((int, slice, slice, slice, int))) $JettonWallet$_load(slice sc_0) inline {
     var v'balance = sc_0~load_varuint16();
     var v'owner = sc_0~load_msg_addr();
     var v'minter = sc_0~load_msg_addr();
-    return (sc_0, (v'balance, v'owner, v'minter));
+    var v'dexRouter = sc_0~load_msg_addr();
+    var v'dexGuardUntil = sc_0~load_uint(32);
+    return (sc_0, (v'balance, v'owner, v'minter, v'dexRouter, v'dexGuardUntil));
 }
 
-builder $JettonWallet$init$_store(builder build_0, (slice, slice) v) inline {
-    var (v'owner, v'minter) = v;
+builder $JettonWallet$init$_store(builder build_0, (slice, slice, slice) v) inline {
+    var (v'owner, v'minter, v'dexRouter) = v;
     build_0 = build_0.store_slice(v'owner);
     build_0 = build_0.store_slice(v'minter);
+    build_0 = build_0.store_slice(v'dexRouter);
     return build_0;
 }
 
-(slice, ((slice, slice))) $JettonWallet$init$_load(slice sc_0) inline {
+(slice, ((slice, slice, slice))) $JettonWallet$init$_load(slice sc_0) inline {
     var v'owner = sc_0~load_msg_addr();
     var v'minter = sc_0~load_msg_addr();
-    return (sc_0, (v'owner, v'minter));
+    var v'dexRouter = sc_0~load_msg_addr();
+    return (sc_0, (v'owner, v'minter, v'dexRouter));
 }
 
-(int, slice, slice) $JettonWallet$_contract_load() impure inline {
+(int, slice, slice, slice, int) $JettonWallet$_contract_load() impure inline {
     slice $sc = get_data().begin_parse();
     int $loaded = $sc~load_int(1);
     if ($loaded) {
         return $sc~$JettonWallet$_load();
     }
     else {
-        (slice $owner, slice $minter) = $sc~$JettonWallet$init$_load();
+        (slice $owner, slice $minter, slice $dexRouter) = $sc~$JettonWallet$init$_load();
         $sc.end_parse();
-        return $JettonWallet$_contract_init($owner, $minter);
+        return $JettonWallet$_contract_init($owner, $minter, $dexRouter);
     }
 }
 
-() $JettonWallet$_contract_store((int, slice, slice) v) impure inline {
+() $JettonWallet$_contract_store((int, slice, slice, slice, int) v) impure inline {
     builder b = begin_cell();
     b = b.store_int(true, 1);
     b = $JettonWallet$_store(b, v);
     set_data(b.end_cell());
 }
 
-(cell, cell) $JettonWallet$_init_child(slice $owner, slice $minter) inline_ref {
+(cell, cell) $JettonWallet$_init_child(slice $owner, slice $minter, slice $dexRouter) inline_ref {
     ;; Build init code cell
 
     ;; Contract Code: JettonWallet
@@ -521,7 +552,7 @@ builder $JettonWallet$init$_store(builder build_0, (slice, slice) v) inline {
 
     builder b = begin_cell();
     b = b.store_int(false, 1);
-    b = $JettonWallet$init$_store(b, ($owner, $minter));
+    b = $JettonWallet$init$_store(b, ($owner, $minter, $dexRouter));
     return (init_code, b.end_cell());
 }
 
@@ -529,18 +560,40 @@ builder $JettonWallet$init$_store(builder build_0, (slice, slice) v) inline {
 ;; Contract JettonWallet functions
 ;;
 
-(int, slice, slice) $JettonWallet$_contract_init(slice $owner, slice $minter) impure inline {
-    var (($self'balance, $self'owner, $self'minter)) = (null(), null(), null());
+(int, slice, slice, slice, int) $JettonWallet$_contract_init(slice $owner, slice $minter, slice $dexRouter) impure inline {
+    var (($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil)) = (null(), null(), null(), null(), null());
     $self'balance = 0;
     $self'owner = $owner;
     $self'minter = $minter;
-    return ($self'balance, $self'owner, $self'minter);
+    $self'dexRouter = $dexRouter;
+    $self'dexGuardUntil = (( equal_slices_bits($owner, $dexRouter) ) ? 4294967295 : 0);
+    return ($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil);
 }
 
-((int, slice, slice), (int, slice, slice, cell)) $JettonWallet$_fun_get_wallet_data((int, slice, slice) $self) impure inline_ref {
-    var (($self'balance, $self'owner, $self'minter)) = $self;
-    var $fresh$ret_0 = $JettonWalletData$_constructor_balance_owner_minter_code($self'balance, $self'owner, $self'minter, $StateInit$_get_code($JettonWallet$_init_child($self'owner, $self'minter)));
-    return (($self'balance, $self'owner, $self'minter), $fresh$ret_0);
+int $global_carriesProvideLp(slice $payload) impure inline_ref {
+    ifnot ($Slice$_fun_refs($payload)) {
+        return false;
+    }
+    slice $dex = $Cell$_fun_beginParse($Slice$_fun_preloadRef($payload));
+    return ( (($Slice$_fun_bits($dex) >= 32)) ? ((preload_uint($dex, 32) == 935368415)) : (false) );
+}
+
+((int, slice, slice, slice, int), ()) $JettonWallet$_fun_refundBounce((int, slice, slice, slice, int) $self, int $queryId) impure inline_ref {
+    var (($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil)) = $self;
+    $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'owner, 0, 66, false, $JettonExcesses$_store_cell($JettonExcesses$_constructor_queryId($queryId), begin_cell())));
+    return (($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil), ());
+}
+
+((int, slice, slice, slice, int), (int, slice, slice, cell)) $JettonWallet$_fun_get_wallet_data((int, slice, slice, slice, int) $self) impure inline_ref {
+    var (($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil)) = $self;
+    var $fresh$ret_0 = $JettonWalletData$_constructor_balance_owner_minter_code($self'balance, $self'owner, $self'minter, $StateInit$_get_code($JettonWallet$_init_child($self'owner, $self'minter, $self'dexRouter)));
+    return (($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil), $fresh$ret_0);
+}
+
+((int, slice, slice, slice, int), int) $JettonWallet$_fun_get_dex_guard((int, slice, slice, slice, int) $self) impure inline_ref {
+    var (($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil)) = $self;
+    var $fresh$ret_1 = $self'dexGuardUntil;
+    return (($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil), $fresh$ret_1);
 }
 
 ;;
@@ -551,6 +604,12 @@ _ %get_wallet_data() method_id(97026) {
     var self = $JettonWallet$_contract_load();
     var res = self~$JettonWallet$_fun_get_wallet_data();
     return $JettonWalletData$_to_external(res);
+}
+
+_ %get_dex_guard() method_id(79860) {
+    var self = $JettonWallet$_contract_load();
+    var res = self~$JettonWallet$_fun_get_dex_guard();
+    return res;
 }
 
 ;;
@@ -573,7 +632,7 @@ _ %get_wallet_data() method_id(97026) {
     __tact_context_sender = msg_sender_addr;
     
     ;; Load contract data
-    var ($self'balance, $self'owner, $self'minter) = $JettonWallet$_contract_load();
+    var ($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil) = $JettonWallet$_contract_load();
     
     ;; Handle bounced messages
     if (msg_bounced) {
@@ -587,7 +646,8 @@ _ %get_wallet_data() method_id(97026) {
         if (op == 0x178d4519) {
             var ($msg'queryId, $msg'amount) = in_msg~$JettonTransferInternal$_load_bounced();
             $self'balance = ($self'balance + $msg'amount);
-            $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter));
+            ($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil)~$JettonWallet$_fun_refundBounce($msg'queryId);
+            $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil));
             return ();
         }
         
@@ -595,7 +655,8 @@ _ %get_wallet_data() method_id(97026) {
         if (op == 0x7bdd97de) {
             var ($msg'queryId, $msg'amount) = in_msg~$JettonBurnNotification$_load_bounced();
             $self'balance = ($self'balance + $msg'amount);
-            $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter));
+            ($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil)~$JettonWallet$_fun_refundBounce($msg'queryId);
+            $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil));
             return ();
         }
         
@@ -620,9 +681,9 @@ _ %get_wallet_data() method_id(97026) {
         int $fwdFee = $Context$_fun_readForwardFee(($ctx'bounceable, $ctx'sender, $ctx'value, $ctx'raw));
         int $fwdCount = (($msg'forwardTonAmount > 0) ? 2 : 1);
         throw_unless(30356, ($ctx'value > ((($msg'forwardTonAmount + ($fwdCount * $fwdFee)) + 30000000) + 10000000)));
-        var ($init'code, $init'data) = $JettonWallet$_init_child($msg'destination, $self'minter);
+        var ($init'code, $init'data) = $JettonWallet$_init_child($msg'destination, $self'minter, $self'dexRouter);
         $global_send($SendParameters$_constructor_to_value_mode_bounce_body_code_data($global_contractAddress(($init'code, $init'data)), 0, 64, true, $JettonTransferInternal$_store_cell($JettonTransferInternal$_constructor_queryId_amount_sender_responseDestination_forwardTonAmount_forwardPayload($msg'queryId, $msg'amount, $self'owner, $msg'responseDestination, $msg'forwardTonAmount, $msg'forwardPayload), begin_cell()), $init'code, $init'data));
-        $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter));
+        $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil));
         return ();
     }
     
@@ -635,9 +696,17 @@ _ %get_wallet_data() method_id(97026) {
         var $msg'forwardTonAmount = in_msg~load_varuint16();
         var $msg'forwardPayload = in_msg;
         var ($ctx'bounceable, $ctx'sender, $ctx'value, $ctx'raw) = __tact_context_get();
-        if (( ~ equal_slices_bits($ctx'sender, $self'minter) )) {
-            var ($peer'code, $peer'data) = $JettonWallet$_init_child($msg'sender, $self'minter);
+        if (( equal_slices_bits($ctx'sender, $self'minter) )) {
+            if (($self'dexGuardUntil == 4294967295)) {
+                $self'dexGuardUntil = ($global_now() + 600);
+            }
+        } else {
+            var ($peer'code, $peer'data) = $JettonWallet$_init_child($msg'sender, $self'minter, $self'dexRouter);
             throw_unless(4429, ( equal_slices_bits($ctx'sender, $global_contractAddress(($peer'code, $peer'data))) ));
+            if (($global_now() < $self'dexGuardUntil)) {
+                throw_unless(55333, ($self'dexGuardUntil != 4294967295));
+                throw_unless(45339, (~ $global_carriesProvideLp($msg'forwardPayload)));
+            }
         }
         $self'balance = ($self'balance + $msg'amount);
         int $msgValue = $ctx'value;
@@ -652,7 +721,7 @@ _ %get_wallet_data() method_id(97026) {
         if (( ((~ null?($msg'responseDestination))) ? (($msgValue > 0)) : (false) )) {
             $global_send($SendParameters$_constructor_to_value_mode_bounce_body(__tact_not_null($msg'responseDestination), $msgValue, 2, false, $JettonExcesses$_store_cell($JettonExcesses$_constructor_queryId($msg'queryId), begin_cell())));
         }
-        $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter));
+        $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil));
         return ();
     }
     
@@ -669,7 +738,7 @@ _ %get_wallet_data() method_id(97026) {
         throw_unless(51863, ($self'balance >= 0));
         throw_unless(30356, ($ctx'value >= 70000000));
         $global_send($SendParameters$_constructor_to_value_mode_bounce_body($self'minter, 0, 64, true, $JettonBurnNotification$_store_cell($JettonBurnNotification$_constructor_queryId_amount_sender_responseDestination_customPayload($msg'queryId, $msg'amount, $self'owner, $msg'responseDestination, $msg'customPayload), begin_cell())));
-        $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter));
+        $JettonWallet$_contract_store(($self'balance, $self'owner, $self'minter, $self'dexRouter, $self'dexGuardUntil));
         return ();
     }
     

@@ -45,11 +45,25 @@ const DEX_TON_SIDE_FWD: Int = ton("0.3");        // pTON forward gas for provide
 const DEX_PTON_GAS: Int = ton("0.01");           // pTON wallet's own gas
 // Taken from the curve reserve to pay both DEX legs and their forward fees.
 const DEX_MIGRATION_COST: Int = ton("0.65");
-const DEX_DEADLINE: Int = 900;                   // seconds STON.fi has to pair both legs
-// min_lp_out = 99% of what a fresh pool mints (sqrt(ton * tokens)). A pool someone
-// created before graduation at a different price mints less, so STON.fi refunds
-// both legs to the liquidity manager instead of selling the liquidity cheap.
+// Seconds STON.fi has to pair both legs. The router refuses a leg that arrives
+// after the deadline and sends it to the liquidity manager, while the leg that
+// arrived in time stays in the token contract's own LP account, which nobody can
+// empty. Both legs leave in one transaction and normally pair within a minute, so
+// a full day only matters when the network stalls: it keeps the legs together.
+const DEX_DEADLINE: Int = 86400;
+// min_lp_out = 99% of what a fresh pool mints (sqrt(ton * tokens)). A pool that
+// already holds liquidity at a different price mints less, so STON.fi does not
+// sell the liquidity cheap: it parks both legs in the liquidity manager's LP
+// account on that pool, from where only the liquidity manager can take them out
+// (refund_me) or add them at a price it accepts (direct_add_liquidity).
 const LP_MIN_OUT_BPS: Int = 9900;
+
+// ─── Router wallet guard (ADR-010) ───────────────────────────────────────────
+// A pool can only be seeded at a wrong price by someone who gets the token into
+// the router's jetton wallet first. So that one wallet takes nothing until the
+// graduation mint, and no third-party liquidity for a short while after it.
+const DEX_CLOSED: Int = 0xFFFFFFFF;              // guard value before the graduation mint
+const DEX_LP_GUARD: Int = 600;                   // seconds after the mint without outside liquidity
 
 // Tag at the start of the burn custom payload that marks a curve sell.
 const SELL_PAYLOAD_OP: Int = 0x53454c4c; // "SELL"
