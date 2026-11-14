@@ -173,7 +173,7 @@ async function main() {
     await loadLibs([router, ptonMaster, ptonWallet]);
     console.log(`Mainnet libraries loaded: ${libs.size}`);
 
-    const deployer = await chain.treasury('deployer', { balance: toNano('100') });
+    const deployer = await chain.treasury('deployer');
     const factory: SandboxContract<InstanceType<FactoryModule['LaunchpadFactory']>> = chain.openContract(
         await LaunchpadFactory.fromInit(deployer.address, deployer.address, deployer.address, { $$type: 'DexConfig', router, ptonWallet }),
     );
