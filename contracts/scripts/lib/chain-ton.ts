@@ -143,6 +143,8 @@ export async function mnemonicSigner(chain: TonChain, mnemonicEnv = 'DEPLOY_MNEM
             seqno,
             secretKey: keyPair.secretKey,
             sendMode,
+            // The SDK default (60 s) can lapse during queued, retried submission.
+            timeout: Math.floor(Date.now() / 1000) + 300,
             messages: messages.map((m) => internal({ to: m.to, value: m.value, body: m.body, init: m.init, bounce: m.bounce ?? true })),
         };
         const body: Cell = wallet instanceof WalletContractV4 ? wallet.createTransfer(args) : wallet.createTransfer(args);

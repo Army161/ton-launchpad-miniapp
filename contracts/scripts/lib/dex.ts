@@ -2,9 +2,9 @@
  * Resolves the STON.fi v2 router and its pTON wallet for deploy and rehearsal.
  *
  * Mainnet: the STON.fi API describes the router (version, type, pool creation)
- * and names its pTON master and wallet. STON.fi has no testnet API, so on testnet
- * (or whenever STON_PTON_MASTER_ADDRESS is set) the API is skipped: the pTON
- * master comes from STON_PTON_MASTER_ADDRESS and the router's pTON wallet is
+ * and names its pTON master and wallet; those checks always run on mainnet.
+ * STON.fi has no testnet API, so on testnet the API is skipped: the pTON master
+ * comes from STON_PTON_MASTER_ADDRESS and the router's pTON wallet is
  * asked from that master on-chain. Either way the pTON master must confirm the
  * wallet belongs to this router, or the TON leg of graduation would be lost.
  */
@@ -36,7 +36,7 @@ export async function resolveDex(
 
     let ptonMaster: Address;
     let source: string;
-    if (env.STON_PTON_MASTER_ADDRESS || network === 'testnet') {
+    if (network === 'testnet') {
         if (!env.STON_PTON_MASTER_ADDRESS) {
             throw new Error('STON.fi has no testnet API: set STON_PTON_MASTER_ADDRESS to the testnet pTON v2 master.');
         }

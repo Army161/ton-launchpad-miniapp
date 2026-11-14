@@ -59,6 +59,12 @@ describe('resolveDex', () => {
         expect(dex.source).toMatch(/v2\.1/);
     });
 
+    it('on mainnet, keeps the API checks even when a pTON master is configured', async () => {
+        const env = { STON_ROUTER_ADDRESS: ROUTER.toString(), STON_PTON_MASTER_ADDRESS: MASTER.toString() };
+        const api = () => ({ getRouter: async () => ({ majorVersion: 1, routerType: 'ConstantProduct', poolCreationEnabled: true }) }) as never;
+        await expect(resolveDex(fakeClient(), 'mainnet', env, api)).rejects.toThrow(/v1/);
+    });
+
     it('on mainnet, refuses a v1 router', async () => {
         const env = { STON_ROUTER_ADDRESS: ROUTER.toString() };
         const api = () => ({ getRouter: async () => ({ majorVersion: 1, routerType: 'ConstantProduct', poolCreationEnabled: true }) }) as never;

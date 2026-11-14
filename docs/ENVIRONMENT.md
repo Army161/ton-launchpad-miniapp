@@ -37,7 +37,7 @@ Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator
 | `DEPLOY_WALLET_VERSION` | `v5r1` (default, Tonkeeper/Telegram Wallet) or `v4` |
 | `LIQUIDITY_MANAGER_ADDRESS` | optional; defaults to the deployer wallet. Receives liquidity only if STON.fi refunds a graduation (ADR-009) |
 | `STON_ROUTER_ADDRESS` | required for deploys: STON.fi v2 constant-product router for the network; fixed in the factory |
-| `STON_PTON_MASTER_ADDRESS` | required on testnet (STON.fi has no testnet API; testnet v2.1 master `kQACS30DNoUQ7NfApPvzh7eBmSZ9L4ygJ-lkNWtba8TQT-Px`); optional on mainnet, where it skips the API. The router's pTON wallet is then asked from this master on-chain |
+| `STON_PTON_MASTER_ADDRESS` | required on testnet (STON.fi has no testnet API; testnet v2.1 master `kQACS30DNoUQ7NfApPvzh7eBmSZ9L4ygJ-lkNWtba8TQT-Px`); ignored on mainnet, where the STON.fi API checks the router. On testnet the router's pTON wallet is asked from this master on-chain |
 | `STON_PTON_WALLET_ADDRESS` | optional; must equal the wallet the pTON master reports for the router (mainnet default: read from the STON.fi API) |
 | `KEEPER_MNEMONIC` | optional; wallet running `npm run graduate` if not the deployer |
 | `MAINNET_GO_LIVE_APPROVED` | `yes` only after the founder's written approval |
