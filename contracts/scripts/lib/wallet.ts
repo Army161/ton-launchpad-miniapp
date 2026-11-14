@@ -35,8 +35,8 @@ export function friendly(a: Address, network: Network): string {
     return a.toString({ bounceable: true, testOnly: network === 'testnet' });
 }
 
-export function requireAddress(name: string): Address {
-    const raw = process.env[name];
+export function requireAddress(name: string, env: NodeJS.ProcessEnv = process.env): Address {
+    const raw = env[name];
     if (!raw) throw new Error(`${name} is not set`);
     try {
         return Address.parse(raw);

@@ -23,6 +23,7 @@ import { dexFactory } from '@ston-fi/sdk';
 import { LaunchpadJetton, storeMigrate } from '../build/Launchpad_LaunchpadJetton';
 import { JettonWallet } from '../build/Launchpad_JettonWallet';
 import { JettonMaster, JettonWallet as TonJettonWallet } from '@ton/ton';
+import { loadEnvFileArg } from './lib/env';
 import { friendly, openWallet, parseNetwork, waitFor, type Network } from './lib/wallet';
 
 const MIGRATE_GAS = toNano('0.1');
@@ -62,6 +63,7 @@ async function lockLp(network: Network, execute: boolean) {
 }
 
 async function main() {
+    loadEnvFileArg();
     const network = parseNetwork(process.argv[2]);
     if (process.argv.includes('--lock-lp')) {
         const execute = process.argv.includes('--execute');
