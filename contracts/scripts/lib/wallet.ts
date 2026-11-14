@@ -81,7 +81,11 @@ export async function openWallet(network: Network, mnemonicEnv = 'DEPLOY_MNEMONI
 
     const keyPair = await mnemonicToPrivateKey(words);
     words.fill('');
-    const version = process.env[`${mnemonicEnv.replace(/_MNEMONIC$/, '')}_WALLET_VERSION`] ?? 'v5r1';
+    const versionEnv = `${mnemonicEnv.replace(/_MNEMONIC$/, '')}_WALLET_VERSION`;
+    const configured = (process.env[versionEnv] ?? '').trim();
+    // Another version derives another address from the same words: never guess.
+    if (configured && configured !== 'v4' && configured !== 'v5r1') throw new Error(`${versionEnv} must be v4 or v5r1`);
+    const version = configured === 'v4' ? 'v4' : 'v5r1';
     const wallet =
         version === 'v4'
             ? WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey })
