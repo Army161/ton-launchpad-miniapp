@@ -42,7 +42,7 @@ Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator
 | `KEEPER_MNEMONIC` | optional; wallet running `npm run graduate` if not the deployer |
 | `MAINNET_GO_LIVE_APPROVED` | `yes` only after the founder's written approval |
 | `STONFI_API_URL` | optional STON.fi API base for the keeper |
-| `TONCENTER_API_KEY` | also used by deploy and keeper scripts |
+| `TONCENTER_API_KEY` | also used by deploy and keeper scripts; without it the scripts space requests about 1.1 s apart and retry HTTP 429 |
 
 ## Deployment
 

@@ -12,7 +12,7 @@ passing. The live site runs 6638371; the 2026-11-10 dependency and validator fix
 | Build (app, API, scripts) | PASS | `npm run build` |
 | Lint | PASS | `npm run lint` (0 errors) |
 | Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
-| Contract tests | PASS | 83/83 sandbox and script tests against the compiled contracts (+1 rehearsal-only suite skipped), incl. the ADR-010 router wallet guard |
+| Contract tests | PASS | 86/86 sandbox and script tests against the compiled contracts (+1 rehearsal-only suite skipped), incl. the ADR-010 router wallet guard |
 | App/API tests | PASS | 68/68 vitest |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
