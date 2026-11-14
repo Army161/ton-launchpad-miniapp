@@ -11,7 +11,7 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled | build log | PASS |
 | Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no diff | CI step "Generated wrappers match" | PASS |
 | Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors | | PASS |
-| Contract tests | sandbox | `cd contracts && npm test` | all pass | 86/86 + 1 skipped (rehearsal-build suite runs only after `npm run build:rehearsal`); 2026-11-14 with ADR-010 and script 429 retries | jest output | PASS |
+| Contract tests | sandbox | `cd contracts && npm test` | all pass | 89/89 with the rehearsal build present (88 + 1 skipped without it); 2026-11-14 with ADR-010 and script 429 retries | jest output | PASS |
 | App lint | oxlint | `npm run lint` | 0 errors | 0 errors, warnings only (fast-refresh/effect style) | | PASS |
 | App + API tests | vitest | `npm test` | all pass | 68/68 (2026-11-12) | vitest output | PASS |
 | Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |
@@ -63,9 +63,9 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 |---|---|---|---|
 | Manifest, `/terms`, `/privacy`, icon reachable | `node scripts/validate-env.ts production --network` | BLOCKED_HUMAN | This sandbox's egress policy blocks `*.vercel.app` and toncenter; run locally |
 | `/api/health`, `/api/tokens` on production | curl after deploy | NOT_STARTED | needs this branch deployed |
-| Testnet deploy, create, buy, sell, fees, refunds | `docs/EXECUTION.md` testnet gate | BLOCKED_HUMAN | funded testnet deployer wallet; network access |
+| Testnet deploy, create, buy, sell, fees, refunds | `docs/EXECUTION.md` testnet gate | PARTIAL | 2026-11-14 testnet: factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed and verified on-chain (fee 200 bps, creator 6000 bps; wallet tx 94bed270…3bdf, factory tx 065af6e1…8479); create and buy proven by the rehearsal below; sell and refund paths still to run |
 | TON Connect in Telegram (Tonkeeper, Wallet), return URL | manual in Telegram | BLOCKED_HUMAN | bot + Mini App short name |
 | Telegram auth on production | manual | BLOCKED_HUMAN | bot token + JWT secret in Vercel |
-| STON.fi seeding + LP lock | sandbox: "seeds STON.fi straight from the curve…", "sets min_lp_out…", "if the DEX legs bounce…" (exact messages); testnet: real pool | PASS (sandbox) / BLOCKED_HUMAN (testnet) | `npm run rehearse:graduation` on testnet (`docs/EXECUTION.md` step 8) |
+| STON.fi seeding + LP lock | sandbox: "seeds STON.fi straight from the curve…", "sets min_lp_out…", "if the DEX legs bounce…" (exact messages); testnet: real pool | PASS (sandbox) / PARTIAL (testnet) / PENDING (mainnet fork) | 2026-11-14 testnet rehearsal, target 1 TON: rehearsal factory `kQCyqBiKoSlucHJfVkoCdJGmMwkBsT8d3W-_Igi2IhCLiFts`, token `kQBugvy3LG5arVJLDAaS7tn1DQnDuzGO2jQ3KrJtu1bLYztD`; deploy 5e56788c…bdc5, launch 33c32ffa…712b, buy 9571b312…b42c / 7e44b806…2bee, migrate ee76281d…cd5b / 752cb7e8…a5cb; jettons to router wallet 89b74d8d…e8e7, 0.67 TON to pTON wallet d3e733b8…bc2d: PASS. Pool: FAIL outside our code, router `kQALh-…Wk0v` aborts with exit 9 (aeb59263…5d2b, fb9c254f…c0dc) because its library is missing on testnet. Pool leg moves to `npm run rehearse:fork` (`docs/EXECUTION.md` 8b) |
 | Mainnet factory deploy + smoke test | `launch-production.sh` | BLOCKED_HUMAN | testnet gate + "MAINNET GO-LIVE APPROVED" |
 | Design pixel pass | — | DEFERRED | `DESIGN_PIXEL_PASS = WAITING_FOR_FOUNDER_ASSET` |
