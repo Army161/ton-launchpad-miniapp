@@ -29,7 +29,7 @@ Needs: a testnet deployer wallet (Tonkeeper → Settings → Dev mode → Testne
 [@testgiver_ton_bot](https://t.me/testgiver_ton_bot) with ~5 TON, and a testnet treasury address.
 
 1. `node scripts/validate-env.ts deploy-testnet`
-2. `cd contracts && npm run deploy:testnet -- --dry-run` → check the printed deployer address matches the funded wallet.
+2. `cd contracts && npm run deploy:testnet -- --dry-run --env-file ../.env.testnet` (contract scripts load the file with `--env-file`; the path is relative to `contracts/`) → check the printed deployer address matches the funded wallet.
    If it does not, set `DEPLOY_WALLET_VERSION=v4` and retry.
 3. `npm run deploy:testnet` → note the factory address (also in `contracts/deployed.testnet.json`).
 4. Run the app against testnet: `VITE_NETWORK=testnet VITE_FACTORY_ADDRESS=<factory> FACTORY_ADDRESS=<factory> npx vercel dev`
@@ -40,8 +40,8 @@ Needs: a testnet deployer wallet (Tonkeeper → Settings → Dev mode → Testne
 7. Try a sell with too little TON attached and a buy with a stale quote (edit amount after quote): both must refund.
 8. Graduation rehearsal (ADR-009): a 1,500 TON graduation cannot be bought with faucet TON, so a testnet-only
    build graduates at 1.5 TON. With ~3 TON in the deployer and `STON_ROUTER_ADDRESS` set to the STON.fi testnet v2
-   router (plus `STONFI_API_URL` for the testnet API, or `STON_PTON_WALLET_ADDRESS`):
-   `cd contracts && npm run rehearse:graduation -- --execute`. It deploys a rehearsal factory, launches a token,
+   router and `STON_PTON_MASTER_ADDRESS` set to its pTON master (STON.fi has no testnet API; values in `.env.example`):
+   `cd contracts && npm run rehearse:graduation -- --execute --env-file ../.env.testnet`. It deploys a rehearsal factory, launches a token,
    buys past the target, sends `Migrate` and prints the pool and the zero-address LP wallet. PASS = the pool shows
    both reserves and the LP sits at the zero address. The rehearsal factory is never used by the app.
 9. Record factory, token and transaction hashes in `docs/STATUS.md` and mark rows in `docs/VERIFICATION.md`.

@@ -51,8 +51,12 @@ export function Sell() {
       showToast('Amount too small to sell');
       return;
     }
+    if (!token.dexRouter) {
+      showToast('Token data is still loading, try again');
+      return;
+    }
     const owner = Address.parse(address);
-    const wallet = await computeWalletAddress(owner, Address.parse(token.id));
+    const wallet = await computeWalletAddress(owner, Address.parse(token.id), Address.parse(token.dexRouter));
     const before = token.tradeCount ?? 0;
     setPhase('signing');
     try {

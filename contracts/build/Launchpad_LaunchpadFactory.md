@@ -1,6 +1,6 @@
 # Tact compilation report
 Contract: LaunchpadFactory
-BoC Size: 7323 bytes
+BoC Size: 7653 bytes
 
 ## Structures (Structs and Messages)
 Total structures: 38
@@ -146,8 +146,8 @@ TL-B: `_ owner:address treasury:address liquidityManager:address dex:DexConfig{r
 Signature: `FactoryInfo{owner:address,treasury:address,liquidityManager:address,dex:DexConfig{router:address,ptonWallet:address},launchCount:uint32,launchFee:coins,graduationTarget:coins,tradeFeeBps:int257,creatorFeeBps:int257,referrerFeeBps:int257}`
 
 ### JettonWallet$Data
-TL-B: `_ balance:coins owner:address minter:address = JettonWallet`
-Signature: `JettonWallet{balance:coins,owner:address,minter:address}`
+TL-B: `_ balance:coins owner:address minter:address dexRouter:address dexGuardUntil:uint32 = JettonWallet`
+Signature: `JettonWallet{balance:coins,owner:address,minter:address,dexRouter:address,dexGuardUntil:uint32}`
 
 ### LaunchpadJetton$Data
 TL-B: `_ factory:address creator:address salt:uint64 initialized:bool treasury:address liquidityManager:address dex:DexConfig{router:address,ptonWallet:address} content:^cell totalSupply:coins virtualTon:coins virtualTokens:coins realTonRaised:coins graduated:bool migrated:bool totalCreatorFees:coins totalPlatformFees:coins tradeCount:uint32 totalReferrerFees:coins = LaunchpadJetton`
@@ -215,9 +215,11 @@ Argument: salt
 * 30356: Insufficient TON attached
 * 35499: Only owner
 * 41529: Slippage exceeded
+* 45339: DEX liquidity not open yet
 * 46558: Initial buy too large
 * 48404: Unknown burn payload
 * 51863: Insufficient jetton balance
+* 55333: DEX closed until graduation
 * 58403: Curve graduated
 * 59371: Trade too small
 * 62610: Not graduated

@@ -53,6 +53,8 @@ export type TokenView = {
   graduated: boolean;
   migrated: boolean;
   tradeCount: number;
+  /** STON.fi router the token graduates to; part of every holder's wallet address. */
+  dexRouter: string;
 };
 
 const friendly = (a: Address) => a.toString({ bounceable: true, testOnly: serverNetwork() === 'testnet' });
@@ -89,11 +91,12 @@ export async function readLaunchpadToken(address: Address, factory: Address): Pr
     graduated: state.graduated,
     migrated: state.migrated,
     tradeCount: Number(state.tradeCount),
+    dexRouter: friendly(state.dex.router),
   };
 }
 
-export async function readHolderBalance(jetton: Address, owner: Address): Promise<bigint> {
-  const wallet = await JettonWallet.fromInit(owner, jetton);
+export async function readHolderBalance(jetton: Address, owner: Address, dexRouter: Address): Promise<bigint> {
+  const wallet = await JettonWallet.fromInit(owner, jetton, dexRouter);
   const c = tonClient();
   if (!(await c.isContractDeployed(wallet.address))) return 0n;
   return (await c.open(wallet).getGetWalletData()).balance;

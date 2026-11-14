@@ -36,6 +36,9 @@ needs rotation.
 | 17 | INFO | Contract toolchain pulled protobufjs 6 (critical advisory) | FIXED (override to 7.6.6, output byte-identical) |
 | 18 | LOW | 2026-11-10 audit: runtime advisories in `undici`, `follow-redirects` (API), `zod` 4 under `@vercel/blob`; contract toolchain `handlebars` (critical), `follow-redirects` | FIXED (`npm audit fix`; `zod` override to ^4.6.6 under `@vercel/cli-config`) |
 | 19 | LOW | `zod` 3.25 inside `@ton/ton` (GHSA-mrhx-c7xc-m3w5, memory on oversized collections); no patched 3.x. Low: `deepmerge` prototype poisoning via `@tonconnect/ui` (and `@tonconnect/ui-react`), no fixed release; it only merges the app's own static UI options. Contract dev toolchain (`@ton/blueprint`, `@tact-lang/compiler`, `@ston-fi/sdk`) carries advisories whose only fix is a major upgrade | ACCEPTED: `@ton/ton` only validates toncenter responses, not user input; the toolchain never ships to users. Revisit on the next `@ton/ton` / blueprint major |
+| 20 | HIGH | 2026-11-12: anyone could pre-create the STON.fi pool at a skewed price before graduation, forcing every graduation into the liquidity manager's fallback | FIXED (ADR-010 router wallet guard; tests "router wallet guard"). Needs testnet proof with real STON.fi |
+| 21 | LOW | A rejected sell or failed transfer left the bounced TON (about 0.07) stuck in the sender's jetton wallet | FIXED (bounce handlers forward it to the owner; test "a rejected sell gives the seller the unspent TON back") |
+| 22 | LOW | If STON.fi refused only one graduation leg (e.g. deadline passed), the other leg would sit in the token contract's LP account with no way to recover it | MITIGATED (deadline 1 day, both legs leave in one transaction); residual risk accepted for V1 |
 
 No unresolved CRITICAL or HIGH findings. Finding 12 is a risk the founder should weigh before mainnet.
 
