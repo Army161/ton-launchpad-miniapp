@@ -13,10 +13,11 @@
  * Uses the rehearsal build (graduation target REHEARSAL_TARGET_TON, default 1.5).
  * Optional: STON_ROUTER_ADDRESS (otherwise the STON.fi API picks a mainnet
  * constant-product v2 router with pool creation enabled), TON_V4_ENDPOINT
- * (default https://mainnet-v4.tonhubapi.com), TONCENTER_API_KEY.
+ * (optional tonhub v4 reader; toncenter v2 is the default), TONCENTER_API_KEY.
+ * Pin the router with --router for repeatable runs; the API pick can change.
  */
-import { Address, beginCell, Cell, CellType, Dictionary, toNano } from '@ton/core';
-import { Blockchain, RemoteBlockchainStorage, wrapTonClient4ForRemote, type SandboxContract, type SendMessageResult } from '@ton/sandbox';
+import { Address, beginCell, Cell, CellType, Dictionary, toNano, type AccountState } from '@ton/core';
+import { Blockchain, RemoteBlockchainStorage, wrapTonClient4ForRemote, type RemoteBlockchainStorageClient, type SandboxContract, type SendMessageResult } from '@ton/sandbox';
 import { JettonMaster, TonClient4 } from '@ton/ton';
 import { StonApiClient } from '@ston-fi/api';
 import * as fs from 'fs';
@@ -55,6 +56,52 @@ export function libraryRefs(roots: (Cell | null | undefined)[]): Buffer[] {
         stack.push(...c.refs);
     }
     return [...found.values()];
+}
+
+type Fetch = (url: string) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
+
+/**
+ * A RemoteBlockchainStorage reader over toncenter v2. The tonhub v4 endpoint
+ * now answers 403 to account reads, so this is the default. It reads the
+ * latest account state (toncenter v2 has no per-block reads); the fork only
+ * needs the current router and pTON code and data.
+ */
+export function toncenterRemote(endpoint = 'https://toncenter.com/api/v2', apiKey = process.env.TONCENTER_API_KEY, doFetch: Fetch = fetch as unknown as Fetch): RemoteBlockchainStorageClient {
+    const call = async (method: string, params: Record<string, string>) => {
+        const q = new URLSearchParams(apiKey ? { ...params, api_key: apiKey } : params);
+        for (let attempt = 1; ; attempt++) {
+            const res = await doFetch(`${endpoint}/${method}?${q.toString()}`);
+            if (res.status === 429 && attempt < 6) {
+                await new Promise((r) => setTimeout(r, 1100 * attempt));
+                continue;
+            }
+            const j = (await res.json()) as { ok?: boolean; result?: unknown; error?: string };
+            if (!res.ok || !j.ok) throw new Error(`toncenter ${method} failed: ${j.error ?? res.status}`);
+            return j.result as Record<string, unknown>;
+        }
+    };
+    const boc = (b64?: string) => (b64 ? Cell.fromBoc(Buffer.from(b64, 'base64'))[0] : undefined);
+    return {
+        async getLastBlockSeqno(): Promise<number> {
+            const r = await call('getMasterchainInfo', {});
+            return Number((r.last as { seqno: number }).seqno);
+        },
+        async getAccount(_seqno: number, address: Address): Promise<Awaited<ReturnType<RemoteBlockchainStorageClient['getAccount']>>> {
+            const r = (await call('getAddressInformation', { address: address.toString() })) as {
+                balance: string; code?: string; data?: string; state: string; frozen_hash?: string;
+                last_transaction_id?: { lt: string; hash: string };
+            };
+            const lt = r.last_transaction_id?.lt;
+            const lastTransaction = lt && lt !== '0' ? { lt: BigInt(lt), hash: Buffer.from(r.last_transaction_id!.hash, 'base64') } : undefined;
+            const state: AccountState =
+                r.state === 'active'
+                    ? { type: 'active', state: { code: boc(r.code), data: boc(r.data) } }
+                    : r.state === 'frozen'
+                      ? { type: 'frozen', stateHash: BigInt('0x' + (Buffer.from(r.frozen_hash ?? '', 'base64').toString('hex') || '0')) }
+                      : { type: 'uninit' };
+            return { state, balance: BigInt(r.balance), lastTransaction };
+        },
+    };
 }
 
 async function fetchLibrary(hash: Buffer): Promise<Cell> {
@@ -97,8 +144,10 @@ async function main() {
     console.log(`pTON master / router pTON wallet: ${ptonMaster.toString()} / ${ptonWallet.toString()}`);
 
     // 2. Local chain that reads missing accounts from mainnet.
-    const v4 = new TonClient4({ endpoint: process.env.TON_V4_ENDPOINT || 'https://mainnet-v4.tonhubapi.com', timeout: 30_000 });
-    const chain = await Blockchain.create({ storage: new RemoteBlockchainStorage(wrapTonClient4ForRemote(v4)) });
+    const remote = process.env.TON_V4_ENDPOINT
+        ? wrapTonClient4ForRemote(new TonClient4({ endpoint: process.env.TON_V4_ENDPOINT, timeout: 30_000 }))
+        : toncenterRemote();
+    const chain = await Blockchain.create({ storage: new RemoteBlockchainStorage(remote) });
     chain.now = Math.floor(Date.now() / 1000);
 
     const libs = Dictionary.empty(Dictionary.Keys.Buffer(32), Dictionary.Values.Cell());
@@ -181,8 +230,16 @@ async function main() {
     const zeroLp = await lp.getWalletAddress(ZERO);
     const zeroState = (await chain.getContract(zeroLp)).accountState;
     console.log(`5. Pool ${pool.toString()} active, LP supply ${lpData.totalSupply}: PASS`);
-    console.log(`6. Zero-address LP wallet ${zeroLp.toString()} ${zeroState?.type === 'active' ? 'exists: PASS' : 'missing: FAIL'}`);
-    if (zeroState?.type !== 'active') process.exit(1);
+    if (zeroState?.type !== 'active') {
+        console.log(`6. Zero-address LP wallet ${zeroLp.toString()} missing: FAIL`);
+        process.exit(1);
+    }
+    const burned = (await (await chain.getContract(zeroLp)).get('get_wallet_data')).stackReader.readBigNumber();
+    // STON.fi keeps a small minimum-liquidity amount locked in the pool, so the
+    // burned LP is slightly below supply; anything under 99% means LP went elsewhere.
+    const ok = burned > 0n && burned * 100n >= lpData.totalSupply * 99n;
+    console.log(`6. Zero-address LP wallet ${zeroLp.toString()} holds ${burned} of ${lpData.totalSupply} LP: ${ok ? 'PASS' : 'FAIL'}`);
+    if (!ok) process.exit(1);
     console.log('PASS: graduation creates the STON.fi pool on the real mainnet router code and burns the LP.');
 }
 

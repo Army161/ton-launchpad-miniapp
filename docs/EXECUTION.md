@@ -49,8 +49,11 @@ Needs: a testnet deployer wallet (Tonkeeper → Settings → Dev mode → Testne
    exit 9 because its library code is missing on testnet, so steps 1-4 pass but no pool can appear. Run 8b for the pool leg.
 8b. Pool leg on a mainnet fork (no TON spent, nothing signed): `cd contracts && npm run rehearse:fork`. It runs the
    rehearsal graduation in @ton/sandbox while loading the real mainnet STON.fi v2 router, pTON and their libraries
-   on demand (router picked and checked through the STON.fi API like the mainnet deploy, or `--router <address>`).
-   PASS = pool active and the zero-address LP wallet exists. Needs internet access to mainnet APIs (not toncenter keys).
+   on demand. Pin the router for a repeatable run: `npm run rehearse:fork -- --router EQDx--jUU9PUtHltPYZX7wdzIi0SPY3KZ8nvOs0iZvQJd6Ql`
+   (without it the STON.fi API picks one, and the pick can change). Mainnet state is read from toncenter v2
+   (`TON_V4_ENDPOINT` switches to a tonhub v4 reader; the public tonhub endpoint now answers 403).
+   PASS = pool active and the zero-address LP wallet holds at least 99% of LP supply (STON.fi locks a small minimum).
+   Needs internet access to mainnet APIs; `TONCENTER_API_KEY` is optional.
 9. Record factory, token and transaction hashes in `docs/STATUS.md` and mark rows in `docs/VERIFICATION.md`.
 
 Any failure → stop, fix, re-run the whole gate.

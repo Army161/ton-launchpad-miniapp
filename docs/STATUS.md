@@ -12,7 +12,7 @@ passing. The live site runs 6638371; the 2026-11-10 dependency and validator fix
 | Build (app, API, scripts) | PASS | `npm run build` |
 | Lint | PASS | `npm run lint` (0 errors) |
 | Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
-| Contract tests | PASS | 89/89 sandbox and script tests against the compiled contracts (88 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard |
+| Contract tests | PASS | 92/92 sandbox and script tests against the compiled contracts (91 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard |
 | App/API tests | PASS | 68/68 vitest |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
@@ -40,7 +40,7 @@ passing. The live site runs 6638371; the 2026-11-10 dependency and validator fix
 ## Human blockers (in order)
 
 1. Provide the treasury address (public, can be shared in chat).
-2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so run `npm run rehearse:fork` for the pool leg and the sell/refund checks (`docs/EXECUTION.md` 8, 8b).
+2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Still open: testnet sell and refund checks (`docs/EXECUTION.md` 8).
 3. Add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret so Claude reviews PRs on GitHub (`docs/EXECUTION.md`).
 4. Optional: enable Vercel Blob (image upload) and add `TONCENTER_API_KEY` to Vercel.
 5. Optional, recommended before real volume: independent contract audit (SECURITY #12).
