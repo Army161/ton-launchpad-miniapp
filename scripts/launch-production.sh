@@ -9,10 +9,12 @@
 #   set -a && source .env.production && set +a
 #   MAINNET_GO_LIVE_APPROVED=yes ./scripts/launch-production.sh
 #
-# Needs the Vercel CLI logged in and linked to the project (`vercel link`, or
-# VERCEL_ORG_ID + VERCEL_PROJECT_ID in the environment). Step 1 checks this
-# before anything spends TON. `vercel deploy` uploads this folder, so
-# .vercelignore must keep .env.* out of it (docs/SECURITY.md #23).
+# With the Vercel CLI installed, step 1 checks before anything spends TON that
+# it is logged in and linked to the project (`vercel link`, or VERCEL_ORG_ID +
+# VERCEL_PROJECT_ID in the environment) and that .vercelignore keeps .env.* out
+# of the `vercel deploy` upload (docs/SECURITY.md #23). Without the CLI nothing
+# is uploaded: the script deploys the factory and step 5 prints the variables
+# to set in the Vercel dashboard.
 #
 # Safe to re-run: the factory deploy detects an existing deployment, and
 # Vercel variables are overwritten with --force instead of duplicated.
@@ -32,12 +34,14 @@ step "1/5 Validate deploy configuration"
 node scripts/validate-env.ts deploy-mainnet
 # Steps 4-5 need Vercel. Check it now, before step 3 spends TON.
 if command -v vercel >/dev/null 2>&1; then
-  grep -qxF '.env.*' .vercelignore 2>/dev/null \
+  [[ -f .vercelignore ]] && tr -d '\r' < .vercelignore | grep -qxF '.env.*' \
     || die '.vercelignore must list .env.* so vercel deploy never uploads .env.production.'
   [[ -z "$(git status --porcelain --untracked-files=no)" ]] \
     || die 'Tracked files have local changes and vercel deploy would ship them. Commit or discard them first.'
   vercel env ls --environment production >/dev/null \
     || die 'The Vercel CLI cannot reach the project. Run vercel login, then vercel link --project ton-launchpad-miniapp (or set VERCEL_ORG_ID and VERCEL_PROJECT_ID).'
+else
+  echo "Vercel CLI not found: after the factory deploy, step 5 prints the variables to set in the Vercel dashboard."
 fi
 
 step "2/5 Build and test contracts"

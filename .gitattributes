@@ -2,3 +2,4 @@
 # value. Keep these LF on Windows checkouts too.
 *.sh text eol=lf
 .env.example text eol=lf
+.vercelignore text eol=lf
