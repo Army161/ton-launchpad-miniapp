@@ -68,9 +68,11 @@ set -a && source .env.production && set +a
 MAINNET_GO_LIVE_APPROVED=yes ./scripts/launch-production.sh
 ```
 
-The script validates configuration, rebuilds and tests contracts, deploys or re-verifies the factory, validates the
-runtime configuration (including the live manifest), writes Vercel variables with `--force` and deploys. Re-running it
-is safe. See `docs/LAUNCH.md` for the founder's steps and the smoke test.
+The script validates configuration, checks that the Vercel CLI reaches the linked project and that `.vercelignore`
+keeps `.env.*` out of the upload, rebuilds and tests contracts, deploys or re-verifies the factory, validates the
+runtime configuration (including the live manifest), writes Vercel variables with `--force` (secrets as Vercel
+Secrets) and deploys. Re-running it is safe. See `docs/LAUNCH.md` for the founder's steps, the dashboard alternative
+and the smoke test.
 
 ## Graduation trigger
 

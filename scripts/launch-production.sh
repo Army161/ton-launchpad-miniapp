@@ -9,6 +9,11 @@
 #   set -a && source .env.production && set +a
 #   MAINNET_GO_LIVE_APPROVED=yes ./scripts/launch-production.sh
 #
+# Needs the Vercel CLI logged in and linked to the project (`vercel link`, or
+# VERCEL_ORG_ID + VERCEL_PROJECT_ID in the environment). Step 1 checks this
+# before anything spends TON. `vercel deploy` uploads this folder, so
+# .vercelignore must keep .env.* out of it (docs/SECURITY.md #23).
+#
 # Safe to re-run: the factory deploy detects an existing deployment, and
 # Vercel variables are overwritten with --force instead of duplicated.
 # Secrets are passed to the Vercel CLI on stdin, never on the command line,
@@ -25,6 +30,15 @@ die() { printf 'ERROR: %s\n' "$1" >&2; exit 1; }
 
 step "1/5 Validate deploy configuration"
 node scripts/validate-env.ts deploy-mainnet
+# Steps 4-5 need Vercel. Check it now, before step 3 spends TON.
+if command -v vercel >/dev/null 2>&1; then
+  grep -qxF '.env.*' .vercelignore 2>/dev/null \
+    || die '.vercelignore must list .env.* so vercel deploy never uploads .env.production.'
+  [[ -z "$(git status --porcelain --untracked-files=no)" ]] \
+    || die 'Tracked files have local changes and vercel deploy would ship them. Commit or discard them first.'
+  vercel env ls --environment production >/dev/null \
+    || die 'The Vercel CLI cannot reach the project. Run vercel login, then vercel link --project ton-launchpad-miniapp (or set VERCEL_ORG_ID and VERCEL_PROJECT_ID).'
+fi
 
 step "2/5 Build and test contracts"
 (cd contracts && npm ci --legacy-peer-deps && npm run build && npm test)
@@ -55,15 +69,19 @@ EOF
   exit 0
 fi
 
+# Public values stay readable in Vercel (Config); secrets are stored write-only.
 set_var() {
-  local name="$1" value="${!1:-}"
+  local name="$1" kind="$2" value="${!1:-}"
   [[ -n "$value" ]] || { echo "  skip $name (not set)"; return 0; }
-  printf '%s' "$value" | vercel env add "$name" production --force >/dev/null
+  printf '%s' "$value" | vercel env add "$name" --environment production --force "--$kind" >/dev/null
   echo "  set  $name"
 }
 for name in FACTORY_ADDRESS VITE_FACTORY_ADDRESS VITE_NETWORK PLATFORM_TREASURY_ADDRESS \
-            TELEGRAM_BOT_TOKEN JWT_SECRET VITE_MANIFEST_URL VITE_TWA_RETURN_URL TONCENTER_API_KEY; do
-  set_var "$name"
+            VITE_MANIFEST_URL VITE_TWA_RETURN_URL; do
+  set_var "$name" no-sensitive
+done
+for name in TELEGRAM_BOT_TOKEN JWT_SECRET TONCENTER_API_KEY; do
+  set_var "$name" sensitive
 done
 
 vercel deploy --prod

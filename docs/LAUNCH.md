@@ -49,6 +49,18 @@ MAINNET_GO_LIVE_APPROVED=yes ./scripts/launch-production.sh
 The script refuses to run without the approval flag, validates everything, rebuilds and tests the contracts, deploys
 (or re-verifies) the factory, sets Vercel variables and deploys production. Re-running it is safe.
 
+Before running it, log the Vercel CLI in and link it to the project: `vercel login`, then
+`vercel link --project ton-launchpad-miniapp`, or put `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` (IDs, not secrets) in
+`.env.production`. Step 1 stops before any TON is spent if the CLI cannot reach the project, if `.vercelignore` is
+missing (it keeps `.env.production` out of the upload) or if tracked files have local changes. On Windows, a checkout
+made before `.gitattributes` existed may still have CRLF scripts that bash cannot run: run
+`rm scripts/*.sh && git checkout -- scripts` once.
+
+Alternative without the Vercel CLI: in `contracts/`, run `MAINNET_GO_LIVE_APPROVED=yes npm run deploy:mainnet` with
+`.env.production` sourced, then in Vercel → Project → Settings → Environment Variables (Production) set
+`FACTORY_ADDRESS` and `VITE_FACTORY_ADDRESS` to the printed factory and `PLATFORM_TREASURY_ADDRESS`, check
+`VITE_NETWORK=mainnet`, and redeploy production. The bot token and JWT secret already in Vercel stay as they are.
+
 ## 5. BotFather
 
 ```

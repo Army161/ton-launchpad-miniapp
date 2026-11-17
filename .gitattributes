@@ -1,0 +1,4 @@
+# Bash cannot run CRLF scripts, and sourcing a CRLF .env file leaves \r on every
+# value. Keep these LF on Windows checkouts too.
+*.sh text eol=lf
+.env.example text eol=lf

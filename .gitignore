@@ -21,6 +21,8 @@ dist-ssr
 mnemonic*.txt
 api/data/store.json
 contracts/deployed*.json
+# Vercel CLI link (`vercel link`)
+.vercel
 
 # Editor directories and files
 .vscode/*
