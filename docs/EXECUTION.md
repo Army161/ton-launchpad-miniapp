@@ -38,6 +38,9 @@ Needs: a testnet deployer wallet (Tonkeeper → Settings → Dev mode → Testne
 6. On https://testnet.tonviewer.com check for each trade: creator got 1.2% and treasury 0.8% of the TON side;
    the curve balance never dropped below its reserve; the seller received TON.
 7. Try a sell with too little TON attached and a buy with a stale quote (edit amount after quote): both must refund.
+   Steps 5-7 without the app: `cd contracts && npm run check:trades -- --env-file ../.env.testnet` launches a token on
+   the deployed testnet factory, buys 0.2 TON, checks the 1.2% / 0.8% fee payments, sells half, tries both refunds and
+   sells the rest (about 0.3 faucet TON, most returned). PASS = every line prints PASS.
 8. Graduation rehearsal (ADR-009): a 1,500 TON graduation cannot be bought with faucet TON, so a testnet-only
    build graduates at 1.5 TON. With ~3 TON in the deployer and `STON_ROUTER_ADDRESS` set to the STON.fi testnet v2
    router and `STON_PTON_MASTER_ADDRESS` set to its pTON master (STON.fi has no testnet API; values in `.env.example`):

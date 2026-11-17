@@ -30,6 +30,8 @@ passing. The live site runs 6638371; the 2026-11-10 dependency and validator fix
 | Item | Value |
 |---|---|
 | Factory address (testnet) | `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` (2026-11-14) |
+| Platform treasury (mainnet) | `UQBNwH67i7p23n2LYgEJtEEWp9p44HlqoDzZHBXm2mcUKyF3` (founder, 2026-11-17; valid mainnet basechain address) |
+| STON.fi router (mainnet, pin) | `EQDx--jUU9PUtHltPYZX7wdzIi0SPY3KZ8nvOs0iZvQJd6Ql` (v2.2 constant product, passed the mainnet-fork rehearsal) |
 | Factory address (mainnet) | none yet (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY` disables launches in the UI) |
 | Production URL | https://ton-launchpad-miniapp.vercel.app (auto-deploys `clawdbot-permanent`) |
 | Bot | @TONLaunchpad_Bot (Main App) |
@@ -39,8 +41,8 @@ passing. The live site runs 6638371; the 2026-11-10 dependency and validator fix
 
 ## Human blockers (in order)
 
-1. Provide the treasury address (public, can be shared in chat).
-2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Still open: testnet sell and refund checks (`docs/EXECUTION.md` 5-7).
+1. Done 2026-11-17: treasury address provided; "MAINNET GO-LIVE APPROVED" given 2026-11-17.
+2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Still open: testnet sell and refund checks (`docs/EXECUTION.md` 5-7, `npm run check:trades`).
 3. Add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret so Claude reviews PRs on GitHub (`docs/EXECUTION.md`).
 4. Optional: enable Vercel Blob (image upload) and add `TONCENTER_API_KEY` to Vercel.
 5. Optional, recommended before real volume: independent contract audit (SECURITY #12).
