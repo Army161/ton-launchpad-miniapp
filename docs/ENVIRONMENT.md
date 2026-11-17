@@ -50,6 +50,7 @@ Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator
 |---|---|
 | `VERCEL_PROD_URL` | used in launch script output |
 | `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | GitHub Actions secrets for the optional CLI deploy |
+| `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (local) | optional in `.env.production`: link the Vercel CLI for `launch-production.sh` without `vercel link` |
 
 ## Profiles checked by the validator
 

@@ -8,14 +8,14 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 
 | Requirement | Method | Command/Test | Expected | Actual | Evidence | Status |
 |---|---|---|---|---|---|---|
-| Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled | build log | PASS |
-| Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no diff | CI step "Generated wrappers match" | PASS |
-| Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors | | PASS |
-| Contract tests | sandbox | `cd contracts && npm test` | all pass | 92/92 with the rehearsal build present (91 + 1 skipped without it); 2026-11-14 with ADR-010, script 429 retries and the fork reader | jest output | PASS |
-| App lint | oxlint | `npm run lint` | 0 errors | 0 errors, warnings only (fast-refresh/effect style) | | PASS |
-| App + API tests | vitest | `npm test` | all pass | 68/68 (2026-11-12) | vitest output | PASS |
-| Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |
-| No server secrets in bundle | grep dist | CI step | no matches | no matches | | PASS |
+| Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled (e113ccf, 2026-11-17) | build log | PASS |
+| Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no wrapper diff (e113ccf) | CI step "Generated wrappers match" | PASS |
+| Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors (e113ccf) | | PASS |
+| Contract tests | sandbox | `cd contracts && npm test` | all pass | 94/94 with the rehearsal build present (93 + 1 skipped without it); 2026-11-17 at e113ccf, incl. the trade-check helpers (earlier: ADR-010, script 429 retries, the fork reader) | jest output | PASS |
+| App lint | oxlint | `npm run lint` | 0 errors | 0 errors, warnings only (fast-refresh/effect style); e113ccf | | PASS |
+| App + API tests | vitest | `npm test` | all pass | 68/68 (2026-11-17, e113ccf) | vitest output | PASS |
+| Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.06 MB JS, gzip 310 KB; e113ccf) | | PASS |
+| No server secrets in bundle | grep dist | CI step | no matches | no matches (e113ccf) | | PASS |
 | Dependency audit | npm audit | `npm audit --omit=dev`; `cd contracts && npm audit` | no unaccepted runtime vulns | app runtime: 2 high (zod 3 inside @ton/ton) + 3 low (deepmerge via @tonconnect/ui), all accepted in SECURITY #19; contracts toolchain: 5 high + 9 low (dev only, major-upgrade fixes) | SECURITY #16–19 | PASS with notes |
 
 ## Economics and contract behaviour (sandbox, compiled code)
@@ -62,7 +62,8 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 | Requirement | Method | Status | Blocker |
 |---|---|---|---|
 | Manifest, `/terms`, `/privacy`, icon reachable | `node scripts/validate-env.ts production --network` | BLOCKED_HUMAN | This sandbox's egress policy blocks `*.vercel.app` and toncenter; run locally |
-| `/api/health`, `/api/tokens` on production | curl after deploy | NOT_STARTED | needs this branch deployed |
+| `/api/health`, `/api/tokens` on production | curl after deploy | PASS (pre-launch) | 2026-11-17 on 682021b: `/api/health` ok, `network: mainnet`, `telegramAuthConfigured: true`, `factoryConfigured: false` until the mainnet factory exists; `/api/tokens` 200 `{"configured":false,"tokens":[]}`; TON Connect manifest served |
+| Launch never uploads local secrets to Vercel | `.vercelignore`; step-1 guard in `launch-production.sh`; Vercel CLI 65.12.1 | PASS | 2026-11-17: Vercel's documented CLI ignore list covers only `.env.local`/`.env.*.local`; `.vercelignore` now lists `.env.*`. With CLI 65.12.1 an unlinked `vercel env add` exits `not_linked`, which step 1 now catches before the factory deploy (SECURITY #23) |
 | Testnet deploy, create, buy, sell, fees, refunds | `docs/EXECUTION.md` testnet gate | PASS | 2026-11-17 `npm run check:trades` on that factory: token `kQDUxg8cZ2K1vweaIKjuMLg-PRuobF3XiGQyKLu6FusdDm5U`, launch, buy 0.2 TON (curve kept 0.196, creator 0.0024 and treasury 0.0016 TON paid), sell half (+0.095 TON), underfunded sell kept the tokens, stale-quote buy refunded (0.0011 TON gas), sell rest, supply back to 0: 10/10 PASS. 2026-11-14 testnet: factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed and verified on-chain (fee 200 bps, creator 6000 bps; wallet tx 94bed270…3bdf, factory tx 065af6e1…8479); create and buy proven by the rehearsal below |
 | TON Connect in Telegram (Tonkeeper, Wallet), return URL | manual in Telegram | BLOCKED_HUMAN | bot + Mini App short name |
 | Telegram auth on production | manual | BLOCKED_HUMAN | bot token + JWT secret in Vercel |

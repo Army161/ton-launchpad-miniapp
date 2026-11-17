@@ -52,12 +52,18 @@ export function sentTo(txs: Transaction[], to: Address): bigint[] {
     return out;
 }
 
+/** The factory that deploy.ts recorded in `file` (deployed.<network>.json), if the file exists. */
+export function deployedFactory(file: string): Address | undefined {
+    if (!fs.existsSync(file)) return undefined;
+    return Address.parse((JSON.parse(fs.readFileSync(file, 'utf8')) as { factoryAddress: string }).factoryAddress);
+}
+
 function factoryAddress(): Address {
     const v = arg('--factory') ?? process.env.FACTORY_ADDRESS;
     if (v) return Address.parse(v);
-    const f = path.join(__dirname, '..', 'deployed.testnet.json');
-    if (fs.existsSync(f)) return Address.parse((JSON.parse(fs.readFileSync(f, 'utf8')) as { factory: string }).factory);
-    throw new Error('No factory: pass --factory or set FACTORY_ADDRESS.');
+    const f = deployedFactory(path.join(__dirname, '..', 'deployed.testnet.json'));
+    if (f) return f;
+    throw new Error('No factory: pass --factory, set FACTORY_ADDRESS or run npm run deploy:testnet first.');
 }
 
 async function main() {

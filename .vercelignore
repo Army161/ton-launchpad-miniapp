@@ -1,0 +1,6 @@
+# Files `vercel deploy` must never upload. Vercel's built-in ignore list skips
+# only .env.local and .env.*.local, so without these lines a local launch would
+# upload .env.production, DEPLOY_MNEMONIC included (docs/SECURITY.md #23).
+.env
+.env.*
+!.env.example
