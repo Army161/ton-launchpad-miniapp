@@ -57,12 +57,24 @@ liquidity goes to the liquidity manager, which seeds manually with `graduate.ts 
 | Route | Purpose |
 |---|---|
 | `POST /api/auth/telegram` | verifies `initData`, returns a 24 h JWT and the Telegram profile |
-| `GET /api/tokens` | lists launches found in the factory's transactions; every token is proven to come from our factory (address re-derived from `(factory, creator, salt)`); 20 s cache |
-| `GET /api/tokens/:address[?holder=]` | live curve state and optionally the holder's balance |
+| `GET /api/tokens` | lists launches found in the factory's transactions; every token is proven to come from our factory (address re-derived from `(factory, creator, salt)`). A complete list is cached for 20 s (15 s at the edge). If some token reads fail, the tokens that were read are returned with `partial: true` and `Cache-Control: no-store`, and nothing is cached. 503 with `Retry-After` when the factory's transactions cannot be read |
+| `GET /api/tokens/:address[?holder=]` | live curve state and optionally the holder's balance. 404 only when the chain answers that the address is not one of our tokens; 503 with `Retry-After` and `no-store` when toncenter cannot be read |
 | `POST /api/metadata/upload` | authenticated image upload to Vercel Blob (503 if Blob is not enabled) |
 | `GET /api/health` | configuration presence flags only |
 
 There is no database: the chain is the source of truth for tokens, and sessions are stateless (ADR-003).
+
+### Chain reads
+
+`api/_lib/chain.ts` reads toncenter v2 through `api/_lib/toncenter.ts`, one session per API request. The session
+starts requests at least 1.1 s apart without `TONCENTER_API_KEY` and 120 ms apart with it, retries HTTP 429, HTTP 5xx
+and requests with no answer (timeouts, resets) with jittered exponential backoff, at most 4 attempts per request, and
+stops at a 7 s budget per API request (each attempt's HTTP timeout, at most 5 s, is cut to what is left). A getter
+exit code (no such getter, or nothing deployed), an uninitialized curve, another factory or an address the factory
+would not derive means "not our token". Running out of retries
+or budget throws `ChainUnavailableError`, which the endpoints answer with 503. Getter exit codes, malformed responses
+and other 4xx are never retried. A token read is 2 requests (`get_curve_state`, `get_jetton_data`), a holder balance
+2 more (account state, `get_wallet_data`), and the list 1 more (the factory's transactions).
 
 ## Front end (`src/`)
 
@@ -70,4 +82,7 @@ There is no database: the chain is the source of truth for tokens, and sessions 
 - `lib/metadata.ts` — TEP-64 on-chain metadata build/parse and validation.
 - `contracts/*` — generated Tact wrappers used to derive token and wallet addresses.
 - Pages: Home (launchpad from `/api/tokens`, graduated from STON.fi), Create, TokenDetail, Buy, Sell, My Tokens, Profile.
-- After sending, pages poll `/api/tokens/:address` until the trade count moves, then show confirmation.
+- After sending, pages poll `/api/tokens/:address` until the trade count moves, then show confirmation. If 90 s pass
+  without that, Buy and Sell say the trade is not confirmed yet and ask the user to check their wallet history before
+  trying again. They never claim a refund, because the API may simply have been unable to read the chain.
+- TON Connect uses the SDK's remote wallets list as is (no hand-written wallet entries).

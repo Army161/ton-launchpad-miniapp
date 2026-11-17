@@ -62,7 +62,7 @@ export function Buy() {
       showToast(done.balance != null ? `Buy confirmed. You now hold ${formatTokens(done.balance)} ${token.ticker}` : 'Buy confirmed');
       void refresh();
     } else {
-      showToast('Not confirmed yet. If the price moved more than 1%, the buy was refunded.');
+      showToast('Buy not confirmed yet. Check your wallet history before trying again.');
     }
   }
 

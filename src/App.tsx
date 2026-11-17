@@ -56,19 +56,6 @@ export default function App() {
       actionsConfiguration={
         CONFIG.twaReturnUrl ? { twaReturnUrl: CONFIG.twaReturnUrl as `${string}://${string}` } : undefined
       }
-      walletsListConfiguration={{
-        includeWallets: [
-          {
-            appName: 'telegram-wallet',
-            name: 'Wallet',
-            imageUrl: 'https://wallet.tg/images/logo-288.png',
-            aboutUrl: 'https://wallet.tg/',
-            universalLink: 'https://t.me/wallet/start',
-            bridgeUrl: 'https://bridge.tonapi.io/bridge',
-            platforms: ['ios', 'android', 'macos', 'windows', 'linux'],
-          },
-        ],
-      }}
     >
       <AuthProvider>
         <WalletProvider>

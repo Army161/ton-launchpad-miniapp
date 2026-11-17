@@ -79,7 +79,7 @@ export function Sell() {
       setAmount('');
       void refresh();
     } else {
-      showToast('Not confirmed yet. If the price moved more than 1%, your tokens were returned.');
+      showToast('Sell not confirmed yet. Check your wallet history before trying again.');
     }
   }
 
