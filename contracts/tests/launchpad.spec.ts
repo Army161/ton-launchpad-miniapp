@@ -3,12 +3,12 @@
  * TON sandbox: no maths is checked without the chain agreeing.
  */
 import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { Address, beginCell, Cell, toNano } from '@ton/core';
+import { Address, beginCell, Cell, Slice, toNano } from '@ton/core';
 import '@ton/test-utils';
 import { findTransaction } from '@ton/test-utils';
 import { LaunchpadFactory, LaunchpadFactory_errors_backward as FE } from '../build/Launchpad_LaunchpadFactory';
 import { LaunchpadJetton, LaunchpadJetton_errors_backward as JE } from '../build/Launchpad_LaunchpadJetton';
-import { JettonWallet, JettonWallet_errors_backward as WE } from '../build/Launchpad_JettonWallet';
+import { JettonWallet, JettonWallet_errors_backward as WE, storeJettonTransferInternal } from '../build/Launchpad_JettonWallet';
 import {
     BUY_GAS,
     buildOnchainContent,
@@ -20,7 +20,10 @@ import {
     GRADUATION_TARGET,
     LAUNCH_FEE,
     MAX_INITIAL_BUY,
+    DEX_CLOSED,
+    DEX_DEADLINE,
     DEX_JETTON_SIDE_FWD,
+    DEX_LP_GUARD,
     DEX_MIGRATION_COST,
     DEX_PTON_GAS,
     DEX_TON_SIDE_FWD,
@@ -29,6 +32,7 @@ import {
     MIGRATE_GAS,
     PTON_TON_TRANSFER_OP,
     STON_PROVIDE_LP_OP,
+    STON_SWAP_OP,
     MIN_TRADE,
     MINTER_MIN_STORAGE,
     OP,
@@ -134,6 +138,13 @@ describe('Launchpad', () => {
 
     async function tonBalance(addr: Address) {
         return (await blockchain.getContract(addr)).balance;
+    }
+
+    /** Buys (as alice) until the curve has raised exactly `netTarget`. */
+    async function raiseTo(jetton: SandboxContract<LaunchpadJetton>, netTarget: bigint) {
+        const s = await curve(jetton);
+        const need = netTarget - s.realTonRaised;
+        return buy(jetton, alice, tonForNetAmount(need));
     }
 
     /** The reserve invariant every state must satisfy. */
@@ -386,6 +397,23 @@ describe('Launchpad', () => {
             expect(res.transactions).toHaveTransaction({ to: jetton.address, success: false, exitCode: JE['Slippage exceeded'] });
             expect(await balanceOf(jetton, alice.address)).toBe(held);
             expect((await curve(jetton)).totalSupply).toBe(held);
+        });
+
+        it('a rejected sell gives the seller the unspent TON back, not only the jettons', async () => {
+            const { jetton } = await launch();
+            await buy(jetton, alice, toNano('5'));
+            const held = await balanceOf(jetton, alice.address);
+            const q = await jetton.getQuoteSell(held);
+            const w = await walletOf(jetton, alice.address);
+            const walletTon = await tonBalance(w.address);
+            const aliceTon = await tonBalance(alice.address);
+            const res = await sell(jetton, alice, held, q.tonOut + 1n);
+            expect(res.transactions).toHaveTransaction({ to: jetton.address, success: false, exitCode: JE['Slippage exceeded'] });
+            expect(res.transactions).toHaveTransaction({ from: w.address, to: alice.address, op: OP.excesses, success: true });
+            expect(await balanceOf(jetton, alice.address)).toBe(held);
+            // Only network fees are spent, and nothing piles up in the jetton wallet.
+            expect(aliceTon - (await tonBalance(alice.address))).toBeLessThan(toNano('0.02'));
+            expect(await tonBalance(w.address)).toBeLessThanOrEqual(walletTon);
         });
 
         it('refuses to sell more than the wallet holds', async () => {
@@ -710,15 +738,237 @@ describe('Launchpad', () => {
         });
     });
 
-    // ── Graduation ─────────────────────────────────────────────────────────
-    describe('graduation', () => {
-        async function raiseTo(jetton: SandboxContract<LaunchpadJetton>, netTarget: bigint) {
-            const s = await curve(jetton);
-            const need = netTarget - s.realTonRaised;
-            const res = await buy(jetton, alice, tonForNetAmount(need));
-            return res;
+    // ── STON.fi router wallet guard (ADR-010) ──────────────────────────────
+    // The router's own wallet for a token is closed until the token contract mints
+    // the graduation liquidity into it, and refuses third-party liquidity for a
+    // short time after. Nobody can therefore create or seed the pool before the curve.
+    describe('router wallet guard', () => {
+        const provideLp = beginCell().storeUint(STON_PROVIDE_LP_OP, 32).storeUint(0, 64).endCell();
+        const swap = beginCell().storeUint(STON_SWAP_OP, 32).storeUint(0, 64).endCell();
+        const inRef = (cell: Cell, either = true) => beginCell().storeBit(either).storeRef(cell).asSlice();
+        const noPayload = () => beginCell().storeBit(false).asSlice();
+
+        async function transfer(
+            jetton: SandboxContract<LaunchpadJetton>,
+            from: SandboxContract<TreasuryContract>,
+            to: Address,
+            amount: bigint,
+            forwardPayload: Slice,
+        ) {
+            const w = await walletOf(jetton, from.address);
+            return w.send(from.getSender(), { value: toNano('0.3') }, {
+                $$type: 'JettonTransfer', queryId: 5n, amount, destination: to, responseDestination: from.address,
+                customPayload: null, forwardTonAmount: toNano('0.05'), forwardPayload,
+            });
         }
 
+        async function guardOf(jetton: SandboxContract<LaunchpadJetton>, who: Address) {
+            return (await walletOf(jetton, who)).getGetDexGuard();
+        }
+
+        async function isActive(address: Address) {
+            return (await blockchain.getContract(address)).accountState?.type === 'active';
+        }
+
+        /**
+         * A refused deposit can still leave an account behind: TON activates an account
+         * from the StateInit of its first message even when that transaction fails.
+         * So "closed" is not "no contract there": it is no tokens, and a guard that
+         * still reads DEX_CLOSED.
+         */
+        async function expectClosedAndEmpty(jetton: SandboxContract<LaunchpadJetton>) {
+            const routerWallet = await jetton.getGetWalletAddress(stonRouter.address);
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(0n);
+            if (await isActive(routerWallet)) expect(await guardOf(jetton, stonRouter.address)).toBe(DEX_CLOSED);
+        }
+
+        /** Launches, lets bob hold some tokens, graduates and migrates at a fixed time. */
+        async function migrated() {
+            const { jetton } = await launch();
+            await buy(jetton, bob, toNano('5'));
+            await raiseTo(jetton, GRADUATION_TARGET);
+            const at = Math.floor(Date.now() / 1000);
+            blockchain.now = at;
+            await jetton.send(mallory.getSender(), { value: MIGRATE_GAS }, { $$type: 'Migrate', queryId: 0n });
+            const routerWallet = await jetton.getGetWalletAddress(stonRouter.address);
+            return { jetton, at, routerWallet, seeded: await balanceOf(jetton, stonRouter.address) };
+        }
+
+        it('before graduation the router cannot receive the token at all, and the sender loses nothing but fees', async () => {
+            const { jetton } = await launch();
+            await buy(jetton, alice, toNano('10'));
+            const held = await balanceOf(jetton, alice.address);
+            const routerWallet = await jetton.getGetWalletAddress(stonRouter.address);
+            const aliceWallet = await walletOf(jetton, alice.address);
+            const aliceTon = await tonBalance(alice.address);
+            const walletTon = await tonBalance(aliceWallet.address);
+
+            for (const payload of [inRef(provideLp), inRef(provideLp, false), inRef(swap), noPayload()]) {
+                const res = await transfer(jetton, alice, stonRouter.address, held / 4n, payload);
+                expect(res.transactions).toHaveTransaction({
+                    from: aliceWallet.address, to: routerWallet, success: false, exitCode: WE['DEX closed until graduation'],
+                });
+                expect(res.transactions).not.toHaveTransaction({ to: stonRouter.address });
+                expect(res.transactions).toHaveTransaction({ from: aliceWallet.address, to: alice.address, op: OP.excesses });
+            }
+            expect(await balanceOf(jetton, alice.address)).toBe(held);
+            await expectClosedAndEmpty(jetton);
+            expect(aliceTon - (await tonBalance(alice.address))).toBeLessThan(toNano('0.08'));
+            expect(await tonBalance(aliceWallet.address)).toBeLessThanOrEqual(walletTon);
+        });
+
+        it('graduating without migrating does not open it', async () => {
+            const { jetton } = await launch();
+            await buy(jetton, bob, toNano('5'));
+            await raiseTo(jetton, GRADUATION_TARGET);
+            const routerWallet = await jetton.getGetWalletAddress(stonRouter.address);
+            const res = await transfer(jetton, bob, stonRouter.address, 10n, inRef(swap));
+            expect(res.transactions).toHaveTransaction({ to: routerWallet, success: false, exitCode: WE['DEX closed until graduation'] });
+            await expectClosedAndEmpty(jetton);
+        });
+
+        it('a refused deposit does not get in the way of the graduation mint', async () => {
+            const { jetton } = await launch();
+            await buy(jetton, bob, toNano('5'));
+            const routerWallet = await jetton.getGetWalletAddress(stonRouter.address);
+            // The refused attempts leave the wallet account behind, still closed and empty.
+            await transfer(jetton, bob, stonRouter.address, 10n, inRef(provideLp));
+            await raiseTo(jetton, GRADUATION_TARGET);
+            await transfer(jetton, bob, stonRouter.address, 10n, inRef(provideLp));
+            await expectClosedAndEmpty(jetton);
+
+            const at = Math.floor(Date.now() / 1000);
+            blockchain.now = at;
+            const tokenLiquidity = (await curve(jetton)).virtualTokens;
+            const res = await jetton.send(mallory.getSender(), { value: MIGRATE_GAS }, { $$type: 'Migrate', queryId: 0n });
+            expect(res.transactions).toHaveTransaction({ from: jetton.address, to: routerWallet, success: true });
+            expect(res.transactions).toHaveTransaction({ from: routerWallet, to: stonRouter.address, op: OP.transferNotification });
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(tokenLiquidity);
+            expect(await guardOf(jetton, stonRouter.address)).toBe(BigInt(at + DEX_LP_GUARD));
+        });
+
+        it('ordinary wallets are never guarded', async () => {
+            const { jetton } = await launch();
+            await buy(jetton, alice, toNano('10'));
+            const held = await balanceOf(jetton, alice.address);
+            expect(await guardOf(jetton, alice.address)).toBe(0n);
+            // Even a payload that looks like a liquidity deposit moves freely between holders.
+            const res = await transfer(jetton, alice, bob.address, held / 2n, inRef(provideLp));
+            expect(res.transactions).toHaveTransaction({ to: bob.address, op: OP.transferNotification });
+            expect(await balanceOf(jetton, bob.address)).toBe(held / 2n);
+            expect(await guardOf(jetton, bob.address)).toBe(0n);
+            // The pTON wallet's address is not the router: its wallet is an ordinary one too.
+            await transfer(jetton, alice, ptonWallet.address, 1n, inRef(provideLp));
+            expect(await balanceOf(jetton, ptonWallet.address)).toBe(1n);
+            expect(await guardOf(jetton, ptonWallet.address)).toBe(0n);
+        });
+
+        it('migration opens it: trades at once, third-party liquidity only after the guard time', async () => {
+            const { jetton, at, routerWallet, seeded } = await migrated();
+            const bobWallet = await walletOf(jetton, bob.address);
+            const held = await balanceOf(jetton, bob.address);
+            expect(seeded).toBeGreaterThan(0n);
+            expect(await guardOf(jetton, stonRouter.address)).toBe(BigInt(at + DEX_LP_GUARD));
+
+            // A sell on the DEX (swap) passes immediately and reaches the router with the real sender.
+            blockchain.now = at + 1;
+            const sold = await transfer(jetton, bob, stonRouter.address, 100n, inRef(swap));
+            const note = findTransaction(sold.transactions, { from: routerWallet, to: stonRouter.address, op: OP.transferNotification });
+            expect(note).toBeDefined();
+            const n = note!.inMessage!.body.beginParse();
+            n.skip(32 + 64);
+            expect(n.loadCoins()).toBe(100n);
+            expect(n.loadAddress()).toEqualAddress(bob.address);
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(seeded + 100n);
+
+            // A liquidity deposit is refused while the guard is on, however the payload is wrapped.
+            for (const now of [at + 1, at + DEX_LP_GUARD - 1]) {
+                blockchain.now = now;
+                for (const payload of [inRef(provideLp), inRef(provideLp, false)]) {
+                    const res = await transfer(jetton, bob, stonRouter.address, 50n, payload);
+                    expect(res.transactions).toHaveTransaction({
+                        from: bobWallet.address, to: routerWallet, success: false, exitCode: WE['DEX liquidity not open yet'],
+                    });
+                    expect(res.transactions).not.toHaveTransaction({ from: routerWallet, to: stonRouter.address });
+                    expect(res.transactions).toHaveTransaction({ from: bobWallet.address, to: bob.address, op: OP.excesses });
+                }
+            }
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(seeded + 100n);
+            expect(await balanceOf(jetton, bob.address)).toBe(held - 100n);
+
+            // From the guard time on anyone can add liquidity, and the guard value never moves again.
+            blockchain.now = at + DEX_LP_GUARD;
+            const later = await transfer(jetton, bob, stonRouter.address, 50n, inRef(provideLp));
+            expect(later.transactions).toHaveTransaction({ from: routerWallet, to: stonRouter.address, op: OP.transferNotification });
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(seeded + 150n);
+            expect(await guardOf(jetton, stonRouter.address)).toBe(BigInt(at + DEX_LP_GUARD));
+        });
+
+        it('looks exactly where the router looks: the first reference of the payload', async () => {
+            const { jetton, at, routerWallet, seeded } = await migrated();
+            blockchain.now = at + 1;
+            const refused = (res: Awaited<ReturnType<typeof transfer>>) =>
+                expect(res.transactions).toHaveTransaction({ to: routerWallet, success: false, exitCode: WE['DEX liquidity not open yet'] });
+
+            // provide_lp in the first reference, with other references after it: refused.
+            refused(await transfer(jetton, bob, stonRouter.address, 1n, beginCell().storeBit(true).storeRef(provideLp).storeRef(swap).asSlice()));
+            // The router ignores inline bits, a short first reference and later references: it refunds
+            // such a deposit instead of adding liquidity, so the wallet lets them through.
+            const harmless = [
+                beginCell().storeBit(false).storeUint(STON_PROVIDE_LP_OP, 32).asSlice(),
+                inRef(beginCell().storeUint(STON_PROVIDE_LP_OP >>> 1, 31).endCell()),
+                beginCell().storeBit(true).storeRef(swap).storeRef(provideLp).asSlice(),
+            ];
+            for (const payload of harmless) await transfer(jetton, bob, stonRouter.address, 1n, payload);
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(seeded + BigInt(harmless.length));
+        });
+
+        it('never stops the router from paying out', async () => {
+            const { jetton, at, seeded } = await migrated();
+            blockchain.now = at + 1;
+            const routerOwnWallet = await walletOf(jetton, stonRouter.address);
+            const before = await balanceOf(jetton, alice.address);
+            await routerOwnWallet.send(stonRouter.getSender(), { value: toNano('0.2') }, {
+                $$type: 'JettonTransfer', queryId: 0n, amount: 1000n, destination: alice.address, responseDestination: null,
+                customPayload: null, forwardTonAmount: 0n, forwardPayload: noPayload(),
+            });
+            expect(await balanceOf(jetton, alice.address)).toBe(before + 1000n);
+            expect(await balanceOf(jetton, stonRouter.address)).toBe(seeded - 1000n);
+        });
+
+        it('only the token contract can open it', async () => {
+            const { jetton } = await launch();
+            await buy(jetton, alice, toNano('1'));
+            const routerWallet = await jetton.getGetWalletAddress(stonRouter.address);
+            const init = await JettonWallet.fromInit(stonRouter.address, jetton.address, stonRouter.address);
+            expect(init.address).toEqualAddress(routerWallet);
+            // Mallory deploys the router's wallet herself with a mint that claims to come from the token contract.
+            const res = await mallory.send({
+                to: routerWallet, value: toNano('0.2'), init: init.init,
+                body: beginCell().store(storeJettonTransferInternal({
+                    $$type: 'JettonTransferInternal', queryId: 0n, amount: 10n ** 15n, sender: jetton.address,
+                    responseDestination: mallory.address, forwardTonAmount: 0n, forwardPayload: noPayload(),
+                })).endCell(),
+            });
+            expect(res.transactions).toHaveTransaction({ to: routerWallet, success: false, exitCode: WE['Invalid sender'] });
+            await expectClosedAndEmpty(jetton);
+            // And the wallet she left behind still refuses everything.
+            const again = await transfer(jetton, alice, stonRouter.address, 1n, inRef(swap));
+            expect(again.transactions).toHaveTransaction({ to: routerWallet, success: false, exitCode: WE['DEX closed until graduation'] });
+        });
+
+        it('wallet addresses depend on the router, and the client derivation matches the token contract', async () => {
+            const { jetton } = await launch();
+            for (const who of [alice.address, stonRouter.address, jetton.address]) {
+                const onChain = await jetton.getGetWalletAddress(who);
+                expect((await JettonWallet.fromInit(who, jetton.address, stonRouter.address)).address).toEqualAddress(onChain);
+                expect((await JettonWallet.fromInit(who, jetton.address, mallory.address)).address).not.toEqualAddress(onChain);
+            }
+        });
+    });
+
+    // ── Graduation ─────────────────────────────────────────────────────────
+    describe('graduation', () => {
         it('does not graduate one nanoton below the target', async () => {
             const { jetton } = await launch();
             await raiseTo(jetton, GRADUATION_TARGET - 1n).catch(async () => {
@@ -785,12 +1035,14 @@ describe('Launchpad', () => {
             await raiseTo(jetton, GRADUATION_TARGET);
             const before = await curve(jetton);
             const lmBefore = await tonBalance(liquidityManager.address);
+            const migratedAt = Math.floor(Date.now() / 1000);
+            blockchain.now = migratedAt;
             const res = await jetton.send(mallory.getSender(), { value: MIGRATE_GAS }, { $$type: 'Migrate', queryId: 9n });
-            return { jetton, before, lmBefore, res };
+            return { jetton, before, lmBefore, res, migratedAt };
         }
 
         it('seeds STON.fi straight from the curve, exactly once, with nobody holding the liquidity', async () => {
-            const { jetton, before, lmBefore, res } = await graduateAndMigrate();
+            const { jetton, before, lmBefore, res, migratedAt } = await graduateAndMigrate();
             const tonLiquidity = before.realTonRaised - DEX_MIGRATION_COST;
             const tokenLiquidity = before.virtualTokens;
             const lpFloor = expectedMinLpOut(tonLiquidity, tokenLiquidity);
@@ -836,9 +1088,11 @@ describe('Launchpad', () => {
                 expect(lp.bothPositive).toBe(1);
                 expect(lp.customFwd).toBe(0n);
                 expect(lp.custom).toBeNull();
-                expect(lp.deadline).toBeGreaterThan(BigInt(Math.floor(Date.now() / 1000) - 60));
+                // A day, not minutes: a leg that reaches the router after the deadline is refunded on
+                // its own, and the other leg would then wait in an LP account nobody can operate.
+                expect(lp.deadline).toBe(BigInt(migratedAt + DEX_DEADLINE));
             }
-            expect(tonLp.deadline).toBe(jetLp.deadline);
+            expect(DEX_DEADLINE).toBeGreaterThanOrEqual(86400);
 
             // The liquidity manager receives nothing on the happy path.
             expect(res.transactions).not.toHaveTransaction({ from: jetton.address, to: liquidityManager.address });

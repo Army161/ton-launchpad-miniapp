@@ -49,8 +49,13 @@ export async function computeJettonAddress(factory: Address, creator: Address, s
   return (await LaunchpadJetton.fromInit(factory, creator, salt)).address;
 }
 
-export async function computeWalletAddress(owner: Address, jetton: Address): Promise<Address> {
-  return (await JettonWallet.fromInit(owner, jetton)).address;
+/**
+ * A holder's jetton wallet. The wallet's code is the same for every token, but
+ * its address also depends on the token's STON.fi router (ADR-010: the router's
+ * own wallet is guarded), so pass `dexRouter` from the token's curve state.
+ */
+export async function computeWalletAddress(owner: Address, jetton: Address, dexRouter: Address): Promise<Address> {
+  return (await JettonWallet.fromInit(owner, jetton, dexRouter)).address;
 }
 
 export function buildCreateTokenBody(params: {

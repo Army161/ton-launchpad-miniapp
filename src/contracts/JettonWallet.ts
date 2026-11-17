@@ -2372,6 +2372,8 @@ export type JettonWallet$Data = {
     balance: bigint;
     owner: Address;
     minter: Address;
+    dexRouter: Address;
+    dexGuardUntil: bigint;
 }
 
 export function storeJettonWallet$Data(src: JettonWallet$Data) {
@@ -2380,6 +2382,8 @@ export function storeJettonWallet$Data(src: JettonWallet$Data) {
         b_0.storeCoins(src.balance);
         b_0.storeAddress(src.owner);
         b_0.storeAddress(src.minter);
+        b_0.storeAddress(src.dexRouter);
+        b_0.storeUint(src.dexGuardUntil, 32);
     };
 }
 
@@ -2388,21 +2392,27 @@ export function loadJettonWallet$Data(slice: Slice) {
     const _balance = sc_0.loadCoins();
     const _owner = sc_0.loadAddress();
     const _minter = sc_0.loadAddress();
-    return { $$type: 'JettonWallet$Data' as const, balance: _balance, owner: _owner, minter: _minter };
+    const _dexRouter = sc_0.loadAddress();
+    const _dexGuardUntil = sc_0.loadUintBig(32);
+    return { $$type: 'JettonWallet$Data' as const, balance: _balance, owner: _owner, minter: _minter, dexRouter: _dexRouter, dexGuardUntil: _dexGuardUntil };
 }
 
 export function loadTupleJettonWallet$Data(source: TupleReader) {
     const _balance = source.readBigNumber();
     const _owner = source.readAddress();
     const _minter = source.readAddress();
-    return { $$type: 'JettonWallet$Data' as const, balance: _balance, owner: _owner, minter: _minter };
+    const _dexRouter = source.readAddress();
+    const _dexGuardUntil = source.readBigNumber();
+    return { $$type: 'JettonWallet$Data' as const, balance: _balance, owner: _owner, minter: _minter, dexRouter: _dexRouter, dexGuardUntil: _dexGuardUntil };
 }
 
 export function loadGetterTupleJettonWallet$Data(source: TupleReader) {
     const _balance = source.readBigNumber();
     const _owner = source.readAddress();
     const _minter = source.readAddress();
-    return { $$type: 'JettonWallet$Data' as const, balance: _balance, owner: _owner, minter: _minter };
+    const _dexRouter = source.readAddress();
+    const _dexGuardUntil = source.readBigNumber();
+    return { $$type: 'JettonWallet$Data' as const, balance: _balance, owner: _owner, minter: _minter, dexRouter: _dexRouter, dexGuardUntil: _dexGuardUntil };
 }
 
 export function storeTupleJettonWallet$Data(source: JettonWallet$Data) {
@@ -2410,6 +2420,8 @@ export function storeTupleJettonWallet$Data(source: JettonWallet$Data) {
     builder.writeNumber(source.balance);
     builder.writeAddress(source.owner);
     builder.writeAddress(source.minter);
+    builder.writeAddress(source.dexRouter);
+    builder.writeNumber(source.dexGuardUntil);
     return builder.build();
 }
 
@@ -2654,6 +2666,7 @@ export function dictValueParserLaunchpadFactory$Data(): DictionaryValue<Launchpa
     $$type: 'JettonWallet_init_args';
     owner: Address;
     minter: Address;
+    dexRouter: Address;
 }
 
 function initJettonWallet_init_args(src: JettonWallet_init_args) {
@@ -2661,14 +2674,15 @@ function initJettonWallet_init_args(src: JettonWallet_init_args) {
         const b_0 = builder;
         b_0.storeAddress(src.owner);
         b_0.storeAddress(src.minter);
+        b_0.storeAddress(src.dexRouter);
     };
 }
 
-async function JettonWallet_init(owner: Address, minter: Address) {
-    const __code = Cell.fromHex('b5ee9c724102110100048500022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d901030149a65ec0bb513434800066be803e903e9015481b04e6be903e901640b4405c1678b6cf1b0d200201125cdb3c3054633052300904b401d072d721d200d200fa4021103450666f04f86102f862ed44d0d200019afa00fa40fa4055206c139afa40fa405902d1017059e204e30202d70d1ff2e0822182100f8a7ea5bae302218210178d4519bae302018210595f07bcba0405080d00b6028020d7217021d749c21f9430d31f01de208210178d4519ba8e1a30d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e082107bdd97deba8e19d33ffa00596c21a002c87f01ca0055205afa0212cecec9ed54e05f0402f231d33ffa00fa40d72c01916d93fa4001e201f40431fa0023fa4430f2d08af8416f2481114d533cc705f2f48142a629c200f2f451a8a18200ca9721c2fff2f44330523bfa40fa0071d721fa00fa00306c6170f83a23c20091729171e281769402a85240a08209c9c380a08208989680a012bcf2f45138db3c5c090601fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d050767080407f2c48135079c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec9105610451034401310465522c8cf8580ca00cf8440ce01fa028069cf40025c6e010700586eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed5404fc31d33ffa00fa40d72c01916d93fa4001e201fa00f8416f24532cc705b38ebc537cdb3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d05240c705f2f4de51a8a021f8276f1021a1820898968066b608a18208e4e1c0a0a126c200e30f236eb3090a0b0c0018f82ac87001ca005a02cecec900e8504b4330fa40fa0071d721fa00fa00306c6170f83a5230a018a171702848135074c8553082107362d09c5005cb1f13cb3f01fa02cecec9284614505510246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0003000c107b50895f0800dc9321c2009170e28e5003206ef2d080727004c8018210d53276db58cb1fcb3fc9414010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00926c31e202c87f01ca0055205afa0212cecec9ed54010ee3025f04f2c0820e01fed33ffa00d72c01916d93fa4001e201f40430f8416f24303281114d5118c705f2f48142a624c200f2f45153a18200ca9721c2fff2f4817694068210042c1d80be16f2f470504380407f544857c8554082107bdd97de5006cb1f14cb3f58fa02ce01206e9430cf84809201cee2f400c926444410246d50436d03c8cf8580ca000f017689cf16ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002c87f01ca0055205afa0212cecec9ed5410000110c9850ae8');
+async function JettonWallet_init(owner: Address, minter: Address, dexRouter: Address) {
+    const __code = Cell.fromHex('b5ee9c72410217010005bb00022cff008e88f4a413f4bcf2c80bed53208e8130e1ed43d90106020378a00204016fbb7f4ed44d0d200019efa00fa40fa40fa40d31f55406c158e19fa40fa40fa40552003d158705331c70592841f9120e2144330e2db3c6c51803000220016fbbb02ed44d0d200019efa00fa40fa40fa40d31f55406c158e19fa40fa40fa40552003d158705331c70592841f9120e2144330e2db3c6c548050116547321db3c3054655052500d04dc01d072d721d200d200fa4021103450666f04f86102f862ed44d0d200019efa00fa40fa40fa40d31f55406c158e19fa40fa40fa40552003d158705331c70592841f9120e2144330e206e30204d70d1ff2e0822182100f8a7ea5bae302218210178d4519bae302018210595f07bcba07090c1302de048020d7217021d749c21f9430d31f01de208210178d4519ba8ea430d33ffa0059325044a0445503db3cc87f01ca0055405054fa0212cece12cecb1fc9ed54e082107bdd97deba8ea3d33ffa0059325044a0445503db3cc87f01ca0055405054fa0212cece12cecb1fc9ed54e05f060808009a7080427003c8018210d53276db58cb1fcb3fc927504410246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb0002f431d33ffa00fa40d72c01916d93fa4001e201f40431fa0023fa4430f2d08af8416f2481114d533cc705f2f48142a629c200f2f451c8a18200ca9721c2fff2f44330523dfa40fa0071d721fa00fa00306c6170f83a23c20091729171e281769402a85240a08209c9c380a08208989680a012bcf2f4543369db3c5c0d0a01fe705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d050767080407f2c48135079c855508210178d45195007cb1f15cb3f5003fa02ce01206e9430cf84809201cee201fa02cec9105610451034401310465522c8cf8580ca00cf8440ce01fa028069cf40025c6e010b00646eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb004034c87f01ca0055405054fa0212cece12cecb1fc9ed5404fc31d33ffa00fa40d72c01916d93fa4001e201fa00f8416f24532ac7058f585477addb3c0181114d02705920f90022f9005ad76501d76582020134c8cb17cb0fcb0fcbffcbff71f90400c87401cb0212ca07cbffc9d05240c705f2f4f8232fb98e948200d8252f841fbdf2f48200b11b25db3cb3f2f4dee30d51c8a021f8270d0e0f10001ef82ac87001ca0055215023cececec9003c20d74a923070e1d74cd020d749c21f9ad70b1f821037c096dfba923070e2001c2e841fba983ef823810258a00ede028c6f1021a1820898968066b608a18208e4e1c0a0a126c20096107d50895f08e30d256eb39321c2009170e292355be30d4034c87f01ca0055405054fa0212cece12cecb1fc9ed54111200e8504d4330fa40fa0071d721fa00fa00306c6170f83a5230a01aa171702848135074c8553082107362d09c5005cb1f13cb3f01fa02cecec9284614505510246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb000500a005206ef2d080727004c8018210d53276db58cb1fcb3fc9414010246d50436d03c8cf8580ca00cf8440ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb00010ee3025f06f2c0821401fed33ffa00d72c01916d93fa4001e201f40430f8416f24303281114d5118c705f2f48142a624c200f2f45173a18200ca9721c2fff2f4817694088210042c1d80be18f2f470504380407f544857c8554082107bdd97de5006cb1f14cb3f58fa02ce01206e9430cf84809201cee2f400c924444410246d50436d03c8cf8580ca0015018289cf16ce01fa028069cf40025c6e016eb0935bcf819d58cf8680cf8480f400f400cf81e2f400c901fb004034c87f01ca0055405054fa0212cece12cecb1fc9ed5416000110eb926ce0');
     const builder = beginCell();
     builder.storeUint(0, 1);
-    initJettonWallet_init_args({ $$type: 'JettonWallet_init_args', owner, minter })(builder);
+    initJettonWallet_init_args({ $$type: 'JettonWallet_init_args', owner, minter, dexRouter })(builder);
     const __data = builder.endCell();
     return { code: __code, data: __data };
 }
@@ -2721,9 +2735,11 @@ export const JettonWallet_errors = {
     30356: { message: "Insufficient TON attached" },
     35499: { message: "Only owner" },
     41529: { message: "Slippage exceeded" },
+    45339: { message: "DEX liquidity not open yet" },
     46558: { message: "Initial buy too large" },
     48404: { message: "Unknown burn payload" },
     51863: { message: "Insufficient jetton balance" },
+    55333: { message: "DEX closed until graduation" },
     58403: { message: "Curve graduated" },
     59371: { message: "Trade too small" },
     62610: { message: "Not graduated" },
@@ -2777,9 +2793,11 @@ export const JettonWallet_errors_backward = {
     "Insufficient TON attached": 30356,
     "Only owner": 35499,
     "Slippage exceeded": 41529,
+    "DEX liquidity not open yet": 45339,
     "Initial buy too large": 46558,
     "Unknown burn payload": 48404,
     "Insufficient jetton balance": 51863,
+    "DEX closed until graduation": 55333,
     "Curve graduated": 58403,
     "Trade too small": 59371,
     "Not graduated": 62610,
@@ -2821,7 +2839,7 @@ const JettonWallet_types: ABIType[] = [
     {"name":"QuoteBuy","header":null,"fields":[{"name":"tokensOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"QuoteSell","header":null,"fields":[{"name":"tonOut","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"fee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"creatorFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"platformFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"FactoryInfo","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"dex","type":{"kind":"simple","type":"DexConfig","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"launchFee","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduationTarget","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"creatorFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}},{"name":"referrerFeeBps","type":{"kind":"simple","type":"int","optional":false,"format":257}}]},
-    {"name":"JettonWallet$Data","header":null,"fields":[{"name":"balance","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"minter","type":{"kind":"simple","type":"address","optional":false}}]},
+    {"name":"JettonWallet$Data","header":null,"fields":[{"name":"balance","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"minter","type":{"kind":"simple","type":"address","optional":false}},{"name":"dexRouter","type":{"kind":"simple","type":"address","optional":false}},{"name":"dexGuardUntil","type":{"kind":"simple","type":"uint","optional":false,"format":32}}]},
     {"name":"LaunchpadJetton$Data","header":null,"fields":[{"name":"factory","type":{"kind":"simple","type":"address","optional":false}},{"name":"creator","type":{"kind":"simple","type":"address","optional":false}},{"name":"salt","type":{"kind":"simple","type":"uint","optional":false,"format":64}},{"name":"initialized","type":{"kind":"simple","type":"bool","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"dex","type":{"kind":"simple","type":"DexConfig","optional":false}},{"name":"content","type":{"kind":"simple","type":"cell","optional":false}},{"name":"totalSupply","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTon","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"virtualTokens","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"realTonRaised","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"graduated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"migrated","type":{"kind":"simple","type":"bool","optional":false}},{"name":"totalCreatorFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"totalPlatformFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}},{"name":"tradeCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}},{"name":"totalReferrerFees","type":{"kind":"simple","type":"uint","optional":false,"format":"coins"}}]},
     {"name":"LaunchpadFactory$Data","header":null,"fields":[{"name":"owner","type":{"kind":"simple","type":"address","optional":false}},{"name":"treasury","type":{"kind":"simple","type":"address","optional":false}},{"name":"liquidityManager","type":{"kind":"simple","type":"address","optional":false}},{"name":"dex","type":{"kind":"simple","type":"DexConfig","optional":false}},{"name":"launchCount","type":{"kind":"simple","type":"uint","optional":false,"format":32}}]},
 ]
@@ -2849,10 +2867,12 @@ const JettonWallet_opcodes = {
 
 const JettonWallet_getters: ABIGetter[] = [
     {"name":"get_wallet_data","methodId":97026,"arguments":[],"returnType":{"kind":"simple","type":"JettonWalletData","optional":false}},
+    {"name":"get_dex_guard","methodId":79860,"arguments":[],"returnType":{"kind":"simple","type":"int","optional":false,"format":257}},
 ]
 
 export const JettonWallet_getterMapping: { [key: string]: string } = {
     'get_wallet_data': 'getGetWalletData',
+    'get_dex_guard': 'getGetDexGuard',
 }
 
 const JettonWallet_receivers: ABIReceiver[] = [
@@ -2889,8 +2909,10 @@ export const DEX_JETTON_SIDE_FWD = 235000000n;
 export const DEX_TON_SIDE_FWD = 300000000n;
 export const DEX_PTON_GAS = 10000000n;
 export const DEX_MIGRATION_COST = 650000000n;
-export const DEX_DEADLINE = 900n;
+export const DEX_DEADLINE = 86400n;
 export const LP_MIN_OUT_BPS = 9900n;
+export const DEX_CLOSED = 4294967295n;
+export const DEX_LP_GUARD = 600n;
 export const SELL_PAYLOAD_OP = 1397050444n;
 
 export class JettonWallet implements Contract {
@@ -2899,12 +2921,12 @@ export class JettonWallet implements Contract {
     public static readonly errors = JettonWallet_errors_backward;
     public static readonly opcodes = JettonWallet_opcodes;
     
-    static async init(owner: Address, minter: Address) {
-        return await JettonWallet_init(owner, minter);
+    static async init(owner: Address, minter: Address, dexRouter: Address) {
+        return await JettonWallet_init(owner, minter, dexRouter);
     }
     
-    static async fromInit(owner: Address, minter: Address) {
-        const __gen_init = await JettonWallet_init(owner, minter);
+    static async fromInit(owner: Address, minter: Address, dexRouter: Address) {
+        const __gen_init = await JettonWallet_init(owner, minter, dexRouter);
         const address = contractAddress(0, __gen_init);
         return new JettonWallet(address, __gen_init);
     }
@@ -2949,6 +2971,13 @@ export class JettonWallet implements Contract {
         const builder = new TupleBuilder();
         const source = (await provider.get('get_wallet_data', builder.build())).stack;
         const result = loadGetterTupleJettonWalletData(source);
+        return result;
+    }
+    
+    async getGetDexGuard(provider: ContractProvider) {
+        const builder = new TupleBuilder();
+        const source = (await provider.get('get_dex_guard', builder.build())).stack;
+        const result = source.readBigNumber();
         return result;
     }
     

@@ -24,7 +24,13 @@ export const DEX_TON_SIDE_FWD = toNano('0.3');
 export const DEX_PTON_GAS = toNano('0.01');
 export const LP_MIN_OUT_BPS = 9900n;
 export const STON_PROVIDE_LP_OP = 0x37c096df;
+export const STON_SWAP_OP = 0x6664de2a;
 export const PTON_TON_TRANSFER_OP = 0x01f3835d;
+export const DEX_DEADLINE = 86400;
+/** `get_dex_guard` of the router's wallet before graduation: nothing gets in. */
+export const DEX_CLOSED = 0xffffffffn;
+/** Seconds after the graduation mint during which third-party liquidity is refused. */
+export const DEX_LP_GUARD = 600;
 
 /** Floor integer square root, the reference for the contract's isqrt. */
 export function isqrt(n: bigint): bigint {
@@ -51,6 +57,8 @@ export const OP = {
     jettonTransfer: 0x0f8a7ea5,
     transferInternal: 0x178d4519,
     burnNotification: 0x7bdd97de,
+    transferNotification: 0x7362d09c,
+    excesses: 0xd53276db,
 };
 
 export const ceilDiv = (a: bigint, b: bigint) => (a + b - 1n) / b;

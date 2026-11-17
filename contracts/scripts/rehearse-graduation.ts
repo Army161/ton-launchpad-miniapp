@@ -7,16 +7,17 @@
  *   npm run rehearse:graduation -- [--execute]
  *
  * Needs DEPLOY_MNEMONIC (a testnet wallet with ~3 TON), PLATFORM_TREASURY_ADDRESS,
- * STON_ROUTER_ADDRESS (testnet v2 router), STONFI_API_URL (testnet API) or
- * STON_PTON_WALLET_ADDRESS. Steps: deploy rehearsal factory, launch a token,
+ * STON_ROUTER_ADDRESS (testnet v2 router) and STON_PTON_MASTER_ADDRESS (testnet
+ * pTON v2 master; STON.fi has no testnet API). --env-file <file> loads them. Steps: deploy rehearsal factory, launch a token,
  * buy past the target, send Migrate, then check the STON.fi pool exists and its
  * LP sits with the zero address.
  */
 import { Address, beginCell, toNano } from '@ton/core';
 import { JettonMaster } from '@ton/ton';
-import { StonApiClient } from '@ston-fi/api';
 import * as fs from 'fs';
 import * as path from 'path';
+import { resolveDex } from './lib/dex';
+import { loadEnvFileArg } from './lib/env';
 import { friendly, openWallet, requireAddress, waitFor } from './lib/wallet';
 
 type FactoryModule = typeof import('../build/Launchpad_LaunchpadFactory');
@@ -26,6 +27,7 @@ const OUT = path.join(__dirname, '..', 'build-rehearsal', 'out');
 const ZERO = new Address(0, Buffer.alloc(32));
 
 async function main() {
+    loadEnvFileArg();
     const execute = process.argv.includes('--execute');
     if (!fs.existsSync(path.join(OUT, 'Launchpad_LaunchpadFactory.ts'))) {
         throw new Error('Run `npm run build:rehearsal` first.');
@@ -38,14 +40,7 @@ async function main() {
     const network = 'testnet' as const;
     const wallet = await openWallet(network, 'DEPLOY_MNEMONIC');
     const treasury = requireAddress('PLATFORM_TREASURY_ADDRESS');
-    const router = requireAddress('STON_ROUTER_ADDRESS');
-    let ptonWallet: Address;
-    if (process.env.STON_PTON_WALLET_ADDRESS) {
-        ptonWallet = requireAddress('STON_PTON_WALLET_ADDRESS');
-    } else {
-        const api = new StonApiClient(process.env.STONFI_API_URL ? { baseURL: process.env.STONFI_API_URL } : undefined);
-        ptonWallet = Address.parse((await api.getRouter(router.toString())).ptonWalletAddress);
-    }
+    const { router, ptonWallet } = await resolveDex(wallet.client, network);
 
     const factory = wallet.client.open(await LaunchpadFactory.fromInit(wallet.address, treasury, wallet.address, {
         $$type: 'DexConfig', router, ptonWallet,

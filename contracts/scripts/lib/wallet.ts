@@ -14,6 +14,8 @@ import {
     type StateInit,
 } from '@ton/ton';
 
+import { requestQueue } from './throttle';
+
 export type Network = 'mainnet' | 'testnet';
 
 export function parseNetwork(value: string | undefined): Network {
@@ -21,7 +23,8 @@ export function parseNetwork(value: string | undefined): Network {
     throw new Error(`Network must be "mainnet" or "testnet" (got "${value ?? ''}")`);
 }
 
-export function client(network: Network): TonClient {
+/** A plain toncenter client with no rate limiting. */
+export function rawClient(network: Network): TonClient {
     return new TonClient({
         endpoint:
             network === 'mainnet'
@@ -31,12 +34,32 @@ export function client(network: Network): TonClient {
     });
 }
 
+/**
+ * A toncenter client whose network calls (get*, run*, call*, is*, send*) go
+ * through one queue that spaces them out and retries 429s and other transport
+ * errors. Contracts opened on it use the same queue. Resending the same signed
+ * external message is safe: the wallet seqno makes a duplicate a no-op.
+ */
+export function client(network: Network, base: TonClient = rawClient(network), gapMs = process.env.TONCENTER_API_KEY ? 150 : 1100): TonClient {
+    const run = requestQueue(gapMs);
+    const proxy: TonClient = new Proxy(base, {
+        get(target, prop) {
+            const value = Reflect.get(target, prop, target) as unknown;
+            if (typeof value !== 'function' || typeof prop !== 'string') return value;
+            const fn = value as (...a: unknown[]) => unknown;
+            if (/^(get|run|call|is|send)/.test(prop)) return (...a: unknown[]) => run(async () => fn.apply(target, a));
+            return (...a: unknown[]) => fn.apply(proxy, a); // open()/provider() build providers on the queued client
+        },
+    });
+    return proxy;
+}
+
 export function friendly(a: Address, network: Network): string {
     return a.toString({ bounceable: true, testOnly: network === 'testnet' });
 }
 
-export function requireAddress(name: string): Address {
-    const raw = process.env[name];
+export function requireAddress(name: string, env: NodeJS.ProcessEnv = process.env): Address {
+    const raw = env[name];
     if (!raw) throw new Error(`${name} is not set`);
     try {
         return Address.parse(raw);
@@ -58,7 +81,11 @@ export async function openWallet(network: Network, mnemonicEnv = 'DEPLOY_MNEMONI
 
     const keyPair = await mnemonicToPrivateKey(words);
     words.fill('');
-    const version = process.env[`${mnemonicEnv.replace(/_MNEMONIC$/, '')}_WALLET_VERSION`] ?? 'v5r1';
+    const versionEnv = `${mnemonicEnv.replace(/_MNEMONIC$/, '')}_WALLET_VERSION`;
+    const configured = (process.env[versionEnv] ?? '').trim();
+    // Another version derives another address from the same words: never guess.
+    if (configured && configured !== 'v4' && configured !== 'v5r1') throw new Error(`${versionEnv} must be v4 or v5r1`);
+    const version = configured === 'v4' ? 'v4' : 'v5r1';
     const wallet =
         version === 'v4'
             ? WalletContractV4.create({ workchain: 0, publicKey: keyPair.publicKey })

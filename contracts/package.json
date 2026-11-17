@@ -10,7 +10,9 @@
     "graduate": "ts-node scripts/graduate.ts",
     "typecheck": "tsc --noEmit -p .",
     "build:rehearsal": "node scripts/build-rehearsal.mjs",
-    "rehearse:graduation": "npm run build:rehearsal && ts-node scripts/rehearse-graduation.ts"
+    "rehearse:graduation": "npm run build:rehearsal && ts-node scripts/rehearse-graduation.ts",
+    "rehearse:fork": "npm run build:rehearsal && ts-node scripts/fork-graduation.ts",
+    "check:trades": "ts-node scripts/trade-check.ts"
   },
   "devDependencies": {
     "@ston-fi/api": "^0.32.0",

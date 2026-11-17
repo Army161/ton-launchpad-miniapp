@@ -17,6 +17,8 @@ export type TokenView = {
   graduated: boolean;
   migrated: boolean;
   tradeCount: number;
+  /** STON.fi router the token graduates to; part of every holder's wallet address. */
+  dexRouter: string;
 };
 
 export async function fetchLaunchpadTokens(): Promise<TokenView[]> {

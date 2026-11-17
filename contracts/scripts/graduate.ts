@@ -23,6 +23,7 @@ import { dexFactory } from '@ston-fi/sdk';
 import { LaunchpadJetton, storeMigrate } from '../build/Launchpad_LaunchpadJetton';
 import { JettonWallet } from '../build/Launchpad_JettonWallet';
 import { JettonMaster, JettonWallet as TonJettonWallet } from '@ton/ton';
+import { loadEnvFileArg } from './lib/env';
 import { friendly, openWallet, parseNetwork, waitFor, type Network } from './lib/wallet';
 
 const MIGRATE_GAS = toNano('0.1');
@@ -62,6 +63,7 @@ async function lockLp(network: Network, execute: boolean) {
 }
 
 async function main() {
+    loadEnvFileArg();
     const network = parseNetwork(process.argv[2]);
     if (process.argv.includes('--lock-lp')) {
         const execute = process.argv.includes('--execute');
@@ -146,6 +148,16 @@ async function main() {
     if (!execute) {
         console.log('Dry run: re-run with --execute to send.');
         return;
+    }
+
+    // ADR-010: the token's router wallet refuses liquidity deposits until DEX_LP_GUARD
+    // seconds after the graduation mint. A deposit sent earlier would only bounce.
+    if (Address.parse(sim.router.address).equals(state.dex.router)) {
+        const routerWallet = keeper.client.open(JettonWallet.fromAddress(await jetton.getGetWalletAddress(state.dex.router)));
+        const guard = await routerWallet.getGetDexGuard().catch(() => 0xffffffffn);
+        const now = BigInt(Math.floor(Date.now() / 1000));
+        if (guard === 0xffffffffn) throw new Error('The router wallet has not received the graduation mint, so a deposit would bounce. Check `get_curve_state` and the Migrate transaction before going further.');
+        if (now < guard) throw new Error(`STON.fi liquidity opens for this token in ${guard - now} s; re-run after that.`);
     }
 
     const { Router, pTON } = dexFactory(sim.router);

@@ -59,10 +59,35 @@ and its pTON wallet are fixed at factory deploy (`DexConfig`); the deploy script
 constant-product with pool creation on and that the pTON master maps the router to that pTON wallet.
 
 - LP goes to the zero address, so the pool's liquidity is locked from the moment it exists.
-- `min_lp_out` is 99% of a fresh pool's `sqrt(ton × tokens)`. A pool someone created before graduation at a different
-  price mints less, so STON.fi refunds both legs instead of donating the difference to that pool's owner.
+- `min_lp_out` is 99% of a fresh pool's `sqrt(ton × tokens)`. A pool that already holds liquidity at a different
+  price mints less, so STON.fi does not add the liquidity: it parks both legs in the liquidity manager's LP account
+  on that pool (corrected 2026-11-12 from STON.fi's source; earlier text said "refunds"). ADR-010 makes this case
+  unreachable before graduation.
 - Refunds and bounced legs go to the liquidity manager, the only remaining trust point, used only on that failure
   path (`graduate.ts --fallback`).
 - 0.65 TON of the reserve pays the DEX gas, so the trigger needs only 0.05 TON and anyone can run it.
 - The sandbox has no STON.fi contracts, so tests check the exact messages sent; the testnet rehearsal must show a real
   pool with LP at the zero address before mainnet (`docs/VERIFICATION.md`).
+
+## ADR-010 The router's jetton wallet is closed until graduation (router wallet guard)
+
+Decided 2026-11-12, before any factory deploy. Found while checking ADR-009 against STON.fi v2's source: tokens are
+transferable during the curve, so anyone could create the token/TON pool on the configured router early, at a
+skewed price, for about 1 TON of gas. Every graduation would then miss `min_lp_out` and land in the liquidity
+manager's LP account instead of a locked pool. STON.fi only adds a token to a pool from a `transfer_notification`
+sent by that token's jetton wallet owned by the router, so that one wallet is the choke point.
+
+- `JettonWallet` takes the token's router as a third init field (it changes every wallet address; clients pass the
+  router from `get_curve_state`). The router's own wallet starts with `get_dex_guard() = 0xFFFFFFFF` and refuses
+  every incoming transfer ("DEX closed until graduation"); the sender keeps the jettons and gets the TON back.
+- The graduation mint from the token contract opens it. For `DEX_LP_GUARD` (600 s) after that it still refuses
+  transfers whose payload the router would read as `provide_lp` (first reference, first 32 bits, exactly as the
+  router parses it), so nobody can race a deposit into the pool before the curve's own pair is added. Swaps (DEX
+  sells) pass at once. Outgoing transfers from the router's wallet are never restricted.
+- Every other wallet has guard 0 and behaves as plain TEP-74.
+- `DEX_DEADLINE` goes from 15 minutes to 1 day, so a slow network cannot split the two legs (a late leg is refused by
+  the router while the other stays in the token contract's LP account, which nobody can empty).
+- A wallet bounce now also returns the unspent TON to the owner (a rejected sell used to leave about 0.07 TON in the
+  seller's jetton wallet).
+- Consequence for operators: the liquidity manager's fallback deposit (`provide_lp` from its own wallet) is refused for
+  the first 10 minutes after migration; the graduation tool must wait for `get_dex_guard`.

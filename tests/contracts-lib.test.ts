@@ -1,7 +1,7 @@
 import { Address, beginCell, toNano } from '@ton/core';
 import { describe, expect, it } from 'vitest';
 import { storeBuy, storeCreateToken } from '../src/contracts/LaunchpadFactory';
-import { storeJettonBurn } from '../src/contracts/JettonWallet';
+import { JettonWallet, storeJettonBurn } from '../src/contracts/JettonWallet';
 import { LaunchpadJetton } from '../src/contracts/LaunchpadJetton';
 import { LaunchpadFactory } from '../src/contracts/LaunchpadFactory';
 import {
@@ -9,6 +9,7 @@ import {
   buildCreateTokenBody,
   buildSellBody,
   computeJettonAddress,
+  computeWalletAddress,
   feeSplit,
   formatUnits,
   parseAmount,
@@ -58,6 +59,14 @@ describe('message encoding matches the compiled contract ABI', () => {
     expect((await computeJettonAddress(A, B, 1234n)).equals(expected.address)).toBe(true);
     const factory = await LaunchpadFactory.fromInit(A, A, A, { $$type: 'DexConfig', router: B, ptonWallet: B });
     expect(factory.address.workChain).toBe(0);
+  });
+
+  it('derives holder wallets with the token\'s DEX router, as the token contract does (ADR-010)', async () => {
+    const jetton = (await LaunchpadJetton.fromInit(A, B, 1234n)).address;
+    const wallet = await computeWalletAddress(B, jetton, A);
+    expect(wallet.equals((await JettonWallet.fromInit(B, jetton, A)).address)).toBe(true);
+    // Another router means another wallet: a stale router would send a sell to an empty address.
+    expect(wallet.equals(await computeWalletAddress(B, jetton, B))).toBe(false);
   });
 });
 

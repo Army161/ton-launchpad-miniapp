@@ -6,26 +6,29 @@
  *
  * Reads (never prints) DEPLOY_MNEMONIC. Needs PLATFORM_TREASURY_ADDRESS and
  * STON_ROUTER_ADDRESS (a STON.fi v2 constant-product router for this network).
- * The router's pTON wallet is read from the STON.fi API (STONFI_API_URL for
- * testnet) and checked on-chain against the pTON master; STON_PTON_WALLET_ADDRESS
- * overrides it. Graduation seeds that router's pool directly (ADR-009).
+ * The router's pTON wallet comes from the STON.fi API on mainnet; testnet has no
+ * API, so there it is asked on-chain from STON_PTON_MASTER_ADDRESS (lib/dex.ts).
+ * Either way the pTON master must confirm it. Pass --env-file <file> to load
+ * variables from a file. Graduation seeds that router's pool directly (ADR-009).
  * LIQUIDITY_MANAGER_ADDRESS (default: the deployer wallet) only receives
  * liquidity if STON.fi refunds a provision.
  *
  * Safe to re-run: the factory address is deterministic, so an existing
  * deployment is detected and reused instead of deployed twice.
  */
-import { Address, beginCell, toNano } from '@ton/core';
-import { StonApiClient } from '@ston-fi/api';
+import { toNano } from '@ton/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import { LaunchpadFactory } from '../build/Launchpad_LaunchpadFactory';
+import { resolveDex } from './lib/dex';
+import { loadEnvFileArg } from './lib/env';
 import { friendly, openWallet, parseNetwork, requireAddress, waitFor } from './lib/wallet';
 
 const DEPLOY_VALUE = toNano('0.1');
 const MIN_DEPLOYER_BALANCE = toNano('0.2');
 
 async function main() {
+    loadEnvFileArg();
     const network = parseNetwork(process.argv[2]);
     const dryRun = process.argv.includes('--dry-run');
 
@@ -42,22 +45,7 @@ async function main() {
         ? requireAddress('LIQUIDITY_MANAGER_ADDRESS')
         : wallet.address;
 
-    const router = requireAddress('STON_ROUTER_ADDRESS');
-    const api = new StonApiClient(process.env.STONFI_API_URL ? { baseURL: process.env.STONFI_API_URL } : undefined);
-    const routerInfo = await api.getRouter(router.toString());
-    if (routerInfo.majorVersion !== 2) throw new Error(`Router is v${routerInfo.majorVersion}; graduation needs a STON.fi v2 router.`);
-    if (!/constant/i.test(routerInfo.routerType)) throw new Error(`Router type is ${routerInfo.routerType}; use a constant-product router.`);
-    if (!routerInfo.poolCreationEnabled) throw new Error('This router does not allow pool creation.');
-    const ptonWallet = process.env.STON_PTON_WALLET_ADDRESS
-        ? requireAddress('STON_PTON_WALLET_ADDRESS')
-        : Address.parse(routerInfo.ptonWalletAddress);
-    // The pTON master must agree that this is the router's pTON wallet, or the TON leg would be lost.
-    const pton = await wallet.client.runMethod(Address.parse(routerInfo.ptonMasterAddress), 'get_wallet_address', [
-        { type: 'slice', cell: beginCell().storeAddress(router).endCell() },
-    ]);
-    if (!pton.stack.readAddress().equals(ptonWallet)) {
-        throw new Error('pTON wallet does not match the pTON master\'s wallet for this router.');
-    }
+    const { router, ptonWallet, source } = await resolveDex(wallet.client, network);
 
     const factory = await LaunchpadFactory.fromInit(wallet.address, treasury, liquidityManager, {
         $$type: 'DexConfig', router, ptonWallet,
@@ -68,7 +56,7 @@ async function main() {
     console.log(`Deployer (${wallet.version}):    ${friendly(wallet.address, network)}`);
     console.log(`Platform treasury:  ${friendly(treasury, network)}`);
     console.log(`Liquidity manager:  ${friendly(liquidityManager, network)} (refund fallback only)`);
-    console.log(`STON.fi router:     ${friendly(router, network)} (v${routerInfo.majorVersion}.${routerInfo.minorVersion}, ${routerInfo.routerType})`);
+    console.log(`STON.fi router:     ${friendly(router, network)} (${source})`);
     console.log(`Router pTON wallet: ${friendly(ptonWallet, network)}`);
     console.log(`Factory address:    ${friendly(factory.address, network)}`);
 

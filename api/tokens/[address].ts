@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const token = await readLaunchpadToken(address, factory).catch(() => null);
     if (!token) return res.status(404).json({ error: 'Not a launchpad token' });
-    const balance = holder ? (await readHolderBalance(address, holder)).toString() : undefined;
+    const balance = holder ? (await readHolderBalance(address, holder, Address.parse(token.dexRouter))).toString() : undefined;
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ token, balance });
   } catch (err) {
