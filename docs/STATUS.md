@@ -10,11 +10,11 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Build (app, API, scripts) | PASS | `npm run build` |
-| Lint | PASS | `npm run lint` (0 errors) |
-| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync |
-| Contract tests | PASS | 92/92 sandbox and script tests against the compiled contracts (91 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard |
-| App/API tests | PASS | 68/68 vitest |
+| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17) |
+| Lint | PASS | `npm run lint` (0 errors, e113ccf) |
+| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf) |
+| Contract tests | PASS | 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17 |
+| App/API tests | PASS | 68/68 vitest (e113ccf) |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |

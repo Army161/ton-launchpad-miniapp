@@ -8,14 +8,14 @@ Contract tests are in `contracts/tests/launchpad.spec.ts`; app tests in `tests/*
 
 | Requirement | Method | Command/Test | Expected | Actual | Evidence | Status |
 |---|---|---|---|---|---|---|
-| Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled | build log | PASS |
-| Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no diff | CI step "Generated wrappers match" | PASS |
-| Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors | | PASS |
-| Contract tests | sandbox | `cd contracts && npm test` | all pass | 92/92 with the rehearsal build present (91 + 1 skipped without it); 2026-11-14 with ADR-010, script 429 retries and the fork reader | jest output | PASS |
-| App lint | oxlint | `npm run lint` | 0 errors | 0 errors, warnings only (fast-refresh/effect style) | | PASS |
-| App + API tests | vitest | `npm test` | all pass | 68/68 (2026-11-12) | vitest output | PASS |
-| Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.05 MB JS, gzip 307 KB) | | PASS |
-| No server secrets in bundle | grep dist | CI step | no matches | no matches | | PASS |
+| Contracts compile | build | `cd contracts && npm run build` | 3 contracts, no errors | JettonWallet, LaunchpadJetton, LaunchpadFactory compiled (e113ccf, 2026-11-17) | build log | PASS |
+| Build is reproducible | rebuild + diff | `npm run build && git status` | no diff | no wrapper diff (e113ccf) | CI step "Generated wrappers match" | PASS |
+| Contract scripts typecheck | tsc | `cd contracts && npm run typecheck` | 0 errors | 0 errors (e113ccf) | | PASS |
+| Contract tests | sandbox | `cd contracts && npm test` | all pass | 94/94 with the rehearsal build present (93 + 1 skipped without it); 2026-11-17 at e113ccf, incl. the trade-check helpers (earlier: ADR-010, script 429 retries, the fork reader) | jest output | PASS |
+| App lint | oxlint | `npm run lint` | 0 errors | 0 errors, warnings only (fast-refresh/effect style); e113ccf | | PASS |
+| App + API tests | vitest | `npm test` | all pass | 68/68 (2026-11-17, e113ccf) | vitest output | PASS |
+| Typecheck + build | tsc -b, vite | `npm run build` | success | success (1.06 MB JS, gzip 310 KB; e113ccf) | | PASS |
+| No server secrets in bundle | grep dist | CI step | no matches | no matches (e113ccf) | | PASS |
 | Dependency audit | npm audit | `npm audit --omit=dev`; `cd contracts && npm audit` | no unaccepted runtime vulns | app runtime: 2 high (zod 3 inside @ton/ton) + 3 low (deepmerge via @tonconnect/ui), all accepted in SECURITY #19; contracts toolchain: 5 high + 9 low (dev only, major-upgrade fixes) | SECURITY #16–19 | PASS with notes |
 
 ## Economics and contract behaviour (sandbox, compiled code)
