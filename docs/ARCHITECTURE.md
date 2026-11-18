@@ -57,7 +57,7 @@ liquidity goes to the liquidity manager, which seeds manually with `graduate.ts 
 | Route | Purpose |
 |---|---|
 | `POST /api/auth/telegram` | verifies `initData`, returns a 24 h JWT and the Telegram profile |
-| `GET /api/tokens` | lists launches found in the factory's transactions, newest first; every token is proven to come from our factory (address re-derived from `(factory, creator, salt)`). Cached for 20 s in memory and 15 s at the edge. A token whose read fails is shown as last read on that instance if that was in the last 30 minutes; a token never read there, or not in that time, is left out and the list says `partial: true`, and then (or while a launch of the last minute still reads as not deployed) the list is cached for only 5 s (`s-maxage=5`). One refresh at a time per instance. If the factory's transactions cannot be read, the last list is served again for 5 s as long as it was read in the last 5 minutes; after that, or with no list yet, 503 with `Retry-After` |
+| `GET /api/tokens` | lists launches found in the factory's transactions, newest first; every token is proven to come from our factory (address re-derived from `(factory, creator, salt)`). Cached for 20 s in memory and 15 s at the edge. A token a refresh does not read (no time left, or the read failed) is shown as last read on that instance, but once a read of that refresh failed only if that was in the last 30 minutes; a token never read there, or not in that time, is left out and the list says `partial: true`, and then (or while a launch of the last minute still reads as not deployed) the list is cached for only 5 s (`s-maxage=5`). One refresh at a time per instance. If the factory's transactions cannot be read, the last list is served again for 5 s as long as it was read in the last 5 minutes; after that, or with no list yet, 503 with `Retry-After` |
 | `GET /api/tokens/:address[?holder=]` | live curve state and optionally the holder's balance, never cached. 404 only when the chain answers that the address is not one of our tokens; 503 with `Retry-After` and `no-store` when toncenter cannot be read. When only the balance cannot be read, 200 with the token and no `balance` |
 | `POST /api/metadata/upload` | authenticated image upload to Vercel Blob (503 if Blob is not enabled) |
 | `GET /api/health` | configuration presence flags only |
@@ -77,8 +77,8 @@ in, so the session also ends an attempt still running 250 ms after it (a body th
 timeout: an API request never runs more than 250 ms past its budget. Retries come from one budget per instance,
 shared by every request it serves: every 5 first attempts earn one retry, up to a reserve of 10. An occasional 429 is
 retried as before, but when most reads fail (toncenter rate limiting us, or a flood of lookups for random addresses)
-retries stop once the reserve is spent, so each request costs about one attempt instead of four. Instances do not
-share it; a per-IP rate limit in front of `/api/tokens/*` is what would bound the total (`docs/SECURITY.md` #24). A
+retries stop once the reserve is spent, so each request costs about one attempt instead of four. A retry that the
+requests queued meanwhile leave no time to start gives its retry back. Instances do not share the budget; a per-IP rate limit in front of `/api/tokens/*` is what would bound the total (`docs/SECURITY.md` #24). A
 getter exit code (no such getter, or nothing deployed), an uninitialized curve, another factory or an address the
 factory would not derive means "not our token". Running out of retries or budget throws `ChainUnavailableError`,
 which the endpoints answer with 503. Getter exit codes, malformed responses and other 4xx are never retried. A token
@@ -90,12 +90,14 @@ more requests (account state, `get_wallet_data`).
 
 The list costs 1 request (the factory's transactions) plus 1 per token, and one 7 s budget fits about 50 requests
 with `TONCENTER_API_KEY` (6 without). So a refresh reads the launches never read on that instance first, then the
-ones read longest ago, and leaves the rest as last read. A launch that read as not deployed is read first again only
-during its first minute (it may still be deploying); after that it takes its turn by when it was last read, like a
-token, so launches that never deploy cannot use up every refresh before a token is read, and one that cannot be read
-is not counted as a missing token. Last-good data has an age limit: a failed read is filled in only from a view read
-in the last 30 minutes (longer than a full round of re-reads, about a minute with a key and up to about 15 minutes
-without one on a quiet instance), and a list is served again after a failed refresh only if it was read in the last 5
+ones read longest ago, and leaves the rest as last read. A launch read as not deployed during its first minute (it
+may still have been deploying) is read first again until a read after that minute, and counts as a missing token
+while it cannot be read; one read as not deployed after its first minute takes its turn by when it was last read,
+like a token, and is no token of ours, so launches that never deploy cannot use up every refresh before a token is
+read. While toncenter answers, a token the refresh has no time left for is shown as last read, however long ago: the
+round of re-reads depends on traffic, and on a quiet instance with many tokens it takes longer than 30 minutes. Once
+a read of the refresh fails, last-good data has an age limit: the tokens it did not read are filled in only from a
+view of the last 30 minutes, and a list is served again after a failed refresh only if it was read in the last 5
 minutes; after that the endpoint answers 503. So an outage of toncenter shows as one, not as a list frozen in time.
 With a key a refresh reads about 46 known tokens or 22 new ones (33 or 15 when toncenter takes 500 ms per getter),
 and successive refreshes cover the whole list (at most 100 factory transactions, `docs/STATUS.md`). Without a key it
@@ -119,8 +121,10 @@ everything (`tests/api-tokens-progress.test.ts` pins both rates).
 - Buy and Sell trade only on a live read: until the page's latest lookup has succeeded (and again whenever one
   fails), Confirm is disabled and the page says it is loading the live price, or that it could not, with Try again.
   So the quote, the minimum received, the balance and the confirmation baseline (the trade count) never come from
-  the list's copy or a lookup that failed. After a confirmed trade the page takes the lookup that confirmed it; after
-  a timeout it looks the token up again. TokenDetail says when its numbers may be out of date.
+  the list's copy or a lookup that failed. Sell with a wallet connected also needs the balance that read returned,
+  since the amount is checked against it: a lookup succeeds without the balance when only that read failed, and then
+  Sell says it could not read the balance, with Try again. After a confirmed trade the page takes the lookup that
+  confirmed it; after a timeout it looks the token up again. TokenDetail says when its numbers may be out of date.
 - After sending, pages poll `/api/tokens/:address` until the trade count moves, then show confirmation. If 90 s pass
   without that, Buy and Sell say the trade is not confirmed yet and ask the user to check their wallet history before
   trying again, in a toast and in a notice that stays on the page until dismissed or a later trade confirms. They

@@ -72,8 +72,14 @@ async function load() {
   vi.resetModules();
   const { default: tokenHandler } = await import('../api/tokens/[address]');
   const { default: listHandler } = await import('../api/tokens/index');
-  const { ChainUnavailableError } = await import('../api/_lib/toncenter');
-  return { tokenHandler, listHandler, unavailable: () => new ChainUnavailableError('toncenter: HTTP 429 after 4 attempts') };
+  const { BudgetSpentError, ChainUnavailableError } = await import('../api/_lib/toncenter');
+  return {
+    tokenHandler,
+    listHandler,
+    unavailable: () => new ChainUnavailableError('toncenter: HTTP 429 after 4 attempts'),
+    /** A read the session had no time left to start. */
+    budgetSpent: () => new BudgetSpentError(),
+  };
 }
 
 /** Token reads that answer from `views` (raw address → view, null for "not ours", Error to throw) and log the order. */
@@ -348,6 +354,28 @@ describe('GET /api/tokens', () => {
     expect(left.headers['cache-control']).toBe(SHORT_CACHE);
   });
 
+  it('shows a token the refresh had no time to read as last read, however long ago, while toncenter answers', async () => {
+    const { listHandler, unavailable, budgetSpent } = await load();
+    chain.listLaunches.mockResolvedValue([launch(TOKEN_A), launch(TOKEN_B)]);
+    readsFrom({ [TOKEN_A]: view(TOKEN_A, 1), [TOKEN_B]: view(TOKEN_B, 1) });
+    await get(listHandler);
+
+    // A quiet instance, an hour later: the refresh reads A and has no time left for B. Nothing failed, so B's round
+    // simply has not come yet.
+    vi.setSystemTime(T0 + 3_600_000);
+    readsFrom({ [TOKEN_A]: view(TOKEN_A, 2), [TOKEN_B]: budgetSpent() });
+    const quiet = await get(listHandler);
+    expect(quiet.body).toEqual({ configured: true, tokens: [view(TOKEN_A, 2), view(TOKEN_B, 1)] });
+    expect(quiet.headers['cache-control']).toBe(LIST_CACHE);
+
+    // Once a read fails, toncenter is in trouble: B's hour-old view is left out and the list says partial.
+    vi.setSystemTime(T0 + 3_621_000);
+    readsFrom({ [TOKEN_A]: unavailable(), [TOKEN_B]: budgetSpent() });
+    const troubled = await get(listHandler);
+    expect(troubled.body).toEqual({ configured: true, tokens: [view(TOKEN_A, 2)], partial: true });
+    expect(troubled.headers['cache-control']).toBe(SHORT_CACHE);
+  });
+
   it('serves the last list again only while it was read in the last 5 minutes, then answers 503', async () => {
     const { listHandler, unavailable } = await load();
     chain.listLaunches.mockResolvedValue([launch(TOKEN_A)]);
@@ -386,6 +414,50 @@ describe('GET /api/tokens', () => {
     const bounced = await get(fresh.listHandler);
     expect(bounced.body).toEqual({ configured: true, tokens: [view(TOKEN_A)] });
     expect(bounced.headers['cache-control']).toBe(LIST_CACHE);
+  });
+
+  it('reads a launch first again while it has only read as not deployed during its first minute, and misses it until then', async () => {
+    const { listHandler, budgetSpent } = await load();
+    // A and B were read at T0. Each refresh's budget fits `budget` reads; the rest have no time left.
+    let budget = 2;
+    let launches = [launch(TOKEN_B), launch(TOKEN_A)];
+    chain.listLaunches.mockImplementation(async () => launches);
+    let deployed = false;
+    const order: string[] = [];
+    chain.readLaunchpadToken.mockImplementation(async (a: Address) => {
+      const key = a.toRawString();
+      order.push(key);
+      if (budget-- <= 0) throw budgetSpent();
+      return key === TOKEN_C && !deployed ? null : view(key);
+    });
+    await get(listHandler);
+
+    // C is set up at T0 + 28 s and read 2 s later, before its jetton is deployed.
+    vi.setSystemTime(T0 + 30_000);
+    launches = [launch(TOKEN_C, T0 + 28_000), launch(TOKEN_B), launch(TOKEN_A)];
+    budget = 1;
+    order.length = 0;
+    const early = await get(listHandler);
+    expect(order[0]).toBe(TOKEN_C);
+    expect(early.body).toEqual({ configured: true, tokens: [view(TOKEN_B), view(TOKEN_A)] });
+    expect(early.headers['cache-control']).toBe(SHORT_CACHE); // C may still be deploying
+
+    // Its first minute is over. That empty read came while it may have been deploying: C may be a token by now, so a
+    // refresh with no time for it counts it as missing, and the next one reads it first.
+    deployed = true;
+    vi.setSystemTime(T0 + 120_000);
+    budget = 0;
+    const unknown = await get(listHandler);
+    expect(unknown.body).toEqual({ configured: true, tokens: [view(TOKEN_B), view(TOKEN_A)], partial: true });
+    expect(unknown.headers['cache-control']).toBe(SHORT_CACHE);
+
+    vi.setSystemTime(T0 + 126_000);
+    budget = 1;
+    order.length = 0;
+    const listed = await get(listHandler);
+    expect(order[0]).toBe(TOKEN_C);
+    expect(listed.body).toEqual({ configured: true, tokens: [view(TOKEN_C), view(TOKEN_B), view(TOKEN_A)] });
+    expect(listed.headers['cache-control']).toBe(LIST_CACHE);
   });
 
   it('reads every token of one request in one session', async () => {

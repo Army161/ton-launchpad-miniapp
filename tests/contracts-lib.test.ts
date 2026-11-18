@@ -8,6 +8,7 @@ import {
   buildBuyBody,
   buildCreateTokenBody,
   buildSellBody,
+  canSendSell,
   computeJettonAddress,
   computeWalletAddress,
   feeSplit,
@@ -95,6 +96,17 @@ describe('curve maths', () => {
 
   it('slippage floor', () => {
     expect(withSlippage(10_000n)).toBe(9_900n);
+  });
+});
+
+describe('sell gate', () => {
+  it('sends a sell only on a live read that returned the balance, and asks to connect a wallet first', () => {
+    expect(canSendSell(true, true, 5n)).toBe(true);
+    expect(canSendSell(true, true, 0n)).toBe(true);
+    expect(canSendSell(true, false, 5n)).toBe(false); // the latest lookup failed or is still running
+    // The lookup succeeded but the balance read did not: the amount cannot be checked against the holding.
+    expect(canSendSell(true, true, null)).toBe(false);
+    expect(canSendSell(false, false, null)).toBe(true); // the button connects a wallet
   });
 });
 

@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type { Address } from '@ton/core';
 import { chainSession, listLaunches, mapLimit, readLaunchpadToken, serverFactory, type Launch, type TokenView } from '../_lib/chain.js';
 import { chainUnavailable, serverError } from '../_lib/http.js';
-import { ChainUnavailableError } from '../_lib/toncenter.js';
+import { BudgetSpentError, ChainUnavailableError } from '../_lib/toncenter.js';
 
 // Tokens are discovered from the factory's on-chain history, not from a
 // user-writable registry, so nothing unverified can be listed.
@@ -16,9 +16,10 @@ const SHORT_CACHE = 's-maxage=5, stale-while-revalidate=30';
 /** A launch this recent that reads as "nothing deployed" may still be deploying, so the list is refreshed sooner. */
 const DEPLOYING_MS = 60_000;
 /**
- * A token whose read fails is filled in from a view read this recently, or left out (partial). Longer than a full
- * round of re-reads (about a minute with TONCENTER_API_KEY, up to about 15 minutes without one on a quiet instance),
- * so only an outage or a long-idle instance reaches it.
+ * Once a token read of a refresh fails (toncenter did not answer it), the tokens that refresh did not read are filled
+ * in only from a view read this recently, or left out (partial), so an outage shows as one and not as old data. While
+ * toncenter answers, a token the refresh had no time left for is shown as last read, however long ago: the instance
+ * re-reads its tokens in turn, longest unread first, and on a quiet instance with many tokens a round takes longer.
  */
 const FILL_MAX_AGE_MS = 30 * 60_000;
 /** After a failed refresh the last list is served again only if it was read this recently; otherwise 503. */
@@ -26,7 +27,7 @@ const LIST_MAX_AGE_MS = 5 * 60_000;
 
 type Listing = { tokens: TokenView[]; partial: boolean; short: boolean; listedAt: number };
 
-/** Last view read of each listed token (by raw address) and when it was read. Fills in a token whose read fails. */
+/** Last view read of each listed token (by raw address) and when it was read. Fills in a token not read this time. */
 const lastRead = new Map<string, { view: TokenView; at: number }>();
 /** Launches whose last read found no token of ours (not deployed yet, or a setup that failed), and when. */
 const lastEmpty = new Map<string, number>();
@@ -35,19 +36,20 @@ let refreshing: Promise<Listing> | null = null;
 
 const errorText = (err: unknown) => (err instanceof Error ? err.message : 'unknown error');
 const keyOf = (address: Address) => address.toRawString();
-const mayBeDeploying = (launch: Launch, now: number) => now - launch.at < DEPLOYING_MS;
+/** True when a read at `at` may have come before the launch's jetton was deployed. */
+const mayBeDeploying = (launch: Launch, at: number) => at - launch.at < DEPLOYING_MS;
 
 /**
- * When a launch was last read, for the read order: 0 for never, and also for one that read as empty while it may
- * still be deploying, so both go first. A launch that is still empty after that takes its turn with the tokens, so
- * launches that never deploy cannot use up every refresh's budget before a token is read.
+ * When a launch was last read, for the read order: 0 for never, and also for one last read as empty while it may
+ * still have been deploying, so both go first. A launch read as empty after its first minute takes its turn with the
+ * tokens, so launches that never deploy cannot use up every refresh's budget before a token is read.
  */
-function readAt(launch: Launch, now: number): number {
+function readAt(launch: Launch): number {
   const key = keyOf(launch.address);
   const token = lastRead.get(key);
   if (token) return token.at;
   const empty = lastEmpty.get(key);
-  return empty === undefined || mayBeDeploying(launch, now) ? 0 : empty;
+  return empty === undefined || mayBeDeploying(launch, empty) ? 0 : empty;
 }
 
 async function readListing(factory: Address): Promise<Listing> {
@@ -57,17 +59,12 @@ async function readListing(factory: Address): Promise<Listing> {
   // first time. So read the launches never read here first, then the ones read longest ago: the budget then leaves
   // the most recently read for the next refresh, and successive refreshes cover every launch.
   const now = Date.now();
-  const order = [...launches].sort((a, b) => readAt(a, now) - readAt(b, now));
-  /** A view read before this is too old to fill in a failed read. Reads of this refresh are all newer. */
-  const oldest = now - FILL_MAX_AGE_MS;
-  const recent = (key: string) => {
-    const last = lastRead.get(key);
-    return last !== undefined && last.at >= oldest ? last.view : undefined;
-  };
+  const order = [...launches].sort((a, b) => readAt(a) - readAt(b));
+  /** Launches this refresh did not read: no time was left for them, or their read failed. */
+  const unread: Launch[] = [];
   let failed = 0;
-  let missing = 0;
-  let deploying = 0;
   let reason = '';
+  let deploying = 0;
   await mapLimit(order, 3, async (launch) => {
     const key = keyOf(launch.address);
     try {
@@ -81,21 +78,37 @@ async function readListing(factory: Address): Promise<Listing> {
         if (mayBeDeploying(launch, Date.now())) deploying++;
       }
     } catch (err) {
-      // Unreadable is not "not ours": keep showing the last view read, if it is recent; an older one is left out
-      // like a token never read. A launch that read as empty last time is not a missing token, but if it may still
-      // be deploying the list is refreshed sooner.
+      // Unreadable is not "not ours": the launch keeps its last view, or its last empty read. A read the session had
+      // no time left to start asked toncenter nothing, so only the others count as failed.
+      unread.push(launch);
+      if (err instanceof BudgetSpentError) return;
       failed++;
       reason ||= errorText(err);
-      if (recent(key)) return;
-      if (lastRead.has(key) || !lastEmpty.has(key)) missing++;
-      else if (mayBeDeploying(launch, Date.now())) deploying++;
     }
   });
   const listed = new Set(launches.map((l) => keyOf(l.address)));
   for (const key of lastRead.keys()) if (!listed.has(key)) lastRead.delete(key);
   for (const key of lastEmpty.keys()) if (!listed.has(key)) lastEmpty.delete(key);
+  /** A view read before this is too old to show. Reads of this refresh are all newer. */
+  const oldest = failed > 0 ? now - FILL_MAX_AGE_MS : Number.NEGATIVE_INFINITY;
+  const shown = (key: string) => {
+    const last = lastRead.get(key);
+    return last !== undefined && last.at >= oldest ? last.view : undefined;
+  };
+  let missing = 0;
+  for (const launch of unread) {
+    const key = keyOf(launch.address);
+    if (shown(key)) continue;
+    // Missing: a launch never read here, a token whose last view is too old, or a launch last read as empty while it
+    // may have been deploying (it may be a token now). One that read as empty is refreshed sooner while it may still
+    // be deploying; once read as empty after its first minute it is no token of ours.
+    const empty = lastEmpty.get(key);
+    if (empty === undefined) missing++;
+    else if (mayBeDeploying(launch, Date.now())) deploying++;
+    else if (mayBeDeploying(launch, empty)) missing++;
+  }
   if (failed > 0) console.warn(`[tokens] ${failed} of ${launches.length} token reads failed, ${missing} left out (${reason})`);
-  const tokens = launches.map((l) => recent(keyOf(l.address))).filter((v): v is TokenView => v !== undefined);
+  const tokens = launches.map((l) => shown(keyOf(l.address))).filter((v): v is TokenView => v !== undefined);
   return { tokens, partial: missing > 0, short: missing > 0 || deploying > 0, listedAt: now };
 }
 
@@ -108,8 +121,9 @@ function refresh(factory: Address): Promise<Listing> {
 }
 
 /**
- * GET /api/tokens: the factory's launches, newest first. A token whose read fails is shown as last read in the last
- * 30 minutes; one never read on this instance, or not in that time, is left out and the list says `partial: true`.
+ * GET /api/tokens: the factory's launches, newest first. A token a refresh does not read is shown as last read on this
+ * instance, but only from the last 30 minutes once a read of that refresh failed; one never read here, or not in that
+ * time, is left out and the list says `partial: true`.
  * A list is cached here for 20 s (15 s at the edge), or for 5 s when it is partial or a launch may still be deploying.
  * When the factory's history cannot be read, the last list is served again if it was read in the last 5 minutes;
  * otherwise, as with no list yet, 503 (Retry-After).

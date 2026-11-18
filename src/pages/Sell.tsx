@@ -9,6 +9,7 @@ import { useWallet } from '../context/WalletContext';
 import { useToken } from '../data/tokens';
 import {
   buildSellBody,
+  canSendSell,
   computeWalletAddress,
   formatTokens,
   formatTon,
@@ -43,6 +44,7 @@ export function Sell() {
         ? 'More than you hold'
         : null;
   const quote = token?.reserves && tokensIn && !inputError ? quoteSell(tokensIn, token.reserves) : null;
+  const sendable = canSendSell(connected, live, balance);
 
   async function confirm() {
     if (!token || !quote || !tokensIn) return;
@@ -51,7 +53,7 @@ export function Sell() {
       return;
     }
     // The quote, the balance and the confirmation baseline must come from a live read, never from an older copy.
-    if (!live) return;
+    if (!sendable) return;
     if (quote.tonOut <= 0n) {
       showToast('Amount too small to sell');
       return;
@@ -165,7 +167,13 @@ export function Sell() {
           {!checking && <button type="button" className="btn-ghost" onClick={retry}>Try again</button>}
         </div>
       )}
-      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote || (connected && !live)}>
+      {live && !sendable && !busy && (
+        <div className={styles.notice} role="status">
+          <span>Could not read your balance, so selling is paused.</span>
+          <button type="button" className="btn-ghost" onClick={retry}>Try again</button>
+        </div>
+      )}
+      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote || !sendable}>
         {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? `Confirm sell · ${amount || '0'} ${token.ticker}` : 'Connect wallet'}
       </button>
     </div>

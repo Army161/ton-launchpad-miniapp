@@ -27,6 +27,18 @@ export class ChainUnavailableError extends Error {
   }
 }
 
+/**
+ * The session's time ran out before this request's first attempt could start, so nothing was asked of toncenter and
+ * the error says nothing about whether it answers. The token list tells a read it had no time for from one that
+ * failed this way. A retry that finds no time left fails with a plain ChainUnavailableError naming its failure.
+ */
+export class BudgetSpentError extends ChainUnavailableError {
+  constructor() {
+    super('toncenter: request budget spent');
+    this.name = 'BudgetSpentError';
+  }
+}
+
 type HttpFailure = { response?: { status?: unknown }; code?: unknown; isAxiosError?: unknown };
 
 const NO_ANSWER_CODES = new Set([
@@ -126,8 +138,11 @@ export const systemClock: Clock = {
  */
 export const ATTEMPT_SLACK_MS = 250;
 
-/** Retries one instance may still make. `spend` takes one retry if there is one left. */
-export type RetryBudget = { earn(): void; spend(): boolean };
+/**
+ * Retries one instance may still make. `spend` takes one retry if there is one left; `refund` gives back one that was
+ * taken but never ran.
+ */
+export type RetryBudget = { earn(): void; spend(): boolean; refund(): void };
 
 /**
  * A retry budget: every `attemptsPerRetry` first attempts earn one retry, up to a reserve of `reserve` retries, and
@@ -146,6 +161,9 @@ export function retryBudget(attemptsPerRetry = 5, reserve = 10): RetryBudget {
       if (credit < attemptsPerRetry) return false;
       credit -= attemptsPerRetry;
       return true;
+    },
+    refund() {
+      credit = Math.min(full, credit + attemptsPerRetry);
     },
   };
 }
@@ -190,7 +208,7 @@ export function toncenterSession<C>(
   const deadline = clock.now() + policy.budgetMs;
   let lastStart = Number.NEGATIVE_INFINITY;
   let turns: Promise<unknown> = Promise.resolve();
-  const budgetSpent = () => new ChainUnavailableError('toncenter: request budget spent');
+  const budgetSpent = () => new BudgetSpentError();
 
   /**
    * Waits for an attempt's turn and returns its HTTP timeout. Attempts take turns in call order, and each starts
@@ -233,8 +251,16 @@ export function toncenterSession<C>(
 
   return {
     async call<T>(fn: (client: C) => Promise<T>): Promise<T> {
+      /** The transport failure the next attempt retries. */
+      let failure: unknown;
       for (let n = 1; ; n++) {
-        const timeoutMs = await admit();
+        // A retry takes its credit before its backoff. When the attempts queued meanwhile leave it no turn inside
+        // the budget, it never runs: the credit goes back, and the error names the failure it was to retry.
+        const timeoutMs = await admit().catch((e: unknown) => {
+          if (n === 1) throw e;
+          retries.refund();
+          throw new ChainUnavailableError(`toncenter: ${describe(failure)}, no time left to retry`);
+        });
         if (n === 1) retries.earn();
         try {
           return await attempt(fn, timeoutMs);
@@ -250,6 +276,7 @@ export function toncenterSession<C>(
           if (!retries.spend()) {
             throw new ChainUnavailableError(`toncenter: ${describe(e)}, no retries left on this instance`);
           }
+          failure = e;
           await clock.sleep(delay);
         }
       }

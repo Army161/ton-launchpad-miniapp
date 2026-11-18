@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ATTEMPT_SLACK_MS,
   backoffDelay,
+  BudgetSpentError,
   callPolicy,
   ChainUnavailableError,
   getterExitCode,
@@ -339,6 +340,37 @@ describe('toncenter session', () => {
 
     for (let i = 0; i < 46; i++) expect(await lookup(['ok'])).toEqual({ outcome: 'ok', attempts: 1 });
     expect(await lookup([httpError(429), httpError(429), httpError(429), 'state'])).toEqual({ outcome: 'state', attempts: 4 });
+  });
+
+  it('gives a retry its credit back when the attempts queued meanwhile leave it no turn', async () => {
+    // Credit for exactly one retry: whatever a retry that never ran took must come back.
+    const shared = retryBudget(5, 1);
+    const h = harness(KEYLESS, 100, undefined, shared);
+    // Six reads take turns at 0, 1.1, 2.2, 3.3, 4.4 and 5.5 s. The third fails at 2.3 s and backs off 0.75 s, but its
+    // retry's turn comes after the sixth read's, at 6.6 s, with less than one attempt's time left of the 7 s.
+    const scripts: Outcome[][] = [['a'], ['b'], [httpError(429), 'c'], ['d'], ['e'], ['f']];
+    const outcomes = await h.drive(Promise.all(scripts.map((s) => h.request(s).catch((e: unknown) => e))));
+    expect(h.attempts.map((a) => a.at)).toEqual([0, 1100, 2200, 3300, 4400, 5500]);
+    expect(outcomes[2]).toBeInstanceOf(ChainUnavailableError);
+    expect(outcomes[2]).not.toBeInstanceOf(BudgetSpentError); // it was asked, and failed
+    expect((outcomes[2] as Error).message).toBe('toncenter: HTTP 429, no time left to retry');
+    expect([...outcomes.slice(0, 2), ...outcomes.slice(3)]).toEqual(['a', 'b', 'd', 'e', 'f']);
+
+    // The retry never ran, so the next invocation can still retry.
+    const next = harness(KEYLESS, 100, undefined, shared);
+    await expect(next.drive(next.request([httpError(429), 'ok']))).resolves.toBe('ok');
+  });
+
+  it('tells a request the session had no time left to start from one that failed', async () => {
+    const h = harness(KEYLESS);
+    const outcomes = await h.drive(Promise.all(Array.from({ length: 7 }, () => h.request(['ok']).catch((e: unknown) => e))));
+    expect(outcomes[6]).toBeInstanceOf(BudgetSpentError);
+    expect(outcomes[6]).toBeInstanceOf(ChainUnavailableError); // still a 503 for the endpoints
+
+    const f = harness(KEYLESS);
+    const failed = await f.drive(f.request([httpError(503), httpError(503), httpError(503), httpError(503)]).catch((e: unknown) => e));
+    expect(failed).toBeInstanceOf(ChainUnavailableError);
+    expect(failed).not.toBeInstanceOf(BudgetSpentError);
   });
 
   it('keeps the request config (and its API key) out of the error', async () => {
