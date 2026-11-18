@@ -37,9 +37,9 @@
 ## Failure behaviour
 
 Every external feed resolves to an empty list, `null` or "—" on network errors, HTTP errors and malformed JSON, and
-never invents data (`tests/external-feeds.test.ts`). The app's own API resolves to an `error` result instead (also when a
-request stalls: it is aborted after 15 s), which the pages show as "try again shortly" with a Try again button, never
-as "no tokens" or "not found".
+never invents data (`tests/external-feeds.test.ts`). The app's own token list and token lookups resolve to an
+`error` result instead (also when a request stalls: it is aborted after 15 s), which the pages show as "try again
+shortly" with a Try again button, never as "no tokens" or "not found".
 
 When toncenter cannot be read, the app's own API answers 503 with `Retry-After` instead of "not a launchpad token".
 The token list then shows each token it could not read as last read if that was in the last 30 minutes, leaves out

@@ -70,10 +70,11 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 
 2026-11-18, PR #12 on d41d543 (on top of fae7421 and its docs commits: the code-review bot's three comments on
 098664f): contracts build, typecheck and 94/94 tests (rehearsal build present), wrappers in sync, lint 0 errors (the
-same 5 warnings), 176/176 app tests, build (1,066 kB JS, gzip 315 kB), bundle secret scan clean, no tracked env files.
-A launch whose reads keep failing takes its turn after two failed reads in a row instead of going first in every
-refresh; every request to the app's own API is aborted after 15 s, so a stalled one cannot hold a page or a
-confirmation wait; a call from an earlier visit stays ignored after the page comes back to that token and wallet.
+same 5 warnings), 176/176 app tests, build (1,066 kB JS, gzip 315 kB), bundle secret scan clean, no tracked env
+files. A launch whose reads keep failing takes its turn after two failed reads in a row instead of going first in
+every refresh; every token list and token lookup request is aborted after 15 s, so a stalled one cannot hold a page
+or a confirmation wait; a call from an earlier visit stays ignored after the page comes back to that token and
+wallet.
 
 2026-11-18, PR #12 on fae7421 (on top of 3df8aa4: the token list cached and filled from the last read and retryable
 errors in the app, 5e17756; the env validator's mnemonic fix, 1eea118; trading only on a live read, one retry budget

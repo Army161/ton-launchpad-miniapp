@@ -120,9 +120,9 @@ Without a key it reads about 5 known tokens or 2 new ones per refresh, so a fres
   they show the token as Home listed it, and offer Try again. Only the newest lookup's answer is used: a late answer
   (an earlier lookup, or the token the page showed before) never replaces a newer one. A page that moves to another
   token or wallet starts from what is known about that one, never from the previous one, and a call from an earlier
-  visit (a trade confirmed before the wallet changed) is ignored, also once the page is back on that token and wallet.
-  A mangled address (HTTP 400) reads as "Token not found." and is not retried. Every request to the app's API is
-  aborted after 15 s and reads as an error, so a request that stalls cannot hold a page.
+  visit (a trade confirmed before the wallet changed) is ignored, also once the page is back on that token and
+  wallet. A mangled address (HTTP 400) reads as "Token not found." and is not retried. Every token list and token
+  lookup request is aborted after 15 s and reads as an error, so a request that stalls cannot hold a page.
 - Buy and Sell trade only on a live read: until the page's latest lookup has succeeded (and again whenever one
   fails), Confirm is disabled and the page says it is loading the live price, or that it could not, with Try again.
   So the quote, the minimum received, the balance and the confirmation baseline (the trade count) never come from
