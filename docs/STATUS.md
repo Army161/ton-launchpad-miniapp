@@ -10,11 +10,11 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4 and on PR #12's head fae7421) |
-| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4 and on fae7421: 0 errors, 5 warnings) |
-| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4 and on fae7421) |
-| Contract tests | PASS | 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` run on fae7421, 2026-11-18 |
-| App/API tests | PASS | 172/172 vitest (2026-11-18, PR #12 on fae7421: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes); 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
+| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4, on fae7421 and on PR #12's head d41d543) |
+| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4, fae7421 and d41d543: 0 errors, 5 warnings) |
+| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4, fae7421 and d41d543) |
+| Contract tests | PASS | 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` runs on fae7421 and d41d543, 2026-11-18 |
+| App/API tests | PASS | 176/176 vitest (2026-11-18, PR #12 on d41d543: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes, the code-review bot's fixes); 172/172 on fae7421; 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
@@ -67,6 +67,13 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Short referral deep links (`startapp`, 64-char limit) | P1 | contract side done (ADR-008); needs launch id + referral code mapping in the API and the Buy page reading `start_param` |
 
 ## Verified at
+
+2026-11-18, PR #12 on d41d543 (on top of fae7421 and its docs commits: the code-review bot's three comments on
+098664f): contracts build, typecheck and 94/94 tests (rehearsal build present), wrappers in sync, lint 0 errors (the
+same 5 warnings), 176/176 app tests, build (1,066 kB JS, gzip 315 kB), bundle secret scan clean, no tracked env files.
+A launch whose reads keep failing takes its turn after two failed reads in a row instead of going first in every
+refresh; every request to the app's own API is aborted after 15 s, so a stalled one cannot hold a page or a
+confirmation wait; a call from an earlier visit stays ignored after the page comes back to that token and wallet.
 
 2026-11-18, PR #12 on fae7421 (on top of 3df8aa4: the token list cached and filled from the last read and retryable
 errors in the app, 5e17756; the env validator's mnemonic fix, 1eea118; trading only on a live read, one retry budget
