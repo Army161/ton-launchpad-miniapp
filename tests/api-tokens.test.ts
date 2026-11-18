@@ -251,7 +251,7 @@ describe('GET /api/tokens', () => {
     expect(answer.body).toEqual({ configured: true, tokens: [view(TOKEN_C), view(TOKEN_B), view(TOKEN_A)] });
   });
 
-  it('reads launches that never deployed after the tokens, so they cannot keep a token out of every list', async () => {
+  it('reads launches that never deployed in turn with the tokens, so they cannot keep a token out of every list', async () => {
     const { listHandler, unavailable } = await load();
     // B and C were set up long ago and read as empty; A is a token. Each refresh's budget fits two reads.
     let budget = 0;

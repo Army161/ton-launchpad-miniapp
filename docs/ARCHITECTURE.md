@@ -72,37 +72,38 @@ from when the previous request actually started (a timer that fires late delays 
 two start together). It retries HTTP 429, HTTP 5xx and requests with no complete answer (timeouts, resets, a body
 that breaks off after the headers) with jittered exponential backoff, at most 4 attempts per request, and stops at a
 7 s budget per API request: each attempt's HTTP timeout, at most 5 s, is what is left of the budget when the attempt
-actually starts, and no attempt starts with less than 1 s left. That HTTP timeout stops counting once the headers are
-in, so the session also ends an attempt still running 250 ms after it (a body that trickles in) and treats it as a
-timeout: an API request never runs more than 250 ms past its budget. Retries come from one budget per instance,
-shared by every request it serves: every 5 first attempts earn one retry, up to a reserve of 10. An occasional 429 is
-retried as before, but when most reads fail (toncenter rate limiting us, or a flood of lookups for random addresses)
-retries stop once the reserve is spent, so each request costs about one attempt instead of four. A retry that the
-requests queued meanwhile leave no time to start gives its retry back. Instances do not share the budget; a per-IP rate limit in front of `/api/tokens/*` is what would bound the total (`docs/SECURITY.md` #24). A
-getter exit code (no such getter, or nothing deployed), an uninitialized curve, another factory or an address the
-factory would not derive means "not our token". Running out of retries or budget throws `ChainUnavailableError`,
-which the endpoints answer with 503. Getter exit codes, malformed responses and other 4xx are never retried. A token
-read is 1 request (`get_curve_state`), plus `get_jetton_data` the first time an instance reads the token: the jetton
-content is written once by the factory's setup and never changes, so it is kept in memory. The text is held to the
-Create page's limits first (name 32, symbol 10, description 200 characters; an image or Telegram link over 256 is
-dropped), since a launch made outside the app can store far more and every list would carry it. A holder balance is 2
-more requests (account state, `get_wallet_data`).
+actually starts, and no attempt starts with less than 1 s left. That HTTP timeout stops counting once the headers
+are in, so the session also ends an attempt still running 250 ms after it (a body that trickles in) and treats it as
+a timeout: an API request never runs more than 250 ms past its budget. Retries come from one budget per instance,
+shared by every request it serves: every 5 first attempts earn one retry, up to a reserve of 10. An occasional 429
+is retried as before, but when most reads fail (toncenter rate limiting us, or a flood of lookups for random
+addresses) retries stop once the reserve is spent, so each request costs about one attempt instead of four. A retry
+that the requests queued meanwhile leave no time to start gives its retry back. Instances do not share the budget; a
+per-IP rate limit in front of `/api/tokens/*` is what would bound the total (`docs/SECURITY.md` #24). A getter exit
+code (no such getter, or nothing deployed), an uninitialized curve, another factory or an address the factory would
+not derive means "not our token". Running out of retries or budget throws `ChainUnavailableError`, which the
+endpoints answer with 503. Getter exit codes, malformed responses and other 4xx are never retried. A token read is 1
+request (`get_curve_state`), plus `get_jetton_data` the first time an instance reads the token: the jetton content
+is written once by the factory's setup and never changes, so it is kept in memory. The text is held to the Create
+page's limits first (name 32, symbol 10, description 200 characters; an image or Telegram link over 256 is dropped),
+since a launch made outside the app can store far more and every list would carry it. A holder balance is 2 more
+requests (account state, `get_wallet_data`).
 
 The list costs 1 request (the factory's transactions) plus 1 per token, and one 7 s budget fits about 50 requests
 with `TONCENTER_API_KEY` (6 without). So a refresh reads the launches never read on that instance first, then the
 ones read longest ago, and leaves the rest as last read. A launch read as not deployed during its first minute (it
-may still have been deploying) is read first again until a read after that minute, and counts as a missing token
-while it cannot be read; one read as not deployed after its first minute takes its turn by when it was last read,
-like a token, and is no token of ours, so launches that never deploy cannot use up every refresh before a token is
-read. While toncenter answers, a token the refresh has no time left for is shown as last read, however long ago: the
-round of re-reads depends on traffic, and on a quiet instance with many tokens it takes longer than 30 minutes. Once
-a read of the refresh fails, last-good data has an age limit: the tokens it did not read are filled in only from a
-view of the last 30 minutes, and a list is served again after a failed refresh only if it was read in the last 5
-minutes; after that the endpoint answers 503. So an outage of toncenter shows as one, not as a list frozen in time.
-With a key a refresh reads about 46 known tokens or 22 new ones (33 or 15 when toncenter takes 500 ms per getter),
-and successive refreshes cover the whole list (at most 100 factory transactions, `docs/STATUS.md`). Without a key it
-reads about 5 known tokens or 2 new ones per refresh, so a fresh instance needs several refreshes, 5 s apart, to list
-everything (`tests/api-tokens-progress.test.ts` pins both rates).
+may still have been deploying) is read first again until a read after that minute, and once that minute has passed
+counts as a missing token while it cannot be read; one read as not deployed after its first minute takes its turn by
+when it was last read, like a token, and is no token of ours, so launches that never deploy cannot use up every
+refresh before a token is read. While toncenter answers, a token the refresh has no time left for is shown as last
+read, however long ago: the round of re-reads depends on traffic, and on a quiet instance with many tokens it takes
+longer than 30 minutes. Once a read of the refresh fails, last-good data has an age limit: the tokens it did not
+read are filled in only from a view of the last 30 minutes, and a list is served again after a failed refresh only
+if it was read in the last 5 minutes; after that the endpoint answers 503. So an outage of toncenter shows as one,
+not as a list frozen in time. With a key a refresh reads about 46 known tokens or 22 new ones (33 or 15 when
+toncenter takes 500 ms per getter), and successive refreshes cover the whole list (at most 100 factory transactions,
+`docs/STATUS.md`). Without a key it reads about 5 known tokens or 2 new ones per refresh, so a fresh instance needs
+several refreshes, 5 s apart, to list everything (`tests/api-tokens-progress.test.ts` pins both rates).
 
 ## Front end (`src/`)
 
