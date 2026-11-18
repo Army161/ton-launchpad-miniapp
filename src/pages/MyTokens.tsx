@@ -13,6 +13,9 @@ export function MyTokens() {
   const { connected, address, connect } = useWallet();
   const [jettons, setJettons] = useState<JettonBalance[]>([]);
   const [created, setCreated] = useState<string[]>([]);
+  // The launchpad list could not be loaded, or only in part: tokens this wallet created may be missing.
+  const [createdIncomplete, setCreatedIncomplete] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,13 +23,16 @@ export function MyTokens() {
 
     async function load() {
       setLoading(true);
-      const lpTokens = await fetchLaunchpadTokens();
+      const list = await fetchLaunchpadTokens();
       if (!cancelled) {
-        registerLiveTokens(lpTokens.map(launchpadToToken));
+        // A failed list shows no created tokens (never another wallet's from an earlier load), with the note below.
+        const tokens = list.status === 'ok' ? list.tokens : [];
+        registerLiveTokens(tokens.map(launchpadToToken));
         if (address) {
           const me = Address.parse(address);
-          setCreated(lpTokens.filter((t) => Address.parse(t.creator).equals(me)).map((t) => t.address));
+          setCreated(tokens.filter((t) => Address.parse(t.creator).equals(me)).map((t) => t.address));
         }
+        setCreatedIncomplete(list.status === 'error' || list.partial);
       }
 
       if (address) {
@@ -38,7 +44,7 @@ export function MyTokens() {
 
     load();
     return () => { cancelled = true; };
-  }, [address]);
+  }, [address, attempt]);
 
   if (!connected) {
     return (
@@ -68,16 +74,26 @@ export function MyTokens() {
         <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>Loading...</p>
       ) : (
         <>
-          {created.length > 0 && (
+          {(created.length > 0 || createdIncomplete) && (
             <>
               <h2 style={{ fontSize: 14, color: 'var(--text-muted)' }}>Created</h2>
-              <div className="token-grid">
-                {created.map((id) => (
-                  <Link key={id} to={`/token/${id}`} className="token-card card">
-                    <span>{id.slice(0, 8)}…</span>
-                  </Link>
-                ))}
-              </div>
+              {createdIncomplete && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                  <p className="muted" style={{ fontSize: 13 }}>Could not load all launchpad tokens, so some you created may be missing.</p>
+                  <button type="button" className="btn-ghost" onClick={() => setAttempt((n) => n + 1)}>
+                    Try again
+                  </button>
+                </div>
+              )}
+              {created.length > 0 && (
+                <div className="token-grid">
+                  {created.map((id) => (
+                    <Link key={id} to={`/token/${id}`} className="token-card card">
+                      <span>{id.slice(0, 8)}…</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </>
           )}
 

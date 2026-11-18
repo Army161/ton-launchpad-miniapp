@@ -1,6 +1,7 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { BondingCurve } from '../components/BondingCurve';
 import { TokenAvatar } from '../components/TokenAvatar';
+import { TokenUnavailable } from '../components/TokenUnavailable';
 import {
   IconArrowDown,
   IconBack,
@@ -20,7 +21,10 @@ import styles from './TokenDetail.module.css';
 
 export function TokenDetail() {
   const { id = '' } = useParams<{ id: string }>();
-  const { token, status } = useToken(id);
+  // Create sends a launch here before it is confirmed: keep looking for the token for a while.
+  const location = useLocation();
+  const launched = (location.state as { launched?: boolean } | null)?.launched === true;
+  const { token, status, retry } = useToken(id, undefined, { retryNotFound: launched });
 
   if (status === 'loading') {
     return (
@@ -30,18 +34,7 @@ export function TokenDetail() {
     );
   }
 
-  if (!token) {
-    return (
-      <div className="page page--no-nav">
-        <Link to="/" className="btn-ghost">
-          <IconBack /> Back
-        </Link>
-        <p style={{ marginTop: 24 }} className="muted">
-          {status === 'error' ? 'Could not load this token. Try again shortly.' : 'Token not found.'}
-        </p>
-      </div>
-    );
-  }
+  if (!token) return <TokenUnavailable status={status} launched={launched} onRetry={retry} />;
 
   const change24h = token.change24h;
   const priceDelta = change24h == null ? 0 : Number(((token.priceUsd * change24h) / 100).toFixed(2));

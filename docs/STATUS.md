@@ -1,6 +1,6 @@
 # STATUS.md — current state
 
-Updated: 2026-11-17 · Branch: `clawdbot-permanent` (GitHub default and Vercel production branch; `main` was merged into it by PR #3 and deleted)
+Updated: 2026-11-18 · Branch: `clawdbot-permanent` (GitHub default and Vercel production branch; `main` was merged into it by PR #3 and deleted)
 
 **Overall: MAINNET DEPLOY IN PROGRESS.** The testnet gate passed and the founder wrote "MAINNET GO-LIVE APPROVED" on
 2026-11-17. The live site runs 682021b with launches disabled (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY`). What remains is
@@ -10,11 +10,11 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165) |
-| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change) |
-| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf) |
-| Contract tests | PASS | 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17 |
-| App/API tests | PASS | 119/119 vitest (2026-11-17, API read-path change on 933a165: toncenter retries, 503 instead of a false 404, no cached partial list); 68/68 at e113ccf |
+| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 with its review follow-up on 3df8aa4) |
+| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 with its review follow-up on 3df8aa4: 0 errors, 5 warnings) |
+| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` run of the API review follow-up on 3df8aa4) |
+| Contract tests | PASS | 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18 |
+| App/API tests | PASS | 136/136 vitest (2026-11-18, review follow-up of the API read-path change on 3df8aa4: list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
@@ -57,7 +57,7 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 |---|---|---|
 | Record mainnet evidence | P0 | after the factory deploy: address and transaction here and in VERIFICATION |
 | Pagination past the ~100 most recent factory transactions in `/api/tokens` | P1 | fine at launch volume; needs an indexer or DB later (ADR-003) |
-| `/api/tokens` reads 2 getters per token inside one 7 s budget | P1 | about 2 tokens per request without `TONCENTER_API_KEY`, about 25 with it; past that the list comes back partial and uncached, so each Home load reads the chain again. Token metadata never changes after launch, so caching `get_jetton_data` per token would halve the requests; an indexer removes the limit (ADR-003) |
+| `/api/tokens` reads the chain inside one 7 s budget per refresh | P1 | a refresh reads about 46 known or 22 new tokens with `TONCENTER_API_KEY` (about 5 or 2 without), never-read and stalest first, and shows the rest as last read, so successive refreshes cover the list (5 s apart while it is partial). The state is per Vercel instance: a fresh instance's first lists can be partial (`partial: true`, 5 s cache) past about 22 tokens with a key, or 2 without. An indexer removes the limit (ADR-003) |
 | Env validator calls a real mnemonic a placeholder | P1 | `checkMnemonic` (`scripts/env/rules.ts`) matches its placeholder pattern against the words, and `example` and `replace` are real wordlist words: about 2.3% of valid mnemonics fail with "still a placeholder". If the founder's `DEPLOY_MNEMONIC` contains either word, `validate-env deploy-mainnet` fails and `scripts/launch-production.sh` (which runs under `set -euo pipefail`) stops at step 1/5, before it spends any TON. The same bug makes two tests in `tests/env-rules.test.ts` fail about 1 run in 20 |
 | Rate limit on `/api/metadata/upload` | P2 | SECURITY #13 |
 | Bundle size (1.05 MB, mostly TON libraries) | P2 | code-split the trading pages |
@@ -66,6 +66,22 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Short referral deep links (`startapp`, 64-char limit) | P1 | contract side done (ADR-008); needs launch id + referral code mapping in the API and the Buy page reading `start_param` |
 
 ## Verified at
+
+2026-11-18, review follow-up on 3df8aa4 (review findings server-R1/R2/R3, client-UX-1 to UX-5, tests-docs-CACHE-1 and
+TEST-1): lint 0 errors (same 5 warnings as before), 136/136 app tests (new: `tests/chain-session.test.ts`; two runs hit the env validator
+flake in the remaining work above and passed on rerun), build,
+bundle secret scan clean, no tracked env files. Contracts untouched; the `/verify` contract run passed (93 passed, 1
+skipped without the rehearsal build) and left `src/contracts` unchanged. `/api/tokens` now runs one refresh
+at a time per instance, reads `get_jetton_data` once per token, shows a token whose read fails as last read, leaves
+out (and marks `partial`) only tokens never read, caches that for 5 s instead of not at all, serves the last list when
+the factory's transactions cannot be read, and caches for 5 s while a launch of the last minute is still deploying.
+`/api/tokens/:address` returns the token without a balance when only the balance read fails. Home and My Tokens show
+a retryable error instead of "No launchpad tokens yet"; token pages retry a failed lookup and offer Try again; Buy and
+Sell keep an on-page notice after a confirmation timeout; an unconfirmed launch no longer promises that the page will
+load by itself. `validate-env production` warns when `TONCENTER_API_KEY` is missing. A virtual-clock run of the real
+handlers (one 10 rps key, 10 tokens, 2 Home loads per second, one trader polling every 3 s) served 229 of 259 loads
+from memory and offered toncenter 1.7 requests/s, with no 503 among 40 polls; the previous version served none from
+memory, offered 52.0 requests/s and answered 26 of 40 polls with 503.
 
 2026-11-17, API read-path change on 933a165 (pre-launch review findings API-1 and TC-1): lint 0 errors, 119/119 app
 tests (new: `tests/toncenter.test.ts`, `tests/chain-read.test.ts`, `tests/api-tokens.test.ts`), build, bundle secret

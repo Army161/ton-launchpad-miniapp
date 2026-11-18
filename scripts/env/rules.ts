@@ -7,13 +7,15 @@ import { Address } from '@ton/core';
 import { mnemonicValidate } from '@ton/crypto';
 
 export type Profile = 'deploy-testnet' | 'deploy-mainnet' | 'production';
-export type Finding = { name: string; ok: boolean; message: string };
+/** `warn`: passes (does not fail the profile) but needs a look, e.g. a variable that is missing but not required. */
+export type Finding = { name: string; ok: boolean; message: string; warn?: boolean };
 export type Env = Record<string, string | undefined>;
 
 const PLACEHOLDER = /REPLACE|PASTE|YOUR_?|YourBot|yourapp|yourshortname|PENDING|CHANGE[-_]?ME|example|xxxx|word1/i;
 
 const pass = (name: string, message = 'ok'): Finding => ({ name, ok: true, message });
 const fail = (name: string, message: string): Finding => ({ name, ok: false, message });
+const warn = (name: string, message: string): Finding => ({ name, ok: true, warn: true, message });
 
 export function checkTonAddress(name: string, value: string | undefined, network: 'mainnet' | 'testnet'): Finding {
   if (!value) return fail(name, 'missing');
@@ -126,6 +128,12 @@ export async function validate(profile: Profile, env: Env): Promise<Finding[]> {
     findings.push(checkHttpsUrl('VITE_MANIFEST_URL', env.VITE_MANIFEST_URL));
     findings.push(env.VITE_NETWORK === 'mainnet' ? pass('VITE_NETWORK', 'mainnet') : fail('VITE_NETWORK', 'must be "mainnet" for production'));
     if (env.DEPLOY_MNEMONIC) findings.push(fail('DEPLOY_MNEMONIC', 'must not be set in the production runtime; keep it local'));
+    // Not required, so not a failure; but without a key toncenter allows about 1 request/s per (shared) Vercel IP.
+    findings.push(
+      env.TONCENTER_API_KEY?.trim()
+        ? pass('TONCENTER_API_KEY', 'set')
+        : warn('TONCENTER_API_KEY', 'not set here: without it token pages and trade confirmations fail under load; set it in Vercel Production (docs/ENVIRONMENT.md)'),
+    );
     findings.push(...checkPublicVars(env));
   }
   return findings;

@@ -40,10 +40,16 @@ function pickColor(i: number) {
 
 type Tab = 'launchpad' | 'graduated';
 
+/** After a failed load the launchpad list is fetched once more on its own, this much later; then Try again. */
+const LIST_RETRY_MS = 5000;
+
 export function Home() {
   const [tab, setTab] = useState<Tab>('launchpad');
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
+  // 'error': the list could not be loaded, which must not read as "no tokens yet". 'partial': some were left out.
+  const [lpState, setLpState] = useState<'ok' | 'partial' | 'error'>('ok');
+  const [lpAttempt, setLpAttempt] = useState(0);
   const [tonPrice, setTonPrice] = useState<{ usd: number; change24h: number | null } | null>(null);
 
   useEffect(() => {
@@ -52,11 +58,20 @@ export function Home() {
 
   useEffect(() => {
     let cancelled = false;
+    let retry: ReturnType<typeof setTimeout> | undefined;
 
     async function loadLaunchpad() {
       setLoading(true);
-      const lpTokens = await fetchLaunchpadTokens();
+      const list = await fetchLaunchpadTokens();
       if (cancelled) return;
+      if (list.status === 'error' || (list.partial && list.tokens.length === 0)) {
+        setCards([]);
+        setLpState('error');
+        setLoading(false);
+        if (lpAttempt === 0) retry = setTimeout(() => setLpAttempt(1), LIST_RETRY_MS);
+        return;
+      }
+      const lpTokens = list.tokens;
 
       registerLiveTokens(lpTokens.map(launchpadToToken));
 
@@ -74,6 +89,7 @@ export function Home() {
       }));
 
       setCards(lpCards);
+      setLpState(list.partial ? 'partial' : 'ok');
       setLoading(false);
     }
 
@@ -121,8 +137,11 @@ export function Home() {
     if (tab === 'launchpad') loadLaunchpad();
     else loadGraduated();
 
-    return () => { cancelled = true; };
-  }, [tab]);
+    return () => {
+      cancelled = true;
+      clearTimeout(retry);
+    };
+  }, [tab, lpAttempt]);
 
   return (
     <div className="page">
@@ -170,43 +189,55 @@ export function Home() {
 
       {loading ? (
         <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>Loading tokens...</p>
+      ) : tab === 'launchpad' && lpState === 'error' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 48 }}>
+          <p className="muted" style={{ textAlign: 'center' }}>Could not load tokens. Try again shortly.</p>
+          <button type="button" className="btn-secondary" onClick={() => setLpAttempt((n) => n + 1)}>
+            Try again
+          </button>
+        </div>
       ) : cards.length === 0 ? (
         <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>
           {tab === 'launchpad' ? 'No launchpad tokens yet. Be the first to launch!' : 'No graduated tokens found.'}
         </p>
       ) : (
-        <div className="token-grid">
-          {cards.map((card) => (
-            <Link key={card.id} to={`/token/${card.id}`} className="token-card card">
-              <div className="token-card-top">
-                <TokenAvatar emoji={card.source === 'launchpad' ? '🚀' : '🪙'} color={card.color} size={36} imageUrl={card.imageUrl || undefined} />
-                <div className="token-card-names">
-                  <strong>{card.name}</strong>
-                  <span className="muted">${card.ticker}</span>
+        <>
+          {tab === 'launchpad' && lpState === 'partial' && (
+            <p className="muted" style={{ fontSize: 12 }}>Some tokens could not be loaded right now.</p>
+          )}
+          <div className="token-grid">
+            {cards.map((card) => (
+              <Link key={card.id} to={`/token/${card.id}`} className="token-card card">
+                <div className="token-card-top">
+                  <TokenAvatar emoji={card.source === 'launchpad' ? '🚀' : '🪙'} color={card.color} size={36} imageUrl={card.imageUrl || undefined} />
+                  <div className="token-card-names">
+                    <strong>{card.name}</strong>
+                    <span className="muted">${card.ticker}</span>
+                  </div>
                 </div>
-              </div>
-              {card.source === 'launchpad' && card.curveProgress != null && !card.graduated && (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                  Curve {card.curveProgress.toFixed(0)}% · {CONFIG.graduationTarget} TON
+                {card.source === 'launchpad' && card.curveProgress != null && !card.graduated && (
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    Curve {card.curveProgress.toFixed(0)}% · {CONFIG.graduationTarget} TON
+                  </div>
+                )}
+                <div className="token-card-bottom">
+                  <span className="token-card-price">
+                    {card.priceUsd > 0
+                      ? card.priceUsd < 0.01
+                        ? `$${card.priceUsd.toExponential(2)}`
+                        : `$${card.priceUsd.toFixed(4)}`
+                      : card.graduated
+                        ? 'Graduated'
+                        : 'Bonding curve'}
+                  </span>
+                  <span className={`token-card-change${card.change24h == null ? '' : card.change24h >= 0 ? ' positive' : ' negative'}`}>
+                    {card.change24h == null ? '\u2014' : `${card.change24h >= 0 ? '+' : ''}${card.change24h.toFixed(2)}%`}
+                  </span>
                 </div>
-              )}
-              <div className="token-card-bottom">
-                <span className="token-card-price">
-                  {card.priceUsd > 0
-                    ? card.priceUsd < 0.01
-                      ? `$${card.priceUsd.toExponential(2)}`
-                      : `$${card.priceUsd.toFixed(4)}`
-                    : card.graduated
-                      ? 'Graduated'
-                      : 'Bonding curve'}
-                </span>
-                <span className={`token-card-change${card.change24h == null ? '' : card.change24h >= 0 ? ' positive' : ' negative'}`}>
-                  {card.change24h == null ? '\u2014' : `${card.change24h >= 0 ? '+' : ''}${card.change24h.toFixed(2)}%`}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

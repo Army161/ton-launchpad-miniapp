@@ -16,7 +16,8 @@ function parseAddress(value: unknown): Address | null {
 /**
  * GET /api/tokens/:address[?holder=<wallet>]: live curve state, optional holder balance.
  * 404 only when the chain answered that this is not one of our tokens; 503 (Retry-After) when toncenter could not
- * be read, so a confirmation poll keeps polling instead of reporting a missing token.
+ * be read, so a confirmation poll keeps polling instead of reporting a missing token. When only the holder balance
+ * cannot be read, the token is still returned, without `balance`.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
@@ -33,7 +34,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const chain = chainSession();
     const token = await readLaunchpadToken(address, factory, chain);
     if (!token) return res.status(404).json({ error: 'Not a launchpad token' });
-    const balance = holder ? (await readHolderBalance(address, holder, Address.parse(token.dexRouter), chain)).toString() : undefined;
+    let balance: string | undefined;
+    if (holder) {
+      try {
+        balance = (await readHolderBalance(address, holder, Address.parse(token.dexRouter), chain)).toString();
+      } catch (err) {
+        if (!(err instanceof ChainUnavailableError)) throw err;
+        // The live token read is what a confirmation poll needs; the client treats a missing balance as unknown.
+        console.warn('[token] holder balance not read:', err.message);
+      }
+    }
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ token, balance });
   } catch (err) {

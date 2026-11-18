@@ -153,8 +153,9 @@ export function Create() {
       showToast(`${meta.symbol} is live`);
       navigate(`/token/${id}`);
     } else {
-      showToast('Not confirmed yet. Check your wallet history; the token page will load once it lands.');
-      navigate(`/token/${id}`);
+      // The token page keeps looking for the token for a while and says the launch is not confirmed yet.
+      showToast('Launch not confirmed yet. Check your wallet history before launching again.');
+      navigate(`/token/${id}`, { state: { launched: true } });
     }
   }
 

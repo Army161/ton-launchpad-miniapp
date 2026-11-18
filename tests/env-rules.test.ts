@@ -71,6 +71,27 @@ describe('env rules', () => {
     expect(text).not.toContain(JWT);
   });
 
+  it('production profile warns, without failing, when TONCENTER_API_KEY is missing', async () => {
+    const env = {
+      PLATFORM_TREASURY_ADDRESS: MAINNET_ADDR,
+      TELEGRAM_BOT_TOKEN: BOT,
+      JWT_SECRET: JWT,
+      FACTORY_ADDRESS: MAINNET_ADDR,
+      VITE_FACTORY_ADDRESS: MAINNET_ADDR,
+      VITE_TWA_RETURN_URL: 'https://t.me/TONLaunchpadBot/launch',
+      VITE_MANIFEST_URL: 'https://ton-launchpad-miniapp.vercel.app/tonconnect-manifest.json',
+      VITE_NETWORK: 'mainnet',
+    };
+    const without = await validate('production', env);
+    expect(without.filter((f) => !f.ok)).toEqual([]);
+    expect(without.find((f) => f.name === 'TONCENTER_API_KEY')).toMatchObject({ ok: true, warn: true });
+    const withKey = await validate('production', { ...env, TONCENTER_API_KEY: 'a-toncenter-key' });
+    const key = withKey.find((f) => f.name === 'TONCENTER_API_KEY');
+    expect(key).toMatchObject({ ok: true });
+    expect(key?.warn).toBeUndefined();
+    expect(JSON.stringify(withKey)).not.toContain('a-toncenter-key');
+  });
+
   it('production profile fails closed on placeholders and a deploy mnemonic', async () => {
     const findings = await validate('production', { VITE_FACTORY_ADDRESS: 'PENDING_DEPLOY', DEPLOY_MNEMONIC: 'x', VITE_NETWORK: 'testnet' });
     const failed = findings.filter((f) => !f.ok).map((f) => f.name);

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Address } from '@ton/core';
 import { IconBack, IconCheck, IconInfo, IconShield } from '../components/Icons';
 import { TokenAvatar } from '../components/TokenAvatar';
+import { TokenUnavailable } from '../components/TokenUnavailable';
 import { useToast } from '../context/ToastContext';
 import { useWallet } from '../context/WalletContext';
 import { useToken } from '../data/tokens';
@@ -26,9 +27,11 @@ export function Buy() {
   const { id = '' } = useParams<{ id: string }>();
   const { showToast } = useToast();
   const { connected, connect, sendTransaction, address } = useWallet();
-  const { token, status, refresh } = useToken(id, address);
+  const { token, status, refresh, retry } = useToken(id, address);
   const [amount, setAmount] = useState('1');
   const [phase, setPhase] = useState<Phase>('idle');
+  // A buy whose confirmation timed out may still land: warn on the page, not only in a passing toast.
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
   const tonIn = parseAmount(amount);
   const inputError =
@@ -59,9 +62,11 @@ export function Buy() {
     const done = await waitForToken(token.id, (l) => l.token.tradeCount > before, address);
     setPhase('idle');
     if (done) {
+      setUnconfirmed(false);
       showToast(done.balance != null ? `Buy confirmed. You now hold ${formatTokens(done.balance)} ${token.ticker}` : 'Buy confirmed');
       void refresh();
     } else {
+      setUnconfirmed(true);
       showToast('Buy not confirmed yet. Check your wallet history before trying again.');
     }
   }
@@ -69,14 +74,7 @@ export function Buy() {
   if (status === 'loading') {
     return <div className="page page--no-nav"><p className="muted" style={{ marginTop: 48, textAlign: 'center' }}>Loading…</p></div>;
   }
-  if (!token) {
-    return (
-      <div className="page page--no-nav">
-        <Link to="/" className="btn-ghost"><IconBack /> Back</Link>
-        <p style={{ marginTop: 24 }} className="muted">{status === 'error' ? 'Could not load this token. Try again shortly.' : 'Token not found.'}</p>
-      </div>
-    );
-  }
+  if (!token) return <TokenUnavailable status={status} onRetry={retry} />;
   if (token.source !== 'launchpad' || token.graduated) {
     return (
       <div className="page page--no-nav">
@@ -128,6 +126,12 @@ export function Buy() {
       </div>
 
       <p className={styles.secure}><IconShield size={15} /> Secure transaction on TON Blockchain</p>
+      {unconfirmed && (
+        <div className={styles.notice} role="status">
+          <span>Your last buy is not confirmed yet. Check your wallet history before buying again.</span>
+          <button type="button" className="btn-ghost" onClick={() => setUnconfirmed(false)}>Dismiss</button>
+        </div>
+      )}
       <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote}>
         {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? `Confirm buy · ${amount || '0'} TON` : 'Connect wallet'}
       </button>

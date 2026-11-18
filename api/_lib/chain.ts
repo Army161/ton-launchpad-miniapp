@@ -65,6 +65,17 @@ export type TokenView = {
 
 const friendly = (a: Address) => a.toString({ bounceable: true, testOnly: serverNetwork() === 'testnet' });
 
+type TokenMetadata = Pick<TokenView, 'name' | 'symbol' | 'description' | 'image' | 'telegram'>;
+
+/**
+ * Jetton content of each token this instance has read, by raw address. The factory's JettonSetup writes it once,
+ * when the curve becomes initialized, and nothing changes it afterwards, so get_jetton_data is read once per token
+ * and every later read of the token is a single request.
+ */
+const metadataCache = new Map<string, TokenMetadata>();
+/** Bounds the memory one instance spends on it; the oldest entry goes first (a Map keeps insertion order). */
+const METADATA_CACHE_LIMIT = 1000;
+
 /**
  * Reads a jetton and proves it came from our factory: the curve must name our
  * factory, and its address must be the one the factory derives for
@@ -85,16 +96,25 @@ export async function readLaunchpadToken(address: Address, factory: Address, cha
   const expected = await LaunchpadJetton.fromInit(factory, state.creator, state.salt);
   if (!expected.address.equals(address)) return null;
 
-  const data = await chain.call((c) => c.open(jetton).getGetJettonData());
-  const meta = parseOnchainContent(data.content) ?? {};
+  const key = address.toRawString();
+  let meta = metadataCache.get(key);
+  if (!meta) {
+    const data = await chain.call((c) => c.open(jetton).getGetJettonData());
+    const content = parseOnchainContent(data.content) ?? {};
+    meta = {
+      name: content.name ?? '',
+      symbol: content.symbol ?? '',
+      description: content.description ?? '',
+      image: content.image ?? '',
+      telegram: content.telegram ?? '',
+    };
+    if (metadataCache.size >= METADATA_CACHE_LIMIT) metadataCache.delete(metadataCache.keys().next().value as string);
+    metadataCache.set(key, meta);
+  }
   return {
     address: friendly(address),
     creator: friendly(state.creator),
-    name: meta.name ?? '',
-    symbol: meta.symbol ?? '',
-    description: meta.description ?? '',
-    image: meta.image ?? '',
-    telegram: meta.telegram ?? '',
+    ...meta,
     virtualTon: state.virtualTon.toString(),
     virtualTokens: state.virtualTokens.toString(),
     realTonRaised: state.realTonRaised.toString(),
@@ -114,17 +134,23 @@ export async function readHolderBalance(jetton: Address, owner: Address, dexRout
   return (await chain.call((c) => c.open(wallet).getGetWalletData())).balance;
 }
 
-/** Addresses of jettons the factory has set up, newest first. */
-export async function listLaunchAddresses(factory: Address, limit = 100, chain: ChainSession = chainSession()): Promise<Address[]> {
+/** A jetton the factory has set up, and when (ms since epoch) the factory sent its JettonSetup. */
+export type Launch = { address: Address; at: number };
+
+/**
+ * Jettons the factory has set up, newest first. The jetton itself is deployed by that JettonSetup, in a later
+ * transaction, so for a few seconds after `at` a launch can still read as "nothing deployed".
+ */
+export async function listLaunches(factory: Address, limit = 100, chain: ChainSession = chainSession()): Promise<Launch[]> {
   const txs = await chain.call((c) => c.getTransactions(factory, { limit, archival: true }));
-  const seen = new Map<string, Address>();
+  const seen = new Map<string, Launch>();
   for (const tx of txs) {
     for (const msg of tx.outMessages.values()) {
       if (msg.info.type !== 'internal') continue;
       const body = msg.body.beginParse();
       if (body.remainingBits < 32 || body.loadUint(32) !== OP_JETTON_SETUP) continue;
       const key = msg.info.dest.toRawString();
-      if (!seen.has(key)) seen.set(key, msg.info.dest);
+      if (!seen.has(key)) seen.set(key, { address: msg.info.dest, at: tx.now * 1000 });
     }
   }
   return [...seen.values()];

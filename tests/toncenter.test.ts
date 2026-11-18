@@ -190,6 +190,22 @@ describe('toncenter session', () => {
     expect(concurrent.attempts.map((a) => a.at)).toEqual([0, 1100, 2200]);
   });
 
+  it('cuts each concurrent attempt to the budget left at its reserved start, and starts none past the budget', async () => {
+    const h = harness(KEYLESS);
+    const outcomes = await h.drive(Promise.all(Array.from({ length: 7 }, () => h.request(['ok']).catch((e: unknown) => e))));
+    expect(h.attempts).toEqual([
+      { at: 0, timeoutMs: 5000 },
+      { at: 1100, timeoutMs: 5000 },
+      { at: 2200, timeoutMs: 4800 },
+      { at: 3300, timeoutMs: 3700 },
+      { at: 4400, timeoutMs: 2600 },
+      { at: 5500, timeoutMs: 1500 },
+    ]);
+    expect(outcomes.slice(0, 6)).toEqual(['ok', 'ok', 'ok', 'ok', 'ok', 'ok']);
+    expect(outcomes[6]).toBeInstanceOf(ChainUnavailableError);
+    expect((outcomes[6] as Error).message).toBe('toncenter: request budget spent');
+  });
+
   it('spaces calls 120 ms apart with an API key, retries included', async () => {
     const h = harness(KEYED);
     await h.drive(h.request(['ok']));

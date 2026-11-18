@@ -1,4 +1,4 @@
-/** Client for the app's own /api endpoints. Network failures resolve to empty results. */
+/** Client for the app's own /api endpoints. Failures resolve to an 'error' result, never throw. */
 
 export type TokenView = {
   address: string;
@@ -21,14 +21,20 @@ export type TokenView = {
   dexRouter: string;
 };
 
-export async function fetchLaunchpadTokens(): Promise<TokenView[]> {
+/**
+ * The launchpad's tokens. 'error': the list could not be loaded (the API could not read the chain, or no answer),
+ * which is not the same as no tokens. `partial`: the API could not read some tokens yet and left them out.
+ */
+export type TokenList = { status: 'ok'; tokens: TokenView[]; partial: boolean } | { status: 'error' };
+
+export async function fetchLaunchpadTokens(): Promise<TokenList> {
   try {
     const res = await fetch('/api/tokens');
-    if (!res.ok) return [];
-    const data = (await res.json()) as { tokens?: TokenView[] };
-    return data.tokens ?? [];
+    if (!res.ok) return { status: 'error' };
+    const data = (await res.json()) as { tokens?: TokenView[]; partial?: boolean };
+    return { status: 'ok', tokens: data.tokens ?? [], partial: data.partial === true };
   } catch {
-    return [];
+    return { status: 'error' };
   }
 }
 
