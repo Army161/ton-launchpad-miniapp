@@ -86,6 +86,20 @@ describe('readLaunchpadToken', () => {
     expect(chain.requests()).toBe(2);
   });
 
+  it('holds creator-chosen metadata to the Create page limits, so a launch made elsewhere cannot bloat the list', async () => {
+    const t = await launched();
+    const content = buildOnchainContent({
+      name: '🚀'.repeat(100),
+      symbol: 'S'.repeat(50),
+      description: 'd'.repeat(60_000),
+      image: `https://img.example/${'i'.repeat(300)}.png`,
+      telegram: 'https://t.me/doge',
+    });
+    const chain = fakeChain({ curve: async () => t.state, jetton: async () => ({ ...t.data, content }) });
+    const view = await readLaunchpadToken(t.address, FACTORY, chain.session);
+    expect(view).toMatchObject({ name: '🚀'.repeat(32), symbol: 'S'.repeat(10), description: 'd'.repeat(200), image: '', telegram: 'https://t.me/doge' });
+  });
+
   it.each([
     ['exit code 11 (no such getter)', 11],
     ['exit code -13 (nothing deployed)', -13],

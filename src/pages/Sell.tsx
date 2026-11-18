@@ -28,7 +28,7 @@ export function Sell() {
   const { id = '' } = useParams<{ id: string }>();
   const { showToast } = useToast();
   const { connected, connect, sendTransaction, address } = useWallet();
-  const { token, balance, status, refresh, retry } = useToken(id, address);
+  const { token, balance, status, live, checking, refresh, retry, apply } = useToken(id, address);
   const [amount, setAmount] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
   // A sell whose confirmation timed out may still land: warn on the page, not only in a passing toast.
@@ -50,6 +50,8 @@ export function Sell() {
       connect();
       return;
     }
+    // The quote, the balance and the confirmation baseline must come from a live read, never from an older copy.
+    if (!live) return;
     if (quote.tonOut <= 0n) {
       showToast('Amount too small to sell');
       return;
@@ -81,10 +83,11 @@ export function Sell() {
       setUnconfirmed(false);
       showToast(`Sold for ~${formatTon(quote.tonOut)} TON`);
       setAmount('');
-      void refresh();
+      apply(done);
     } else {
       setUnconfirmed(true);
       showToast('Sell not confirmed yet. Check your wallet history before trying again.');
+      void refresh();
     }
   }
 
@@ -156,7 +159,13 @@ export function Sell() {
           <button type="button" className="btn-ghost" onClick={() => setUnconfirmed(false)}>Dismiss</button>
         </div>
       )}
-      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote}>
+      {!live && !busy && (
+        <div className={styles.notice} role="status">
+          <span>{checking ? 'Loading the live price…' : 'Could not load the live price. Selling resumes once it loads.'}</span>
+          {!checking && <button type="button" className="btn-ghost" onClick={retry}>Try again</button>}
+        </div>
+      )}
+      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote || (connected && !live)}>
         {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? `Confirm sell · ${amount || '0'} ${token.ticker}` : 'Connect wallet'}
       </button>
     </div>

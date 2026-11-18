@@ -27,7 +27,7 @@ export function Buy() {
   const { id = '' } = useParams<{ id: string }>();
   const { showToast } = useToast();
   const { connected, connect, sendTransaction, address } = useWallet();
-  const { token, status, refresh, retry } = useToken(id, address);
+  const { token, status, live, checking, refresh, retry, apply } = useToken(id, address);
   const [amount, setAmount] = useState('1');
   const [phase, setPhase] = useState<Phase>('idle');
   // A buy whose confirmation timed out may still land: warn on the page, not only in a passing toast.
@@ -44,6 +44,8 @@ export function Buy() {
       connect();
       return;
     }
+    // The quote, the minimum and the confirmation baseline must come from a live read, never from an older copy.
+    if (!live) return;
     const before = token.tradeCount ?? 0;
     const minOut = withSlippage(quote.tokensOut);
     setPhase('signing');
@@ -64,10 +66,11 @@ export function Buy() {
     if (done) {
       setUnconfirmed(false);
       showToast(done.balance != null ? `Buy confirmed. You now hold ${formatTokens(done.balance)} ${token.ticker}` : 'Buy confirmed');
-      void refresh();
+      apply(done);
     } else {
       setUnconfirmed(true);
       showToast('Buy not confirmed yet. Check your wallet history before trying again.');
+      void refresh();
     }
   }
 
@@ -132,7 +135,13 @@ export function Buy() {
           <button type="button" className="btn-ghost" onClick={() => setUnconfirmed(false)}>Dismiss</button>
         </div>
       )}
-      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote}>
+      {!live && !busy && (
+        <div className={styles.notice} role="status">
+          <span>{checking ? 'Loading the live price…' : 'Could not load the live price. Buying resumes once it loads.'}</span>
+          {!checking && <button type="button" className="btn-ghost" onClick={retry}>Try again</button>}
+        </div>
+      )}
+      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote || (connected && !live)}>
         {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? `Confirm buy · ${amount || '0'} TON` : 'Connect wallet'}
       </button>
     </div>

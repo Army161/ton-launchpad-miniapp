@@ -245,6 +245,41 @@ describe('GET /api/tokens', () => {
     expect(answer.body).toEqual({ configured: true, tokens: [view(TOKEN_C), view(TOKEN_B), view(TOKEN_A)] });
   });
 
+  it('reads launches that never deployed after the tokens, so they cannot keep a token out of every list', async () => {
+    const { listHandler, unavailable } = await load();
+    // B and C were set up long ago and read as empty; A is a token. Each refresh's budget fits two reads.
+    let budget = 0;
+    chain.listLaunches.mockImplementation(async () => {
+      budget = 2;
+      return [launch(TOKEN_B), launch(TOKEN_C), launch(TOKEN_A)];
+    });
+    const order: string[] = [];
+    chain.readLaunchpadToken.mockImplementation(async (a: Address) => {
+      const key = a.toRawString();
+      order.push(key);
+      if (budget-- <= 0) throw unavailable();
+      return key === TOKEN_A ? view(TOKEN_A) : null;
+    });
+
+    const first = await get(listHandler);
+    expect(order).toEqual([TOKEN_B, TOKEN_C, TOKEN_A]);
+    expect(first.body).toEqual({ configured: true, tokens: [], partial: true });
+
+    vi.setSystemTime(T0 + 6_000);
+    order.length = 0;
+    const second = await get(listHandler);
+    expect(order).toEqual([TOKEN_A, TOKEN_B, TOKEN_C]);
+    // C could not be read this time, but it read as empty before: it is not a missing token.
+    expect(second.body).toEqual({ configured: true, tokens: [view(TOKEN_A)] });
+    expect(second.headers['cache-control']).toBe(LIST_CACHE);
+
+    vi.setSystemTime(T0 + 27_000);
+    order.length = 0;
+    const third = await get(listHandler);
+    expect(order).toEqual([TOKEN_C, TOKEN_B, TOKEN_A]);
+    expect(third.body).toEqual({ configured: true, tokens: [view(TOKEN_A)] });
+  });
+
   it('runs one refresh at a time: requests that arrive meanwhile wait for it', async () => {
     const { listHandler } = await load();
     let release: (launches: Launch[]) => void = () => undefined;
@@ -293,6 +328,44 @@ describe('GET /api/tokens', () => {
     chain.listLaunches.mockResolvedValue([launch(TOKEN_A)]);
     expect((await get(listHandler)).headers['cache-control']).toBe(LIST_CACHE);
     expect(chain.listLaunches).toHaveBeenCalledTimes(3);
+  });
+
+  it('fills in a failed read only from a view of the last 30 minutes, then leaves the token out and says partial', async () => {
+    const { listHandler, unavailable } = await load();
+    chain.listLaunches.mockResolvedValue([launch(TOKEN_A), launch(TOKEN_B)]);
+    readsFrom({ [TOKEN_A]: view(TOKEN_A, 1), [TOKEN_B]: view(TOKEN_B, 1) });
+    await get(listHandler);
+
+    readsFrom({ [TOKEN_A]: view(TOKEN_A, 2), [TOKEN_B]: unavailable() });
+    vi.setSystemTime(T0 + 1_800_000);
+    const filled = await get(listHandler);
+    expect(filled.body).toEqual({ configured: true, tokens: [view(TOKEN_A, 2), view(TOKEN_B, 1)] });
+    expect(filled.headers['cache-control']).toBe(LIST_CACHE);
+
+    vi.setSystemTime(T0 + 1_821_000);
+    const left = await get(listHandler);
+    expect(left.body).toEqual({ configured: true, tokens: [view(TOKEN_A, 2)], partial: true });
+    expect(left.headers['cache-control']).toBe(SHORT_CACHE);
+  });
+
+  it('serves the last list again only while it was read in the last 5 minutes, then answers 503', async () => {
+    const { listHandler, unavailable } = await load();
+    chain.listLaunches.mockResolvedValue([launch(TOKEN_A)]);
+    readsFrom({});
+    const first = await get(listHandler);
+
+    chain.listLaunches.mockRejectedValue(unavailable());
+    vi.setSystemTime(T0 + 300_000);
+    const again = await get(listHandler);
+    expect(again.status).toBe(200);
+    expect(again.body).toEqual(first.body);
+    expect(again.headers['cache-control']).toBe(SHORT_CACHE);
+
+    vi.setSystemTime(T0 + 306_000);
+    const gone = await get(listHandler);
+    expect(gone.status).toBe(503);
+    expect(gone.headers['retry-after']).toBe('5');
+    expect(gone.headers['cache-control']).toBe('no-store');
   });
 
   it('caches for 5 s while a launch of the last minute still reads as not deployed, and leaves out an old one for good', async () => {

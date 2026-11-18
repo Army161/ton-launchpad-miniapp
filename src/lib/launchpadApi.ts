@@ -47,7 +47,8 @@ export async function fetchLaunchpadToken(address: string, holder?: string | nul
   try {
     const qs = holder ? `?holder=${encodeURIComponent(holder)}` : '';
     const res = await fetch(`/api/tokens/${encodeURIComponent(address)}${qs}`);
-    if (res.status === 404) return { status: 'not-found' };
+    // 400: not a TON address at all (a mangled link), which no retry can fix.
+    if (res.status === 404 || res.status === 400) return { status: 'not-found' };
     if (!res.ok) return { status: 'error' };
     const data = (await res.json()) as { token: TokenView; balance?: string };
     return { status: 'ok', token: data.token, balance: data.balance != null ? BigInt(data.balance) : null };

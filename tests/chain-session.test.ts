@@ -69,4 +69,24 @@ describe('chainSession', () => {
     await run(1);
     expect(built).toEqual([{ endpoint: 'https://testnet.toncenter.com/api/v2/jsonRPC', apiKey: 'a-key', timeout: 5000 }]);
   });
+
+  // Last in this file: it spends the instance's retry budget, which is module state.
+  it('takes retries from one budget that every session of the instance shares', async () => {
+    vi.stubEnv('TONCENTER_API_KEY', 'a-key');
+    const rateLimited = () =>
+      Object.assign(new Error('Request failed with status code 429'), { isAxiosError: true, code: 'ERR_BAD_REQUEST', response: { status: 429 } });
+    let attempts = 0;
+    for (let i = 0; i < 20; i++) {
+      const failure = chainSession()
+        .call(async () => {
+          attempts++;
+          throw rateLimited();
+        })
+        .catch((e: unknown) => e);
+      await vi.advanceTimersByTimeAsync(8000);
+      expect(await failure).toBeInstanceOf(ChainUnavailableError);
+    }
+    // A session per request, each allowed 4 attempts: 80 alone. Shared: 10 retries, then 1 per 5 requests.
+    expect(attempts).toBe(33);
+  });
 });

@@ -2,7 +2,7 @@ import { Address } from '@ton/core';
 import { TonClient } from '@ton/ton';
 import { LaunchpadJetton } from '../../src/contracts/LaunchpadJetton.js';
 import { JettonWallet } from '../../src/contracts/JettonWallet.js';
-import { parseOnchainContent } from '../../src/lib/metadata.js';
+import { METADATA_LIMITS, parseOnchainContent } from '../../src/lib/metadata.js';
 import { callPolicy, getterExitCode, toncenterSession, type ToncenterSession } from './toncenter.js';
 
 const OP_JETTON_SETUP = 0x4c500002;
@@ -77,6 +77,14 @@ const metadataCache = new Map<string, TokenMetadata>();
 const METADATA_CACHE_LIMIT = 1000;
 
 /**
+ * Creator-chosen text, held to the Create page's limits: a launch made outside the app can store far more, and that
+ * would bloat the cache and every list. Text is cut (by code point); a URL over its limit is dropped, since a cut
+ * one would be broken.
+ */
+const cut = (text: string | undefined, max: number) => Array.from(text ?? '').slice(0, max).join('');
+const url = (text: string | undefined) => (text !== undefined && text.length <= METADATA_LIMITS.url ? text : '');
+
+/**
  * Reads a jetton and proves it came from our factory: the curve must name our
  * factory, and its address must be the one the factory derives for
  * (creator, salt). Anything else returns null, so a look-alike contract can
@@ -102,11 +110,11 @@ export async function readLaunchpadToken(address: Address, factory: Address, cha
     const data = await chain.call((c) => c.open(jetton).getGetJettonData());
     const content = parseOnchainContent(data.content) ?? {};
     meta = {
-      name: content.name ?? '',
-      symbol: content.symbol ?? '',
-      description: content.description ?? '',
-      image: content.image ?? '',
-      telegram: content.telegram ?? '',
+      name: cut(content.name, METADATA_LIMITS.name),
+      symbol: cut(content.symbol, METADATA_LIMITS.symbol),
+      description: cut(content.description, METADATA_LIMITS.description),
+      image: url(content.image),
+      telegram: url(content.telegram),
     };
     if (metadataCache.size >= METADATA_CACHE_LIMIT) metadataCache.delete(metadataCache.keys().next().value as string);
     metadataCache.set(key, meta);

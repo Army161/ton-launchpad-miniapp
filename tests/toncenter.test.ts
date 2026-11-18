@@ -5,14 +5,17 @@ import { Address } from '@ton/core';
 import { TonClient } from '@ton/ton';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  ATTEMPT_SLACK_MS,
   backoffDelay,
   callPolicy,
   ChainUnavailableError,
   getterExitCode,
   isTransportError,
+  retryBudget,
   toncenterSession,
   type CallPolicy,
   type Clock,
+  type RetryBudget,
 } from '../api/_lib/toncenter';
 
 // Error shapes as @ton/ton (HttpApi over axios 1.x) produces them.
@@ -25,13 +28,19 @@ const httpError = (status: number) =>
 const timeoutError = (ms: number) => Object.assign(new Error(`timeout of ${ms}ms exceeded`), { isAxiosError: true, code: 'ECONNABORTED' });
 const noAnswer = () => Object.assign(new Error('Network Error'), { isAxiosError: true, code: 'ERR_NETWORK' });
 const connectionReset = () => Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' });
+// axios raises this when the body breaks off after the headers, with those headers' status attached.
+const cutOff = () =>
+  Object.assign(new Error('stream has been aborted'), { isAxiosError: true, code: 'ERR_BAD_RESPONSE', response: { status: 200 } });
 const exitCode = (code: number) => new Error(`Unable to execute get method. Got exit_code: ${code}`);
 
 const KEYLESS = callPolicy(undefined);
 const KEYED = callPolicy('a-key');
 
-/** Virtual time: sleep() parks on a queue that drive() releases in time order whenever nothing else can run. */
-function virtualClock() {
+/**
+ * Virtual time: sleep() parks on a queue that drive() releases in time order whenever nothing else can run.
+ * `blocked` models an event loop that is busy from `from` until `until`: a timer due in between fires at `until`.
+ */
+function virtualClock(blocked?: { from: number; until: number }) {
   let now = 0;
   let seq = 0;
   const timers: { at: number; seq: number; wake: () => void }[] = [];
@@ -54,7 +63,8 @@ function virtualClock() {
       timers.sort((a, b) => a.at - b.at || a.seq - b.seq);
       const next = timers.shift();
       if (!next) throw new Error('stalled');
-      now = Math.max(now, next.at);
+      const late = blocked !== undefined && next.at >= blocked.from && next.at < blocked.until;
+      now = Math.max(now, late ? blocked.until : next.at);
       next.wake();
     }
   }
@@ -62,15 +72,18 @@ function virtualClock() {
 }
 
 const TIMEOUT = Symbol('timeout');
+/** An attempt that never ends by itself, like a body that keeps trickling in: the HTTP timeout never fires. */
+const STALL = Symbol('stall');
 type Outcome = unknown;
 
 /**
  * A session over a scripted toncenter. Each attempt takes `latencyMs` and then answers with the next outcome of its
  * request's script: an Error is thrown, TIMEOUT waits out the attempt's HTTP timeout, anything else is returned.
+ * Each harness gets a full retry budget of its own unless one is passed in, so no test depends on another.
  */
-function harness(policy: CallPolicy, latencyMs = 100) {
-  const vc = virtualClock();
-  const session = toncenterSession((timeoutMs: number) => ({ timeoutMs }), policy, vc.clock, () => 0.5);
+function harness(policy: CallPolicy, latencyMs = 100, blocked?: { from: number; until: number }, retries: RetryBudget = retryBudget()) {
+  const vc = virtualClock(blocked);
+  const session = toncenterSession((timeoutMs: number) => ({ timeoutMs }), policy, { clock: vc.clock, random: () => 0.5, retries });
   const attempts: { at: number; timeoutMs: number }[] = [];
   const request = (script: Outcome[]) =>
     session.call(async ({ timeoutMs }) => {
@@ -80,6 +93,7 @@ function harness(policy: CallPolicy, latencyMs = 100) {
         await vc.clock.sleep(timeoutMs);
         throw timeoutError(timeoutMs);
       }
+      if (outcome === STALL) await new Promise(() => undefined);
       await vc.clock.sleep(latencyMs);
       if (outcome instanceof Error) throw outcome;
       return outcome;
@@ -95,6 +109,8 @@ describe('toncenter error classification', () => {
     ['a timeout', timeoutError(5000)],
     ['no HTTP answer', noAnswer()],
     ['a connection reset', connectionReset()],
+    ['a body cut off after 200 headers', cutOff()],
+    ['an axios error with no answer and an unlisted code', Object.assign(new Error('write EPROTO'), { isAxiosError: true, code: 'EPROTO' })],
   ])('retries %s', (_name, err) => {
     expect(isTransportError(err)).toBe(true);
   });
@@ -170,6 +186,25 @@ describe('toncenter session', () => {
     expect(h.now()).toBeLessThanOrEqual(KEYLESS.budgetMs);
   });
 
+  it('ends an attempt still running just past its timeout, and retries it', async () => {
+    const h = harness(KEYED);
+    await expect(h.drive(h.request([STALL, 'state']))).resolves.toBe('state');
+    // Ended at 5250 ms, then 188 ms of backoff; the second attempt gets what is left of the 7 s.
+    expect(h.attempts).toEqual([
+      { at: 0, timeoutMs: 5000 },
+      { at: 5438, timeoutMs: 1562 },
+    ]);
+  });
+
+  it('ends stalled attempts within the budget plus the slack, as unavailable', async () => {
+    const h = harness(KEYED);
+    const failure = h.drive(h.request([STALL, STALL, STALL]));
+    await expect(failure).rejects.toBeInstanceOf(ChainUnavailableError);
+    await expect(failure).rejects.toThrow('toncenter: ETIMEDOUT, no time left to retry');
+    expect(h.attempts).toHaveLength(2);
+    expect(h.now()).toBeLessThanOrEqual(KEYED.budgetMs + ATTEMPT_SLACK_MS);
+  });
+
   it('fails at once when the budget is spent, without another request', async () => {
     const h = harness(KEYLESS);
     await expect(h.drive(h.request([TIMEOUT, TIMEOUT]))).rejects.toBeInstanceOf(ChainUnavailableError);
@@ -190,7 +225,7 @@ describe('toncenter session', () => {
     expect(concurrent.attempts.map((a) => a.at)).toEqual([0, 1100, 2200]);
   });
 
-  it('cuts each concurrent attempt to the budget left at its reserved start, and starts none past the budget', async () => {
+  it('cuts each concurrent attempt to the budget left at its start, and starts none past the budget', async () => {
     const h = harness(KEYLESS);
     const outcomes = await h.drive(Promise.all(Array.from({ length: 7 }, () => h.request(['ok']).catch((e: unknown) => e))));
     expect(h.attempts).toEqual([
@@ -204,6 +239,42 @@ describe('toncenter session', () => {
     expect(outcomes.slice(0, 6)).toEqual(['ok', 'ok', 'ok', 'ok', 'ok', 'ok']);
     expect(outcomes[6]).toBeInstanceOf(ChainUnavailableError);
     expect((outcomes[6] as Error).message).toBe('toncenter: request budget spent');
+  });
+
+  it('spaces attempts by when they actually start when a timer fires late', async () => {
+    // The event loop is busy from 1000 to 2300 ms: the second attempt, due at 1100, starts at 2300.
+    const h = harness(KEYLESS, 100, { from: 1000, until: 2300 });
+    await h.drive(Promise.all([h.request(['ok']), h.request(['ok']), h.request(['ok'])]));
+    expect(h.attempts).toEqual([
+      { at: 0, timeoutMs: 5000 },
+      { at: 2300, timeoutMs: 4700 },
+      { at: 3400, timeoutMs: 3600 },
+    ]);
+  });
+
+  it('takes the timeout from the budget left when an attempt actually starts, never one that would run past it', async () => {
+    const six = (h: ReturnType<typeof harness>) =>
+      h.drive(Promise.all(Array.from({ length: 6 }, () => h.request(['ok']).catch((e: unknown) => e))));
+    const onTime = [
+      { at: 0, timeoutMs: 5000 },
+      { at: 1100, timeoutMs: 5000 },
+      { at: 2200, timeoutMs: 4800 },
+      { at: 3300, timeoutMs: 3700 },
+      { at: 4400, timeoutMs: 2600 },
+    ];
+
+    // The sixth attempt, due at 5500 with 1.5 s left, starts at 6000: it gets the 1 s that is left then.
+    const late = harness(KEYLESS, 100, { from: 5000, until: 6000 });
+    expect(await six(late)).toEqual(['ok', 'ok', 'ok', 'ok', 'ok', 'ok']);
+    expect(late.attempts).toEqual([...onTime, { at: 6000, timeoutMs: 1000 }]);
+
+    // At 6500 only 0.5 s is left, less than one attempt needs: it does not start.
+    const later = harness(KEYLESS, 100, { from: 5000, until: 6500 });
+    const outcomes = await six(later);
+    expect(later.attempts).toEqual(onTime);
+    expect(outcomes[5]).toBeInstanceOf(ChainUnavailableError);
+    expect((outcomes[5] as Error).message).toBe('toncenter: request budget spent');
+    expect(later.now()).toBeLessThanOrEqual(KEYLESS.budgetMs);
   });
 
   it('spaces calls 120 ms apart with an API key, retries included', async () => {
@@ -224,6 +295,52 @@ describe('toncenter session', () => {
     expect(range(KEYED, 1)).toEqual([125, 250]);
   });
 
+  it('stops retrying when the instance has spent its retries, and first attempts earn them back', async () => {
+    // One retry per 2 first attempts, a reserve of 2 retries.
+    const h = harness(KEYED, 100, undefined, retryBudget(2, 2));
+    const attemptsOf = async (script: Outcome[]) => {
+      const before = h.attempts.length;
+      const outcome = await h.drive(h.request(script)).catch((e: unknown) => e);
+      return { outcome, attempts: h.attempts.length - before };
+    };
+    const noRetries = 'toncenter: HTTP 429, no retries left on this instance';
+
+    const first = await attemptsOf([httpError(429), httpError(429), httpError(429), 'state']);
+    expect(first.attempts).toBe(3); // the reserve of 2 retries, then no more
+    expect(first.outcome).toBeInstanceOf(ChainUnavailableError);
+    expect((first.outcome as Error).message).toBe(noRetries);
+
+    expect(await attemptsOf(['ok'])).toEqual({ outcome: 'ok', attempts: 1 });
+    // Two first attempts since then have earned one retry.
+    expect(await attemptsOf([httpError(429), 'ok'])).toEqual({ outcome: 'ok', attempts: 2 });
+    const spent = await attemptsOf([httpError(429), 'ok']);
+    expect(spent.attempts).toBe(1);
+    expect((spent.outcome as Error).message).toBe(noRetries);
+  });
+
+  it('costs about one attempt per lookup in a flood of failing lookups, and retries again once they succeed', async () => {
+    // Each lookup is its own API invocation, so its own session, and they all share the instance's budget.
+    const shared = retryBudget();
+    const lookup = async (script: Outcome[]) => {
+      const h = harness(KEYED, 100, undefined, shared);
+      const outcome = await h.drive(h.request(script)).catch((e: unknown) => e);
+      return { outcome, attempts: h.attempts.length };
+    };
+    const always429 = () => [httpError(429), httpError(429), httpError(429), httpError(429)];
+
+    let attempts = 0;
+    for (let i = 0; i < 100; i++) {
+      const r = await lookup(always429());
+      expect(r.outcome).toBeInstanceOf(ChainUnavailableError); // 503 for the endpoint, never "not a token"
+      attempts += r.attempts;
+    }
+    // Alone, each lookup makes 4 attempts (400). Shared: the reserve of 10 retries, then 1 retry per 5 lookups.
+    expect(attempts).toBe(129);
+
+    for (let i = 0; i < 46; i++) expect(await lookup(['ok'])).toEqual({ outcome: 'ok', attempts: 1 });
+    expect(await lookup([httpError(429), httpError(429), httpError(429), 'state'])).toEqual({ outcome: 'state', attempts: 4 });
+  });
+
   it('keeps the request config (and its API key) out of the error', async () => {
     const h = harness(KEYED);
     const leaky = () => Object.assign(httpError(429), { config: { headers: { 'X-API-Key': 'secret-api-key' } } });
@@ -236,7 +353,7 @@ describe('toncenter session', () => {
 // The same session over a real TonClient (HttpApi + axios) and a local stand-in for toncenter on 127.0.0.1, so the
 // classification is checked against the errors the libraries really throw. Real timers, tiny limits.
 describe('toncenter session over a real TonClient', () => {
-  type Reply = { status: number; body?: unknown } | 'hang' | 'drop';
+  type Reply = { status: number; body?: unknown } | 'hang' | 'drop' | 'stall' | 'cut' | 'trickle';
   const answer = (exitCode: number): Reply => ({ status: 200, body: { ok: true, result: { gas_used: 0, exit_code: exitCode, stack: [] } } });
   const FAST: CallPolicy = { gapMs: 0, maxAttempts: 4, budgetMs: 3000, attemptTimeoutMs: 200, minAttemptMs: 50, backoffMs: 1, maxBackoffMs: 5 };
   const ADDRESS = Address.parse('EQD__________________________________________0vo');
@@ -248,7 +365,11 @@ describe('toncenter session over a real TonClient', () => {
     vi.unstubAllEnvs();
   });
 
-  /** Answers each request with the next reply: an HTTP status and JSON body, no answer at all, or a reset socket. */
+  /**
+   * Answers each request with the next reply: an HTTP status and JSON body, no answer at all, or a reset socket.
+   * 'stall', 'cut' and 'trickle' send 200 headers and the start of a body, then nothing more, a reset socket, or one
+   * byte every 20 ms until the client goes away.
+   */
   async function fakeToncenter(replies: Reply[]) {
     let requests = 0;
     const server = createServer((req, res) => {
@@ -259,6 +380,16 @@ describe('toncenter session over a real TonClient', () => {
         if (reply === 'hang') return;
         if (reply === 'drop') {
           req.socket.destroy();
+          return;
+        }
+        if (reply === 'stall' || reply === 'cut' || reply === 'trickle') {
+          res.writeHead(200, { 'content-type': 'application/json' });
+          res.write('{"ok":true,');
+          if (reply === 'cut') setTimeout(() => req.socket.destroy(), 20);
+          if (reply === 'trickle') {
+            const drip = setInterval(() => res.write(' '), 20);
+            res.on('close', () => clearInterval(drip));
+          }
           return;
         }
         res.writeHead(reply.status, { 'content-type': 'application/json' });
@@ -276,7 +407,7 @@ describe('toncenter session over a real TonClient', () => {
   }
 
   async function runGetter(endpoint: string) {
-    const session = toncenterSession((timeout) => new TonClient({ endpoint, timeout }), FAST);
+    const session = toncenterSession((timeout) => new TonClient({ endpoint, timeout }), FAST, { retries: retryBudget() });
     return session.call((c) => c.runMethod(ADDRESS, 'get_curve_state')).then(
       () => 'answered',
       (e: unknown) => e,
@@ -297,6 +428,9 @@ describe('toncenter session over a real TonClient', () => {
     ['HTTP 502 and 504', [{ status: 502 }, { status: 504 }, answer(0)], 3],
     ['a timeout', ['hang', answer(0)], 2],
     ['a dropped connection', ['drop', answer(0)], 2],
+    ['a body that stops after the headers', ['stall', answer(0)], 2],
+    ['a connection dropped after the headers', ['cut', answer(0)], 2],
+    ['a body that trickles in past the timeout', ['trickle', answer(0)], 2],
   ])('retries %s and returns the answer', async (_name, replies, requests) => {
     expect(await run(replies)).toEqual({ outcome: 'answered', requests });
   });

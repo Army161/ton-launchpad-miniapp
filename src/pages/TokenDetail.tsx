@@ -24,7 +24,7 @@ export function TokenDetail() {
   // Create sends a launch here before it is confirmed: keep looking for the token for a while.
   const location = useLocation();
   const launched = (location.state as { launched?: boolean } | null)?.launched === true;
-  const { token, status, retry } = useToken(id, undefined, { retryNotFound: launched });
+  const { token, status, live, checking, retry } = useToken(id, undefined, { retryNotFound: launched });
 
   if (status === 'loading') {
     return (
@@ -81,6 +81,15 @@ export function TokenDetail() {
           <span>Watchlist</span>
         </button>
       </div>
+
+      {!live && !checking && (
+        <p className="muted" style={{ fontSize: 12 }} role="status">
+          Could not refresh this token, so these numbers may be out of date.{' '}
+          <button type="button" className="btn-ghost" style={{ fontSize: 12 }} onClick={retry}>
+            Try again
+          </button>
+        </p>
+      )}
 
       {onCurve && (
         <BondingCurve
