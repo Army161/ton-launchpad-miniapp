@@ -39,8 +39,10 @@ export async function checkMnemonic(name: string, value: string | undefined): Pr
   if (!value) return fail(name, 'missing');
   const words = value.trim().split(/\s+/);
   if (words.length !== 24) return fail(name, `must be 24 words (has ${words.length})`);
-  if (PLACEHOLDER.test(value)) return fail(name, 'still a placeholder');
-  return (await mnemonicValidate(words)) ? pass(name, '24 words, valid TON mnemonic') : fail(name, 'not a valid TON mnemonic');
+  // Validate before the placeholder check: "example" and "replace" are wordlist words, so a real mnemonic can match
+  // PLACEHOLDER (about 1 in 40 do). A mnemonic that validates is real, whatever words it contains.
+  if (await mnemonicValidate(words)) return pass(name, '24 words, valid TON mnemonic');
+  return fail(name, PLACEHOLDER.test(value) ? 'still a placeholder' : 'not a valid TON mnemonic');
 }
 
 export function checkBotToken(name: string, value: string | undefined): Finding {

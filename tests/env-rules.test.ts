@@ -1,4 +1,4 @@
-import { mnemonicNew } from '@ton/crypto';
+import { mnemonicNew, mnemonicValidate, mnemonicWordList } from '@ton/crypto';
 import { describe, expect, it } from 'vitest';
 import { checkBotToken, checkJwtSecret, checkManifest, checkMnemonic, checkPublicVars, checkReturnUrl, checkTonAddress, validate } from '../scripts/env/rules';
 
@@ -6,6 +6,25 @@ const MAINNET_ADDR = 'UQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqEBI';
 const TESTNET_ADDR = '0QCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqPvC';
 const JWT = 'f3a9c2e81b7d4056a1e2c3d4b5f60718293a4b5c6d7e8f901a2b3c4d5e6f7a8b';
 const BOT = '7123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw1';
+
+/**
+ * Two 24-word lists that contain the wordlist words "example" and "replace", which the placeholder pattern matches:
+ * 23 fixed words plus the first wordlist word that makes them a valid TON mnemonic (`real`), and the same 23 words
+ * plus the first word that does not (`invalid`). Built here, so no mnemonic is committed, and deterministic, so the
+ * test cannot flake.
+ */
+async function mnemonicsWithPlaceholderWords(): Promise<{ real: string[]; invalid: string[] }> {
+  const fixed = ['example', 'replace', ...Array.from({ length: 21 }, (_, i) => mnemonicWordList[(i * 97 + 5) % mnemonicWordList.length])];
+  let real: string[] | undefined;
+  let invalid: string[] | undefined;
+  for (const last of mnemonicWordList) {
+    const words = [...fixed, last];
+    if (await mnemonicValidate(words)) real ??= words;
+    else invalid ??= words;
+    if (real && invalid) return { real, invalid };
+  }
+  throw new Error('no valid completion found');
+}
 
 describe('env rules', () => {
   it('addresses', () => {
@@ -21,9 +40,25 @@ describe('env rules', () => {
     const words = (await mnemonicNew()).join(' ');
     expect((await checkMnemonic('M', words)).ok).toBe(true);
     expect((await checkMnemonic('M', 'word1 word2 word3')).ok).toBe(false);
+    // Swap the last word for the first one that breaks the checksum (a blind swap still validates 1 time in 256).
     const wrong = words.split(' ');
-    wrong[23] = wrong[0] === 'abandon' ? 'zoo' : 'abandon';
+    for (const w of mnemonicWordList) {
+      if (w !== wrong[23] && !(await mnemonicValidate([...wrong.slice(0, 23), w]))) {
+        wrong[23] = w;
+        break;
+      }
+    }
     expect((await checkMnemonic('M', wrong.join(' '))).ok).toBe(false);
+  });
+
+  it('accepts a real mnemonic that contains "example" or "replace", and still names a placeholder', async () => {
+    const { real, invalid } = await mnemonicsWithPlaceholderWords();
+    expect(await checkMnemonic('M', real.join(' '))).toMatchObject({ ok: true, message: '24 words, valid TON mnemonic' });
+    expect(await checkMnemonic('M', invalid.join(' '))).toMatchObject({ ok: false, message: 'still a placeholder' });
+    const template = Array.from({ length: 24 }, (_, i) => `word${i + 1}`).join(' ');
+    expect(await checkMnemonic('M', template)).toMatchObject({ ok: false, message: 'still a placeholder' });
+    const garbled = Array.from({ length: 24 }, () => 'zzzz').join(' ');
+    expect(await checkMnemonic('M', garbled)).toMatchObject({ ok: false, message: 'not a valid TON mnemonic' });
   });
 
   it('bot token and JWT secret', () => {

@@ -1,6 +1,6 @@
 # STATUS.md — current state
 
-Updated: 2026-11-18 · Branch: `clawdbot-permanent` (GitHub default and Vercel production branch; `main` was merged into it by PR #3 and deleted)
+Updated: 2026-11-18 · Branch: `clawdbot-permanent` (GitHub default; `main` was merged into it by PR #3 and deleted. Vercel's production branch setting still names `main`, so a push or merge to `clawdbot-permanent` builds a preview and production is deployed explicitly)
 
 **Overall: MAINNET DEPLOY IN PROGRESS.** The testnet gate passed and the founder wrote "MAINNET GO-LIVE APPROVED" on
 2026-11-17. The live site runs 682021b with launches disabled (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY`). What remains is
@@ -34,7 +34,7 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Platform treasury (mainnet) | `UQBNwH67i7p23n2LYgEJtEEWp9p44HlqoDzZHBXm2mcUKyF3` (founder, 2026-11-17; valid mainnet basechain address) |
 | STON.fi router (mainnet, pin) | `EQDx--jUU9PUtHltPYZX7wdzIi0SPY3KZ8nvOs0iZvQJd6Ql` (v2.2 constant product, passed the mainnet-fork rehearsal) |
 | Factory address (mainnet) | none yet (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY` disables launches in the UI) |
-| Production URL | https://ton-launchpad-miniapp.vercel.app (auto-deploys `clawdbot-permanent`) |
+| Production URL | https://ton-launchpad-miniapp.vercel.app (deployed explicitly from `clawdbot-permanent`; pushes there build previews only, see the branch note above) |
 | Bot | @TONLaunchpad_Bot (Main App) |
 | Liquidity manager | refund fallback only (ADR-009); defaults to the deployer wallet |
 | STON.fi router | chosen at deploy (`STON_ROUTER_ADDRESS`); graduation seeds it on-chain |
@@ -58,7 +58,6 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Record mainnet evidence | P0 | after the factory deploy: address and transaction here and in VERIFICATION |
 | Pagination past the ~100 most recent factory transactions in `/api/tokens` | P1 | fine at launch volume; needs an indexer or DB later (ADR-003) |
 | `/api/tokens` reads the chain inside one 7 s budget per refresh | P1 | a refresh reads about 46 known or 22 new tokens with `TONCENTER_API_KEY` (about 5 or 2 without), never-read and stalest first, and shows the rest as last read, so successive refreshes cover the list (5 s apart while it is partial). The state is per Vercel instance: a fresh instance's first lists can be partial (`partial: true`, 5 s cache) past about 22 tokens with a key, or 2 without. An indexer removes the limit (ADR-003) |
-| Env validator calls a real mnemonic a placeholder | P1 | `checkMnemonic` (`scripts/env/rules.ts`) matches its placeholder pattern against the words, and `example` and `replace` are real wordlist words: about 2.3% of valid mnemonics fail with "still a placeholder". If the founder's `DEPLOY_MNEMONIC` contains either word, `validate-env deploy-mainnet` fails and `scripts/launch-production.sh` (which runs under `set -euo pipefail`) stops at step 1/5, before it spends any TON. The same bug makes two tests in `tests/env-rules.test.ts` fail about 1 run in 20 |
 | Rate limit on `/api/metadata/upload` | P2 | SECURITY #13 |
 | Bundle size (1.05 MB, mostly TON libraries) | P2 | code-split the trading pages |
 | Independent contract audit | P1 before real volume | SECURITY #12 |
