@@ -100,7 +100,7 @@ minutes; after that the endpoint answers 503. So an outage of toncenter shows as
 With a key a refresh reads about 46 known tokens or 22 new ones (33 or 15 when toncenter takes 500 ms per getter),
 and successive refreshes cover the whole list (at most 100 factory transactions, `docs/STATUS.md`). Without a key it
 reads about 5 known tokens or 2 new ones per refresh, so a fresh instance needs several refreshes, 5 s apart, to list
-everything.
+everything (`tests/api-tokens-progress.test.ts` pins both rates).
 
 ## Front end (`src/`)
 
