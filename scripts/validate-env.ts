@@ -21,9 +21,11 @@ async function main() {
   if (process.argv.includes('--network') && process.env.VITE_MANIFEST_URL) {
     findings.push(...(await checkManifest(process.env.VITE_MANIFEST_URL)));
   }
-  for (const f of findings) console.log(`${f.ok ? 'PASS' : 'FAIL'}  ${f.name.padEnd(28)} ${f.message}`);
+  for (const f of findings) console.log(`${f.ok ? (f.warn ? 'WARN' : 'PASS') : 'FAIL'}  ${f.name.padEnd(28)} ${f.message}`);
   const failed = findings.filter((f) => !f.ok).length;
-  console.log(failed === 0 ? `\n${profile}: GO` : `\n${profile}: NO-GO (${failed} failing)`);
+  const warned = findings.filter((f) => f.ok && f.warn).length;
+  const note = warned > 0 ? ` (${warned} warning${warned > 1 ? 's' : ''}, see WARN above)` : '';
+  console.log(failed === 0 ? `\n${profile}: GO${note}` : `\n${profile}: NO-GO (${failed} failing)`);
   process.exit(failed === 0 ? 0 : 1);
 }
 

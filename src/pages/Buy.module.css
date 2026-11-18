@@ -19,3 +19,4 @@
 .fee { display: flex; align-items: center; gap: 4px; color: var(--ton-blue); font-weight: 600; }
 .secure { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); text-align: center; justify-content: center; margin: 8px 0 4px; }
 .confirm { width: 100%; margin-top: 8px; }
+.notice { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--negative); border-radius: 12px; font-size: 13px; }

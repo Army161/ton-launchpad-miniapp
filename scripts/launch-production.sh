@@ -67,7 +67,8 @@ Environment Variables (Production), set:
   VITE_FACTORY_ADDRESS=$FACTORY
   VITE_NETWORK=mainnet
   PLATFORM_TREASURY_ADDRESS, TELEGRAM_BOT_TOKEN, JWT_SECRET,
-  VITE_MANIFEST_URL, VITE_TWA_RETURN_URL (and TONCENTER_API_KEY if you have one)
+  VITE_MANIFEST_URL, VITE_TWA_RETURN_URL, and TONCENTER_API_KEY (needed for mainnet
+  traffic, docs/ENVIRONMENT.md; mark it Sensitive)
 Never add DEPLOY_MNEMONIC to Vercel. Then redeploy production.
 EOF
   exit 0

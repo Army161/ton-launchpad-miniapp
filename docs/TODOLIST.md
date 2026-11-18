@@ -22,7 +22,8 @@ Current state and evidence: `docs/STATUS.md`, `docs/VERIFICATION.md`. Founder st
 - [x] Enter `TELEGRAM_BOT_TOKEN` and `JWT_SECRET` in Vercel (`/api/health` shows `telegramAuthConfigured: true`)
 - [x] Graduation decided: on-chain STON.fi with LP locked (ADR-009); prove it on testnet
 - [ ] Fund a testnet deployer wallet and run the testnet gate (`docs/EXECUTION.md`)
-- [ ] Optional: enable Vercel Blob; add `TONCENTER_API_KEY` in Vercel
+- [ ] Add `TONCENTER_API_KEY` in Vercel before launch traffic (`docs/ENVIRONMENT.md`)
+- [ ] Optional: enable Vercel Blob
 - [ ] Write "MAINNET GO-LIVE APPROVED", then run the launch script locally
 - [ ] Upload design mockups for the pixel pass
 - [ ] Optional: GitHub secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` for CI deploys

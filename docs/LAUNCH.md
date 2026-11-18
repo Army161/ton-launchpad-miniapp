@@ -18,7 +18,8 @@ machine or into Vercel's secret fields. Public values (addresses, bot username, 
 - Human action required: Enter `TELEGRAM_BOT_TOKEN` into Vercel → Project → Settings → Environment Variables (Production). Do not send the value to anyone.
 - Human action required: Enter `JWT_SECRET` (generate with `openssl rand -hex 32`) into the same Vercel screen.
 - Human action required: Enter `DEPLOY_MNEMONIC` into your local `.env.testnet` / `.env.production` only. Never into Vercel.
-- Optional: `TONCENTER_API_KEY` (from @tonapibot) into Vercel and your local file; enable Vercel Blob (Storage → Blob) for image uploads.
+- Needed for mainnet traffic: `TONCENTER_API_KEY` (free, from @tonapibot) into Vercel (Production) and your local file. Without it the API reads the chain at about one request per second from Vercel's shared IPs, and token pages and trade confirmations answer "try again shortly" under load (`docs/ENVIRONMENT.md`). The production check in step 4 of the launch script prints `WARN TONCENTER_API_KEY` when your local file lacks it.
+- Optional: enable Vercel Blob (Storage → Blob) for image uploads.
 
 ```bash
 cp .env.example .env.testnet        # and later .env.production; both are gitignored

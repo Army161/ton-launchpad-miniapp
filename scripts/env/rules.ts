@@ -7,13 +7,15 @@ import { Address } from '@ton/core';
 import { mnemonicValidate } from '@ton/crypto';
 
 export type Profile = 'deploy-testnet' | 'deploy-mainnet' | 'production';
-export type Finding = { name: string; ok: boolean; message: string };
+/** `warn`: passes (does not fail the profile) but needs a look, e.g. a variable that is missing but not required. */
+export type Finding = { name: string; ok: boolean; message: string; warn?: boolean };
 export type Env = Record<string, string | undefined>;
 
 const PLACEHOLDER = /REPLACE|PASTE|YOUR_?|YourBot|yourapp|yourshortname|PENDING|CHANGE[-_]?ME|example|xxxx|word1/i;
 
 const pass = (name: string, message = 'ok'): Finding => ({ name, ok: true, message });
 const fail = (name: string, message: string): Finding => ({ name, ok: false, message });
+const warn = (name: string, message: string): Finding => ({ name, ok: true, warn: true, message });
 
 export function checkTonAddress(name: string, value: string | undefined, network: 'mainnet' | 'testnet'): Finding {
   if (!value) return fail(name, 'missing');
@@ -37,8 +39,10 @@ export async function checkMnemonic(name: string, value: string | undefined): Pr
   if (!value) return fail(name, 'missing');
   const words = value.trim().split(/\s+/);
   if (words.length !== 24) return fail(name, `must be 24 words (has ${words.length})`);
-  if (PLACEHOLDER.test(value)) return fail(name, 'still a placeholder');
-  return (await mnemonicValidate(words)) ? pass(name, '24 words, valid TON mnemonic') : fail(name, 'not a valid TON mnemonic');
+  // Validate before the placeholder check: "example" and "replace" are wordlist words, so a real mnemonic can match
+  // PLACEHOLDER (about 1 in 40 do). A mnemonic that validates is real, whatever words it contains.
+  if (await mnemonicValidate(words)) return pass(name, '24 words, valid TON mnemonic');
+  return fail(name, PLACEHOLDER.test(value) ? 'still a placeholder' : 'not a valid TON mnemonic');
 }
 
 export function checkBotToken(name: string, value: string | undefined): Finding {
@@ -126,6 +130,12 @@ export async function validate(profile: Profile, env: Env): Promise<Finding[]> {
     findings.push(checkHttpsUrl('VITE_MANIFEST_URL', env.VITE_MANIFEST_URL));
     findings.push(env.VITE_NETWORK === 'mainnet' ? pass('VITE_NETWORK', 'mainnet') : fail('VITE_NETWORK', 'must be "mainnet" for production'));
     if (env.DEPLOY_MNEMONIC) findings.push(fail('DEPLOY_MNEMONIC', 'must not be set in the production runtime; keep it local'));
+    // Not required, so not a failure; but without a key toncenter allows about 1 request/s per (shared) Vercel IP.
+    findings.push(
+      env.TONCENTER_API_KEY?.trim()
+        ? pass('TONCENTER_API_KEY', 'set')
+        : warn('TONCENTER_API_KEY', 'not set here: without it token pages and trade confirmations fail under load; set it in Vercel Production (docs/ENVIRONMENT.md)'),
+    );
     findings.push(...checkPublicVars(env));
   }
   return findings;

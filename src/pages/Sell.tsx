@@ -3,11 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import { Address } from '@ton/core';
 import { IconBack, IconCheck, IconInfo, IconShield } from '../components/Icons';
 import { TokenAvatar } from '../components/TokenAvatar';
+import { TokenUnavailable } from '../components/TokenUnavailable';
 import { useToast } from '../context/ToastContext';
 import { useWallet } from '../context/WalletContext';
 import { useToken } from '../data/tokens';
 import {
   buildSellBody,
+  canSendSell,
   computeWalletAddress,
   formatTokens,
   formatTon,
@@ -27,9 +29,11 @@ export function Sell() {
   const { id = '' } = useParams<{ id: string }>();
   const { showToast } = useToast();
   const { connected, connect, sendTransaction, address } = useWallet();
-  const { token, balance, status, refresh } = useToken(id, address);
+  const { token, balance, status, live, checking, refresh, retry, apply } = useToken(id, address);
   const [amount, setAmount] = useState('');
   const [phase, setPhase] = useState<Phase>('idle');
+  // A sell whose confirmation timed out may still land: warn on the page, not only in a passing toast.
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
   const tokensIn = parseAmount(amount);
   const held = balance ?? 0n;
@@ -40,6 +44,7 @@ export function Sell() {
         ? 'More than you hold'
         : null;
   const quote = token?.reserves && tokensIn && !inputError ? quoteSell(tokensIn, token.reserves) : null;
+  const sendable = canSendSell(connected, live, balance);
 
   async function confirm() {
     if (!token || !quote || !tokensIn) return;
@@ -47,6 +52,8 @@ export function Sell() {
       connect();
       return;
     }
+    // The quote, the balance and the confirmation baseline must come from a live read, never from an older copy.
+    if (!sendable) return;
     if (quote.tonOut <= 0n) {
       showToast('Amount too small to sell');
       return;
@@ -75,25 +82,21 @@ export function Sell() {
     const done = await waitForToken(token.id, (l) => l.token.tradeCount > before, address);
     setPhase('idle');
     if (done) {
+      setUnconfirmed(false);
       showToast(`Sold for ~${formatTon(quote.tonOut)} TON`);
       setAmount('');
-      void refresh();
+      apply(done);
     } else {
-      showToast('Not confirmed yet. If the price moved more than 1%, your tokens were returned.');
+      setUnconfirmed(true);
+      showToast('Sell not confirmed yet. Check your wallet history before trying again.');
+      void refresh();
     }
   }
 
   if (status === 'loading') {
     return <div className="page page--no-nav"><p className="muted" style={{ marginTop: 48, textAlign: 'center' }}>Loading…</p></div>;
   }
-  if (!token) {
-    return (
-      <div className="page page--no-nav">
-        <Link to="/" className="btn-ghost"><IconBack /> Back</Link>
-        <p style={{ marginTop: 24 }} className="muted">{status === 'error' ? 'Could not load this token. Try again shortly.' : 'Token not found.'}</p>
-      </div>
-    );
-  }
+  if (!token) return <TokenUnavailable status={status} onRetry={retry} />;
   if (token.source !== 'launchpad' || token.graduated) {
     return (
       <div className="page page--no-nav">
@@ -152,7 +155,25 @@ export function Sell() {
       </div>
 
       <p className={styles.secure}><IconShield size={15} /> Your wallet will show this as a token burn; the curve pays you TON for it.</p>
-      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote}>
+      {unconfirmed && (
+        <div className={styles.notice} role="status">
+          <span>Your last sell is not confirmed yet. Check your wallet history before selling again.</span>
+          <button type="button" className="btn-ghost" onClick={() => setUnconfirmed(false)}>Dismiss</button>
+        </div>
+      )}
+      {!live && !busy && (
+        <div className={styles.notice} role="status">
+          <span>{checking ? 'Loading the live price…' : 'Could not load the live price. Selling resumes once it loads.'}</span>
+          {!checking && <button type="button" className="btn-ghost" onClick={retry}>Try again</button>}
+        </div>
+      )}
+      {live && !sendable && !busy && (
+        <div className={styles.notice} role="status">
+          <span>Could not read your balance, so selling is paused.</span>
+          <button type="button" className="btn-ghost" onClick={retry}>Try again</button>
+        </div>
+      )}
+      <button type="button" className={`btn-primary ${styles.confirm}`} onClick={confirm} disabled={busy || !quote || !sendable}>
         {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? `Confirm sell · ${amount || '0'} ${token.ticker}` : 'Connect wallet'}
       </button>
     </div>

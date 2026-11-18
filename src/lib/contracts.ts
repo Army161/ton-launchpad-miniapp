@@ -129,6 +129,16 @@ export function withSlippage(amount: bigint, slippageBps = DEFAULT_SLIPPAGE_BPS)
   return (amount * (BPS - slippageBps)) / BPS;
 }
 
+/**
+ * Whether Sell may send. With a wallet connected only on a live read (the page's latest lookup succeeded) that also
+ * returned the wallet's balance, since the amount is checked against it: a lookup succeeds without the balance when
+ * only that read failed, and a sell over the holding just bounces off the jetton wallet, costing the network fee.
+ * Without a wallet the button connects one first.
+ */
+export function canSendSell(connected: boolean, live: boolean, balance: bigint | null): boolean {
+  return !connected || (live && balance !== null);
+}
+
 /** Spot price in TON per whole token. */
 export function spotPriceTon(reserves: CurveReserves): number {
   if (reserves.virtualTokens === 0n) return 0;
