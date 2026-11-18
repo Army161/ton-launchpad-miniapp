@@ -286,10 +286,12 @@ describe('GET /api/tokens', () => {
     expect(third.body).toEqual({ configured: true, tokens: [view(TOKEN_A)] });
   });
 
-  it('tries a failed read first again once, then lets a launch whose reads keep failing take its turn', async () => {
+  it('tries a failed read first again once, then lets a launch whose reads keep failing wait, longer each time up to a minute', async () => {
     const { listHandler, unavailable, budgetSpent } = await load();
-    // B and C are newer than token A, and every read of theirs fails. Each refresh's budget fits two reads.
+    // B and C are newer than token A, and their reads fail until `readable` says otherwise. Each refresh's budget fits
+    // two reads.
     let budget = 0;
+    const readable = new Set([TOKEN_A]);
     chain.listLaunches.mockImplementation(async () => {
       budget = 2;
       return [launch(TOKEN_B), launch(TOKEN_C), launch(TOKEN_A)];
@@ -299,33 +301,88 @@ describe('GET /api/tokens', () => {
       if (budget-- <= 0) throw budgetSpent();
       const key = a.toRawString();
       order.push(key);
-      if (key === TOKEN_A) return view(TOKEN_A);
+      if (readable.has(key)) return view(key);
       throw unavailable();
     });
+    const refreshAt = async (ms: number) => {
+      vi.setSystemTime(T0 + ms);
+      order.length = 0;
+      return get(listHandler);
+    };
 
-    const first = await get(listHandler);
+    expect((await refreshAt(0)).body).toEqual({ configured: true, tokens: [], partial: true });
     expect(order).toEqual([TOKEN_B, TOKEN_C]);
-    expect(first.body).toEqual({ configured: true, tokens: [], partial: true });
 
-    vi.setSystemTime(T0 + 6_000);
-    order.length = 0;
-    const second = await get(listHandler);
+    // A single failure keeps a launch first.
+    expect((await refreshAt(6_000)).body).toEqual({ configured: true, tokens: [], partial: true });
     expect(order).toEqual([TOKEN_B, TOKEN_C]);
-    expect(second.body).toEqual({ configured: true, tokens: [], partial: true });
 
-    // B and C have now failed twice in a row: they take their turn by when they last failed, after A.
-    vi.setSystemTime(T0 + 12_000);
-    order.length = 0;
-    const third = await get(listHandler);
-    expect(order).toEqual([TOKEN_A, TOKEN_B]);
-    expect(third.body).toEqual({ configured: true, tokens: [view(TOKEN_A)], partial: true });
+    // B and C have failed twice in a row: they wait 15 s, read after A while they wait.
+    expect((await refreshAt(12_000)).body).toEqual({ configured: true, tokens: [view(TOKEN_A)], partial: true });
+    expect(order).toEqual([TOKEN_A, TOKEN_B]); // B fails a third time: it now waits 30 s, until 42 s
+    await refreshAt(18_000);
+    expect(order).toEqual([TOKEN_A, TOKEN_C]); // C, whose wait ends first, also fails a third time: until 48 s
 
-    // C failed longest ago; B and A (both tried at T0 + 12 s) follow newest first. A is shown as last read.
-    vi.setSystemTime(T0 + 18_000);
-    order.length = 0;
-    const fourth = await get(listHandler);
-    expect(order).toEqual([TOKEN_C, TOKEN_B]);
-    expect(fourth.body).toEqual({ configured: true, tokens: [view(TOKEN_A)], partial: true });
+    // B's wait is over: it is read first again, fails a fourth time and waits 60 s. C still waits.
+    await refreshAt(43_000);
+    expect(order).toEqual([TOKEN_B, TOKEN_A]);
+
+    // C's wait is over and it answers now: it is listed, and no longer waits.
+    readable.add(TOKEN_C);
+    const listed = await refreshAt(49_000);
+    expect(order).toEqual([TOKEN_C, TOKEN_A]);
+    expect(listed.body).toEqual({ configured: true, tokens: [view(TOKEN_C), view(TOKEN_A)], partial: true });
+    await refreshAt(55_000);
+    expect(order).toEqual([TOKEN_C, TOKEN_A]); // both read at 49 s, so the newest first; B waits until 103 s
+
+    // The wait doubles at most to one minute, so a launch that fails often in a rate-limit storm is still tried
+    // about once a minute, while one that never answers costs at most one read a minute.
+    await refreshAt(103_000);
+    expect(order[0]).toBe(TOKEN_B); // fifth failure: 120 s, capped at 60 s
+    for (const at of [163_000, 223_000, 283_000]) {
+      await refreshAt(at - 6_000); // past the 5 s cache of the last partial list
+      expect(order).not.toContain(TOKEN_B);
+      await refreshAt(at);
+      expect(order[0]).toBe(TOKEN_B);
+    }
+  });
+
+  it('lists a new token that failed twice within seconds after its wait, not after every other token is read again', async () => {
+    const { listHandler, unavailable, budgetSpent } = await load();
+    // 20 known tokens, read before T0; each refresh's budget fits two reads. N is launched and fails twice.
+    const known = Array.from({ length: 20 }, (_, i) => `0:${(i + 1).toString(16).padStart(64, '0')}`);
+    const NEW = `0:${'d'.repeat(64)}`;
+    chain.listLaunches.mockImplementation(async () => {
+      budget = 2;
+      return [launch(NEW), ...known.map((k) => launch(k))];
+    });
+    let budget = 0;
+    let newFails = 2;
+    const order: string[] = [];
+    chain.readLaunchpadToken.mockImplementation(async (a: Address) => {
+      if (budget-- <= 0) throw budgetSpent();
+      const key = a.toRawString();
+      order.push(key);
+      if (key === NEW && newFails-- > 0) throw unavailable();
+      return view(key);
+    });
+    // Warm up: every known token read once (N is not launched yet).
+    chain.listLaunches.mockImplementationOnce(async () => {
+      budget = 20;
+      return known.map((k) => launch(k));
+    });
+    vi.setSystemTime(T0 - 60_000);
+    await get(listHandler);
+
+    const listedAt: number[] = [];
+    for (let at = 0; at <= 60_000; at += 6_000) {
+      vi.setSystemTime(T0 + at);
+      const answer = await get(listHandler);
+      const tokens = (answer.body as { tokens: TokenView[] }).tokens;
+      if (tokens.some((t) => t.address === NEW)) listedAt.push(at);
+    }
+    // Fails at 0 s and 6 s, waits 15 s, read first again at 24 s. Reading every token again would take 10 refreshes.
+    expect(listedAt[0]).toBe(24_000);
   });
 
   it('runs one refresh at a time: requests that arrive meanwhile wait for it', async () => {
@@ -416,6 +473,20 @@ describe('GET /api/tokens', () => {
     const troubled = await get(listHandler);
     expect(troubled.body).toEqual({ configured: true, tokens: [view(TOKEN_A, 2)], partial: true });
     expect(troubled.headers['cache-control']).toBe(SHORT_CACHE);
+  });
+
+  it('applies the 30-minute limit when no read could start, since only the factory history answered', async () => {
+    const { listHandler, budgetSpent } = await load();
+    chain.listLaunches.mockResolvedValue([launch(TOKEN_A), launch(TOKEN_B)]);
+    readsFrom({ [TOKEN_A]: view(TOKEN_A, 1), [TOKEN_B]: view(TOKEN_B, 1) });
+    await get(listHandler);
+
+    // An hour later the history read takes the whole budget (retries after 429s or a timeout): no token read starts.
+    vi.setSystemTime(T0 + 3_600_000);
+    readsFrom({ [TOKEN_A]: budgetSpent(), [TOKEN_B]: budgetSpent() });
+    const stale = await get(listHandler);
+    expect(stale.body).toEqual({ configured: true, tokens: [], partial: true });
+    expect(stale.headers['cache-control']).toBe(SHORT_CACHE);
   });
 
   it('serves the last list again only while it was read in the last 5 minutes, then answers 503', async () => {

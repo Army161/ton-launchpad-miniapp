@@ -42,6 +42,7 @@ never invents data (`tests/external-feeds.test.ts`). The app's own token list an
 shortly" with a Try again button, never as "no tokens" or "not found".
 
 When toncenter cannot be read, the app's own API answers 503 with `Retry-After` instead of "not a launchpad token".
+A launch whose reads keep failing waits behind the others for up to a minute before it is tried first again.
 The token list then shows each token it could not read as last read if that was in the last 30 minutes, leaves out
 the others, says `partial: true` and is cached for 5 s (while toncenter answers, a token a refresh merely had no time
 for is shown as last read however long ago); and when the factory's transactions cannot be read it serves the last

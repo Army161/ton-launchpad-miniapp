@@ -57,7 +57,7 @@ liquidity goes to the liquidity manager, which seeds manually with `graduate.ts 
 | Route | Purpose |
 |---|---|
 | `POST /api/auth/telegram` | verifies `initData`, returns a 24 h JWT and the Telegram profile |
-| `GET /api/tokens` | lists launches found in the factory's transactions, newest first; every token is proven to come from our factory (address re-derived from `(factory, creator, salt)`). Cached for 20 s in memory and 15 s at the edge. A token a refresh does not read (no time left, or the read failed) is shown as last read on that instance, but once a read of that refresh failed only if that was in the last 30 minutes; a token never read there, or not in that time, is left out and the list says `partial: true`, and then (or while a launch of the last minute still reads as not deployed) the list is cached for only 5 s (`s-maxage=5`). One refresh at a time per instance. If the factory's transactions cannot be read, the last list is served again for 5 s as long as it was read in the last 5 minutes; after that, or with no list yet, 503 with `Retry-After` |
+| `GET /api/tokens` | lists launches found in the factory's transactions, newest first; every token is proven to come from our factory (address re-derived from `(factory, creator, salt)`). Cached for 20 s in memory and 15 s at the edge. A token a refresh does not read (no time left, or the read failed) is shown as last read on that instance, but once a read of that refresh failed (or none could start) only if that was in the last 30 minutes; a token never read there, or not in that time, is left out and the list says `partial: true`, and then (or while a launch of the last minute still reads as not deployed) the list is cached for only 5 s (`s-maxage=5`). One refresh at a time per instance. If the factory's transactions cannot be read, the last list is served again for 5 s as long as it was read in the last 5 minutes; after that, or with no list yet, 503 with `Retry-After` |
 | `GET /api/tokens/:address[?holder=]` | live curve state and optionally the holder's balance, never cached. 404 only when the chain answers that the address is not one of our tokens; 503 with `Retry-After` and `no-store` when toncenter cannot be read. When only the balance cannot be read, 200 with the token and no `balance` |
 | `POST /api/metadata/upload` | authenticated image upload to Vercel Blob (503 if Blob is not enabled) |
 | `GET /api/health` | configuration presence flags only |
@@ -91,15 +91,18 @@ requests (account state, `get_wallet_data`).
 
 The list costs 1 request (the factory's transactions) plus 1 per token, and one 7 s budget fits about 50 requests
 with `TONCENTER_API_KEY` (6 without). So a refresh reads the launches never read on that instance first, then the
-ones read longest ago, and leaves the rest as last read. A launch whose read failed is tried first again; after two
-failed reads in a row it takes its turn by when it last failed, so launches whose reads keep failing cannot keep the
-others out of every refresh. A launch read as not deployed during its first minute (it may still have been
+ones read longest ago, and leaves the rest as last read. A launch whose read failed is tried first again; after two failed reads in a row it waits,
+read after every other launch, for 15 s, then twice as long after each further failure, at most a minute, and then
+takes its usual place again. So launches whose reads keep failing cannot keep the others out of every refresh (one
+that never answers costs at most one read a minute), while in a rate-limit storm, where every launch fails now and
+then, a launch that failed a few times in a row is still read again within about a minute. A launch read as not deployed during its first minute (it may still have been
 deploying) is read first again until a read after that minute, and once that minute has passed counts as a missing
 token while it cannot be read; one read as not deployed after its first minute takes its turn by when it was last
 read, like a token, and is no token of ours, so launches that never deploy cannot use up every refresh before a
 token is read. While toncenter answers, a token the refresh has no time left for is shown as last read, however long
 ago: the round of re-reads depends on traffic, and on a quiet instance with many tokens it takes longer than 30
-minutes. Once a read of the refresh fails, last-good data has an age limit: the tokens it did not read are filled in
+minutes. Once a read of the refresh fails, or no read could start at all (only the factory's
+history answered), last-good data has an age limit: the tokens it did not read are filled in
 only from a view of the last 30 minutes, and a list is served again after a failed refresh only if it was read in
 the last 5 minutes; after that the endpoint answers 503. So an outage of toncenter shows as one, not as a list
 frozen in time. With a key a refresh reads about 46 known tokens or 22 new ones (33 or 15 when toncenter takes 500
