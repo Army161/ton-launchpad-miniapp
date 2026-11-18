@@ -31,6 +31,8 @@ type Listing = { tokens: TokenView[]; partial: boolean; short: boolean; listedAt
 const lastRead = new Map<string, { view: TokenView; at: number }>();
 /** Launches whose last read found no token of ours (not deployed yet, or a setup that failed), and when. */
 const lastEmpty = new Map<string, number>();
+/** Launches whose reads failed in a row (toncenter did not answer them): how many times, and when last. */
+const failing = new Map<string, { times: number; at: number }>();
 let cache: (Listing & { expiresAt: number }) | null = null;
 let refreshing: Promise<Listing> | null = null;
 
@@ -42,10 +44,14 @@ const mayBeDeploying = (launch: Launch, at: number) => at - launch.at < DEPLOYIN
 /**
  * When a launch was last read, for the read order: 0 for never, and also for one last read as empty while it may
  * still have been deploying, so both go first. A launch read as empty after its first minute takes its turn with the
- * tokens, so launches that never deploy cannot use up every refresh's budget before a token is read.
+ * tokens, so launches that never deploy cannot use up every refresh's budget before a token is read. A failed read
+ * leaves the launch where it was, so it is tried first again; after two failed reads in a row it takes its turn by
+ * when it last failed, so launches whose reads keep failing cannot use up every refresh before the others are read.
  */
 function readAt(launch: Launch): number {
   const key = keyOf(launch.address);
+  const failed = failing.get(key);
+  if (failed && failed.times >= 2) return failed.at;
   const token = lastRead.get(key);
   if (token) return token.at;
   const empty = lastEmpty.get(key);
@@ -69,6 +75,7 @@ async function readListing(factory: Address): Promise<Listing> {
     const key = keyOf(launch.address);
     try {
       const view = await readLaunchpadToken(launch.address, factory, chain);
+      failing.delete(key);
       if (view) {
         lastRead.set(key, { view, at: Date.now() });
         lastEmpty.delete(key);
@@ -82,6 +89,7 @@ async function readListing(factory: Address): Promise<Listing> {
       // no time left to start asked toncenter nothing, so only the others count as failed.
       unread.push(launch);
       if (err instanceof BudgetSpentError) return;
+      failing.set(key, { times: (failing.get(key)?.times ?? 0) + 1, at: Date.now() });
       failed++;
       reason ||= errorText(err);
     }
@@ -89,6 +97,7 @@ async function readListing(factory: Address): Promise<Listing> {
   const listed = new Set(launches.map((l) => keyOf(l.address)));
   for (const key of lastRead.keys()) if (!listed.has(key)) lastRead.delete(key);
   for (const key of lastEmpty.keys()) if (!listed.has(key)) lastEmpty.delete(key);
+  for (const key of failing.keys()) if (!listed.has(key)) failing.delete(key);
   /** A view read before this is too old to show. Reads of this refresh are all newer. */
   const oldest = failed > 0 ? now - FILL_MAX_AGE_MS : Number.NEGATIVE_INFINITY;
   const shown = (key: string) => {

@@ -126,8 +126,8 @@ function freshView(id: string, lookup: string): View {
  * balance and the confirmation baseline come from the chain and not from an older copy. Only the latest lookup
  * updates the page, and another token or holder starts from what is known about it, never from the previous one.
  * `retry` looks again at once, for a Try again button; `apply` takes a fresh lookup the page already has, e.g. the
- * one that confirmed a trade. A call made for a token or holder the page no longer shows (a trade confirmed after the
- * wallet changed) does nothing.
+ * one that confirmed a trade. A call made while the page showed another token or holder, or an earlier visit to this
+ * one (a trade confirmed before the wallet changed, arriving after the page came back to that wallet), does nothing.
  */
 export function useToken(id: string, holder?: string | null, { retryNotFound = false } = {}) {
   const lookup = `${id} ${holder ?? ''}`;
@@ -135,12 +135,17 @@ export function useToken(id: string, holder?: string | null, { retryNotFound = f
   // A view kept for another token or holder (a reused page, a wallet that connects) is never shown.
   const view = stored.lookup === lookup ? stored : freshView(id, lookup);
   const latest = useRef(0);
-  // The lookup the page shows now. Declared before the effect that starts a lookup, so that effect sees it.
-  const shown = useRef(lookup);
+  // Each token and holder the page starts showing is a new visit, also one it showed before: the callbacks of an
+  // earlier visit stay stale when the page comes back to the same lookup.
+  const [visit, setVisit] = useState({ lookup, n: 0 });
+  if (visit.lookup !== lookup) setVisit({ lookup, n: visit.n + 1 });
+  const n = visit.lookup === lookup ? visit.n : visit.n + 1;
+  // The visit the page shows now. Declared before the effect that starts a lookup, so that effect sees it.
+  const shown = useRef(n);
   useEffect(() => {
-    shown.current = lookup;
-  }, [lookup]);
-  const current = useCallback(() => shown.current === lookup, [lookup]);
+    shown.current = n;
+  }, [n]);
+  const current = useCallback(() => shown.current === n, [n]);
 
   // Changes the view of this token and holder only: one kept for another lookup is replaced, never mixed in.
   const update = useCallback(

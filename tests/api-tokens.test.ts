@@ -286,6 +286,48 @@ describe('GET /api/tokens', () => {
     expect(third.body).toEqual({ configured: true, tokens: [view(TOKEN_A)] });
   });
 
+  it('tries a failed read first again once, then lets a launch whose reads keep failing take its turn', async () => {
+    const { listHandler, unavailable, budgetSpent } = await load();
+    // B and C are newer than token A, and every read of theirs fails. Each refresh's budget fits two reads.
+    let budget = 0;
+    chain.listLaunches.mockImplementation(async () => {
+      budget = 2;
+      return [launch(TOKEN_B), launch(TOKEN_C), launch(TOKEN_A)];
+    });
+    const order: string[] = [];
+    chain.readLaunchpadToken.mockImplementation(async (a: Address) => {
+      if (budget-- <= 0) throw budgetSpent();
+      const key = a.toRawString();
+      order.push(key);
+      if (key === TOKEN_A) return view(TOKEN_A);
+      throw unavailable();
+    });
+
+    const first = await get(listHandler);
+    expect(order).toEqual([TOKEN_B, TOKEN_C]);
+    expect(first.body).toEqual({ configured: true, tokens: [], partial: true });
+
+    vi.setSystemTime(T0 + 6_000);
+    order.length = 0;
+    const second = await get(listHandler);
+    expect(order).toEqual([TOKEN_B, TOKEN_C]);
+    expect(second.body).toEqual({ configured: true, tokens: [], partial: true });
+
+    // B and C have now failed twice in a row: they take their turn by when they last failed, after A.
+    vi.setSystemTime(T0 + 12_000);
+    order.length = 0;
+    const third = await get(listHandler);
+    expect(order).toEqual([TOKEN_A, TOKEN_B]);
+    expect(third.body).toEqual({ configured: true, tokens: [view(TOKEN_A)], partial: true });
+
+    // C failed longest ago; B and A (both tried at T0 + 12 s) follow newest first. A is shown as last read.
+    vi.setSystemTime(T0 + 18_000);
+    order.length = 0;
+    const fourth = await get(listHandler);
+    expect(order).toEqual([TOKEN_C, TOKEN_B]);
+    expect(fourth.body).toEqual({ configured: true, tokens: [view(TOKEN_A)], partial: true });
+  });
+
   it('runs one refresh at a time: requests that arrive meanwhile wait for it', async () => {
     const { listHandler } = await load();
     let release: (launches: Launch[]) => void = () => undefined;

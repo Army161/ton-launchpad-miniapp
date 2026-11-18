@@ -233,6 +233,34 @@ describe('useToken', () => {
     await page.unmount();
   });
 
+  it('ignores apply and refresh from an earlier visit to the same wallet, after the page comes back to it', async () => {
+    // n counts the lookups of this address: the first wallet, the second, then the first again (a trade landed).
+    const lookups = api((_a, holder, n) =>
+      holder === 'second-wallet' ? ok(view('held', 5), 2n) : n === 0 ? ok(view('held', 5), 1n) : ok(view('held', 7), 3n),
+    );
+    const page = await mount({ id: 'held', holder: 'first-wallet' });
+    await pass(100);
+    const earlier = page.latest();
+    expect(earlier).toMatchObject({ live: true, balance: 1n });
+
+    await page.render({ holder: 'second-wallet' });
+    await pass(100);
+    await page.render({ holder: 'first-wallet' });
+    await pass(100);
+    expect(page.latest()).toMatchObject({ live: true, checking: false, balance: 3n });
+    expect(page.latest().token?.tradeCount).toBe(7);
+
+    // A trade confirmed during the first visit arrives late: its snapshot is older than what the page shows now.
+    await act(async () => {
+      earlier.apply({ token: view('held', 6), balance: 2n });
+      void earlier.refresh();
+    });
+    expect(page.latest()).toMatchObject({ live: true, checking: false, balance: 3n });
+    expect(page.latest().token?.tradeCount).toBe(7);
+    expect(lookups.map((l) => l.holder)).toEqual(['first-wallet', 'second-wallet', 'first-wallet']);
+    await page.unmount();
+  });
+
   it('reads a mangled address (HTTP 400) as not found, without retrying', async () => {
     const lookups = api(() => ({ status: 400, body: { error: 'Invalid token address' } }));
     const page = await mount({ id: 'not-an-address' });

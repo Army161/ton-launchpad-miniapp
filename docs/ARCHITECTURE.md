@@ -91,19 +91,21 @@ requests (account state, `get_wallet_data`).
 
 The list costs 1 request (the factory's transactions) plus 1 per token, and one 7 s budget fits about 50 requests
 with `TONCENTER_API_KEY` (6 without). So a refresh reads the launches never read on that instance first, then the
-ones read longest ago, and leaves the rest as last read. A launch read as not deployed during its first minute (it
-may still have been deploying) is read first again until a read after that minute, and once that minute has passed
-counts as a missing token while it cannot be read; one read as not deployed after its first minute takes its turn by
-when it was last read, like a token, and is no token of ours, so launches that never deploy cannot use up every
-refresh before a token is read. While toncenter answers, a token the refresh has no time left for is shown as last
-read, however long ago: the round of re-reads depends on traffic, and on a quiet instance with many tokens it takes
-longer than 30 minutes. Once a read of the refresh fails, last-good data has an age limit: the tokens it did not
-read are filled in only from a view of the last 30 minutes, and a list is served again after a failed refresh only
-if it was read in the last 5 minutes; after that the endpoint answers 503. So an outage of toncenter shows as one,
-not as a list frozen in time. With a key a refresh reads about 46 known tokens or 22 new ones (33 or 15 when
-toncenter takes 500 ms per getter), and successive refreshes cover the whole list (at most 100 factory transactions,
-`docs/STATUS.md`). Without a key it reads about 5 known tokens or 2 new ones per refresh, so a fresh instance needs
-several refreshes, 5 s apart, to list everything (`tests/api-tokens-progress.test.ts` pins both rates).
+ones read longest ago, and leaves the rest as last read. A launch whose read failed is tried first again; after two
+failed reads in a row it takes its turn by when it last failed, so launches whose reads keep failing cannot keep the
+others out of every refresh. A launch read as not deployed during its first minute (it may still have been
+deploying) is read first again until a read after that minute, and once that minute has passed counts as a missing
+token while it cannot be read; one read as not deployed after its first minute takes its turn by when it was last
+read, like a token, and is no token of ours, so launches that never deploy cannot use up every refresh before a
+token is read. While toncenter answers, a token the refresh has no time left for is shown as last read, however long
+ago: the round of re-reads depends on traffic, and on a quiet instance with many tokens it takes longer than 30
+minutes. Once a read of the refresh fails, last-good data has an age limit: the tokens it did not read are filled in
+only from a view of the last 30 minutes, and a list is served again after a failed refresh only if it was read in
+the last 5 minutes; after that the endpoint answers 503. So an outage of toncenter shows as one, not as a list
+frozen in time. With a key a refresh reads about 46 known tokens or 22 new ones (33 or 15 when toncenter takes 500
+ms per getter), and successive refreshes cover the whole list (at most 100 factory transactions, `docs/STATUS.md`).
+Without a key it reads about 5 known tokens or 2 new ones per refresh, so a fresh instance needs several refreshes,
+5 s apart, to list everything (`tests/api-tokens-progress.test.ts` pins both rates).
 
 ## Front end (`src/`)
 
@@ -117,8 +119,10 @@ several refreshes, 5 s apart, to list everything (`tests/api-tokens-progress.tes
 - Token pages (TokenDetail, Buy, Sell) retry a failed lookup 5 s after it ended, up to 12 times in a row, also while
   they show the token as Home listed it, and offer Try again. Only the newest lookup's answer is used: a late answer
   (an earlier lookup, or the token the page showed before) never replaces a newer one. A page that moves to another
-  token or wallet starts from what is known about that one, never from the previous one. A mangled address (HTTP 400)
-  reads as "Token not found." and is not retried.
+  token or wallet starts from what is known about that one, never from the previous one, and a call from an earlier
+  visit (a trade confirmed before the wallet changed) is ignored, also once the page is back on that token and wallet.
+  A mangled address (HTTP 400) reads as "Token not found." and is not retried. Every request to the app's API is
+  aborted after 15 s and reads as an error, so a request that stalls cannot hold a page.
 - Buy and Sell trade only on a live read: until the page's latest lookup has succeeded (and again whenever one
   fails), Confirm is disabled and the page says it is loading the live price, or that it could not, with Try again.
   So the quote, the minimum received, the balance and the confirmation baseline (the trade count) never come from
@@ -126,10 +130,10 @@ several refreshes, 5 s apart, to list everything (`tests/api-tokens-progress.tes
   since the amount is checked against it: a lookup succeeds without the balance when only that read failed, and then
   Sell says it could not read the balance, with Try again. After a confirmed trade the page takes the lookup that
   confirmed it; after a timeout it looks the token up again. TokenDetail says when its numbers may be out of date.
-- After sending, pages poll `/api/tokens/:address` until the trade count moves, then show confirmation. If 90 s pass
-  without that, Buy and Sell say the trade is not confirmed yet and ask the user to check their wallet history before
-  trying again, in a toast and in a notice that stays on the page until dismissed or a later trade confirms. They
-  never claim a refund, because the API may simply have been unable to read the chain. An unconfirmed launch opens the
-  token page, which keeps looking for the token for a minute and says "Your launch is not confirmed yet. Check your
-  wallet history before launching again." until it loads.
+- After sending, pages poll `/api/tokens/:address` every 3 s until the trade count moves, then show confirmation. If
+  90 s pass without that (the last poll may end up to 18 s later), Buy and Sell say the trade is not confirmed yet and
+  ask the user to check their wallet history before trying again, in a toast and in a notice that stays on the page
+  until dismissed or a later trade confirms. They never claim a refund, because the API may simply have been unable to
+  read the chain. An unconfirmed launch opens the token page, which keeps looking for the token for a minute and says
+  "Your launch is not confirmed yet. Check your wallet history before launching again." until it loads.
 - TON Connect uses the SDK's remote wallets list as is (no hand-written wallet entries).

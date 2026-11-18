@@ -70,6 +70,32 @@ describe('launchpad API lookups', () => {
     expect(await fetchLaunchpadTokens()).toEqual({ status: 'ok', tokens: [], partial: false });
   });
 
+  it('cuts off a lookup or list request that stalls for 15 s and reads it as an error', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    try {
+      const signals: AbortSignal[] = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: string, init?: RequestInit) => {
+          if (init?.signal) signals.push(init.signal);
+          return new Promise<Response>(() => undefined);
+        }),
+      );
+      let lookup: unknown = 'waiting';
+      let list: unknown = 'waiting';
+      void fetchLaunchpadToken('EQA1', 'UQB1').then((l) => (lookup = l));
+      void fetchLaunchpadTokens().then((l) => (list = l));
+      await vi.advanceTimersByTimeAsync(14_900);
+      expect([lookup, list]).toEqual(['waiting', 'waiting']);
+      await vi.advanceTimersByTimeAsync(100);
+      expect([lookup, list]).toEqual([{ status: 'error' }, { status: 'error' }]);
+      // The request itself is aborted too, not only left behind.
+      expect(signals.map((s) => s.aborted)).toEqual([true, true]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('reads a 503 from the list as an error, not as an empty list', async () => {
     vi.stubGlobal('fetch', vi.fn(json({ error: 'Chain temporarily unavailable' }, 503)));
     expect(await fetchLaunchpadTokens()).toEqual({ status: 'error' });
@@ -114,5 +140,19 @@ describe('waiting for a trade or launch to show up', () => {
     await vi.advanceTimersByTimeAsync(3_000);
     expect(found).toBeNull();
     expect(fetch).toHaveBeenCalledTimes(30);
+  });
+
+  it('gives up after 90 s also when lookups stall, since each is cut off after 15 s', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    const fetch = vi.fn(() => new Promise<Response>(() => undefined));
+    vi.stubGlobal('fetch', fetch);
+    let found: unknown = 'waiting';
+    void waitForToken('EQA1', () => true, 'UQB1').then((l) => (found = l));
+    await vi.advanceTimersByTimeAsync(89_900);
+    expect(found).toBe('waiting');
+    await vi.advanceTimersByTimeAsync(100);
+    expect(found).toBeNull();
+    // Lookups at 3, 21, 39, 57 and 75 s, each cut off 15 s later.
+    expect(fetch).toHaveBeenCalledTimes(5);
   });
 });
