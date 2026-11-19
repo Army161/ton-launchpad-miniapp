@@ -20,7 +20,7 @@ Telegram (open the app, connect a wallet, launch and trade a token).
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
-| Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy |
+| Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`, and again as `dpl_D3x9yK6MSjGMRSBMa93baErrkZst` with `TONCENTER_API_KEY` set); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy |
 | Telegram validation | DONE | @TONLaunchpad_Bot Main App, menu button, return URL `https://t.me/TONLaunchpad_Bot?startapp` |
 | Testnet deployment | PASS | factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed 2026-11-14; it embeds STON.fi's broken testnet router, so redeploy if a working one appears. sell and refund checks passed 2026-11-17 |
 | Mainnet deployment | PASS (factory), smoke test open | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17). On 2026-11-19 the founder deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27); the page verified `get_factory_info` and the address equals the one computed from his wallet and the pinned treasury and router (`docs/VERIFICATION.md`). Vercel Production points at it and was redeployed. Open: the founder's smoke test in Telegram |
@@ -46,9 +46,9 @@ Telegram (open the app, connect a wallet, launch and trade a token).
 1. Done 2026-11-17: treasury address provided; "MAINNET GO-LIVE APPROVED" given 2026-11-17.
 2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Sell and refund checks passed 2026-11-17 (`npm run check:trades`, 10/10). Testnet gate PASS.
 3. Add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret so Claude reviews PRs on GitHub (`docs/EXECUTION.md`).
-4. Add `TONCENTER_API_KEY` to Vercel (Production) before launch traffic. Without it the API reads toncenter at about
-   one request per second from shared Vercel IPs, so token pages and trade confirmations answer 503 ("try again
-   shortly") under load (`docs/ENVIRONMENT.md`). Optional: enable Vercel Blob (image upload).
+4. Done 2026-11-19: the founder added `TONCENTER_API_KEY` to Vercel (Production, stored as a sensitive value) and
+   production was redeployed (`dpl_D3x9yK6MSjGMRSBMa93baErrkZst`). Without it the API read toncenter at about one
+   request per second from shared Vercel IPs (`docs/ENVIRONMENT.md`). Optional: enable Vercel Blob (image upload).
 5. Optional, recommended before real volume: independent contract audit (SECURITY #12).
 6. Done 2026-11-19: mainnet factory deployed from the founder's wallet app. Open: the smoke test in Telegram
    (@TONLaunchpad_Bot: open the app, connect a wallet, launch a token, buy and sell a little).
@@ -90,7 +90,14 @@ https://ton-launchpad-miniapp.vercel.app. Read through Vercel at 10:08 UTC: `/ap
 `/api/tokens` 200 `{"configured":true,"tokens":[]}` (the API read the factory's transactions on mainnet and found no
 launch yet), the app shell 200, no runtime errors. The client bundle's factory address was not read directly; the
 smoke test shows it. `VITE_FACTORY_DEPLOY_PAGE` (Preview, branch `claude/project-thread-ri5mr2`) is set to `off`, so
-new previews no longer serve the deploy page. Not yet done: the smoke test in Telegram, `TONCENTER_API_KEY` in Vercel.
+new previews no longer serve the deploy page. Not yet done: the smoke test in Telegram.
+
+2026-11-19 10:23 UTC, toncenter key: the founder added `TONCENTER_API_KEY` in Vercel (Production only, sensitive; its
+value was never read from here). Production was redeployed from `clawdbot-permanent` 4a1392f as
+`dpl_D3x9yK6MSjGMRSBMa93baErrkZst` (READY, serves the production domain). On the new deployment `/api/tokens`
+answered 200 `{"configured":true,"tokens":[]}` from a fresh instance, which it does only when the factory's
+transactions were read from toncenter, so toncenter accepts the key; `/api/health` unchanged (mainnet, factory and
+Telegram auth configured). The higher request limit itself was not load-tested.
 
 2026-11-19, the wallet-approved factory deploy on 2ef6051 (on top of 4a1392f): contracts build, typecheck and 96/96
 tests (rehearsal build present), wrappers in sync, lint 0 errors (the same 5 warnings), 192/192 app tests, build
