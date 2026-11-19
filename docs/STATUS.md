@@ -1,10 +1,11 @@
 # STATUS.md — current state
 
-Updated: 2026-11-18 · Branch: `clawdbot-permanent` (GitHub default; `main` was merged into it by PR #3 and deleted. Vercel's production branch setting still names `main`, so a push or merge to `clawdbot-permanent` builds a preview and production is deployed explicitly)
+Updated: 2026-11-19 · Branch: `clawdbot-permanent` (GitHub default; `main` was merged into it by PR #3 and deleted. Vercel's production branch setting still names `main`, so a push or merge to `clawdbot-permanent` builds a preview and production is deployed explicitly)
 
-**Overall: MAINNET DEPLOY IN PROGRESS.** The testnet gate passed and the founder wrote "MAINNET GO-LIVE APPROVED" on
-2026-11-17. The live site runs 682021b with launches disabled (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY`). What remains is
-the founder's factory deploy from their own wallet, pointing Vercel at the factory, and the Telegram smoke test.
+**Overall: MAINNET FACTORY LIVE, SMOKE TEST OPEN.** The testnet gate passed, the founder wrote "MAINNET GO-LIVE
+APPROVED" on 2026-11-17 and deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on
+2026-11-19. Production runs 4a1392f pointed at that factory on mainnet. What remains is the founder's smoke test in
+Telegram (open the app, connect a wallet, launch and trade a token).
 
 ## Gates
 
@@ -19,10 +20,10 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
-| Live site | PASS | production deploy of 682021b (2026-11-17); `/api/health` ok, `network: mainnet`, `telegramAuthConfigured: true`, `factoryConfigured: false` until the factory exists |
+| Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy |
 | Telegram validation | DONE | @TONLaunchpad_Bot Main App, menu button, return URL `https://t.me/TONLaunchpad_Bot?startapp` |
 | Testnet deployment | PASS | factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed 2026-11-14; it embeds STON.fi's broken testnet router, so redeploy if a working one appears. sell and refund checks passed 2026-11-17 |
-| Mainnet deployment | IN PROGRESS | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17); the founder deploys the factory, then Vercel gets the address. Since 2026-11-19 he deploys it from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27). The launch script's Vercel upload of `.env.production` was fixed first (SECURITY #23) |
+| Mainnet deployment | PASS (factory), smoke test open | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17). On 2026-11-19 the founder deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27); the page verified `get_factory_info` and the address equals the one computed from his wallet and the pinned treasury and router (`docs/VERIFICATION.md`). Vercel Production points at it and was redeployed. Open: the founder's smoke test in Telegram |
 | TON Connect validation | BLOCKED_HUMAN | testnet factory exists; needs a Tonkeeper testnet wallet run (`docs/EXECUTION.md` 4-7). Also check that the wallet list shows Telegram's wallet once and that it connects (the stale hand-written "Wallet" entry, review finding TC-1, was removed) |
 | Design pixel pass | DEFERRED | `DESIGN_PIXEL_PASS = WAITING_FOR_FOUNDER_ASSET` |
 
@@ -33,10 +34,11 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Factory address (testnet) | `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` (2026-11-14) |
 | Platform treasury (mainnet) | `UQBNwH67i7p23n2LYgEJtEEWp9p44HlqoDzZHBXm2mcUKyF3` (founder, 2026-11-17; valid mainnet basechain address) |
 | STON.fi router (mainnet, pin) | `EQDx--jUU9PUtHltPYZX7wdzIi0SPY3KZ8nvOs0iZvQJd6Ql` (v2.2 constant product, passed the mainnet-fork rehearsal) |
-| Factory address (mainnet) | none yet (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY` disables launches in the UI) |
+| Factory address (mainnet) | `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` (deployed 2026-11-19 10:04 UTC from the owner wallet, transaction `e7d83327e5f39f15c8e9cfaf2220a7afb9886cd16bfc8067fc6f951c4ff4f9e9`) |
+| Factory owner (mainnet) | `UQAilXDBqbF_t4Bd1qRJEqgLoJVXom6-LOIDkVYZt8lRkhCH` (the founder's wallet that approved the deploy) |
 | Production URL | https://ton-launchpad-miniapp.vercel.app (deployed explicitly from `clawdbot-permanent`; pushes there build previews only, see the branch note above) |
 | Bot | @TONLaunchpad_Bot (Main App) |
-| Liquidity manager | refund fallback only (ADR-009); the deployer wallet (founder's choice, 2026-11-18) |
+| Liquidity manager | refund fallback only (ADR-009); the deployer wallet (founder's choice, 2026-11-18), on mainnet the owner wallet above |
 | STON.fi router | chosen at deploy (`STON_ROUTER_ADDRESS`); graduation seeds it on-chain |
 
 ## Human blockers (in order)
@@ -48,14 +50,15 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
    one request per second from shared Vercel IPs, so token pages and trade confirmations answer 503 ("try again
    shortly") under load (`docs/ENVIRONMENT.md`). Optional: enable Vercel Blob (image upload).
 5. Optional, recommended before real volume: independent contract audit (SECURITY #12).
-6. Deploy the mainnet factory from a fresh deploy wallet (`docs/LAUNCH.md` section 4), then the smoke test.
+6. Done 2026-11-19: mainnet factory deployed from the founder's wallet app. Open: the smoke test in Telegram
+   (@TONLaunchpad_Bot: open the app, connect a wallet, launch a token, buy and sell a little).
 7. Upload design mockups for the pixel pass.
 
 ## Remaining engineering work
 
 | Item | Priority | Notes |
 |---|---|---|
-| Record mainnet evidence | P0 | after the factory deploy: address and transaction here and in VERIFICATION |
+| Record the mainnet smoke test | P0 | factory address and transaction are recorded (2026-11-19); add the first launch, buy and sell with their fee payments here and in VERIFICATION once the founder has run them |
 | Pagination past the ~100 most recent factory transactions in `/api/tokens` | P1 | fine at launch volume; needs an indexer or DB later (ADR-003) |
 | `/api/tokens` reads the chain inside one 7 s budget per refresh | P1 | a refresh reads about 46 known or 22 new tokens with `TONCENTER_API_KEY` (about 5 or 2 without), never-read and stalest first, and shows the rest as last read, so successive refreshes cover the list (5 s apart while it is partial). The state is per Vercel instance: a fresh instance's first lists can be partial (`partial: true`, 5 s cache) past about 22 tokens with a key, or 2 without. An indexer removes the limit (ADR-003) |
 | Rate limit per IP on `/api/tokens/*` | P1 | SECURITY #24: a Vercel Firewall rule, about 120 requests a minute per IP (the app polls at most every 3 s per tab). Each instance already stops retrying in a flood of failing lookups, but nothing bounds the total across instances, so a script can still use up the toncenter quota |
@@ -67,6 +70,27 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Short referral deep links (`startapp`, 64-char limit) | P1 | contract side done (ADR-008); needs launch id + referral code mapping in the API and the Buy page reading `start_param` |
 
 ## Verified at
+
+2026-11-19, mainnet go-live: the founder approved one 0.1 TON transaction on `/deploy-factory` (preview of f59e51d)
+and the page reported "The factory is deployed and its settings are verified on-chain" with factory
+`EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55`, owner and refund wallet
+`UQAilXDBqbF_t4Bd1qRJEqgLoJVXom6-LOIDkVYZt8lRkhCH`, the recorded treasury and the pinned router. `planFactoryDeploy` run
+locally for that owner with the pinned treasury, router and router pTON wallet gives exactly that address, and the
+address is the hash of the contract code and its starting data, so the deployed code and settings are those of this
+repository. A read-only check on the founder's PC (contracts rebuilt on 4a1392f, toncenter) reported the same
+address, the account active, the deploy transaction `e7d83327e5f39f15c8e9cfaf2220a7afb9886cd16bfc8067fc6f951c4ff4f9e9` at 10:04:19 UTC with
+exit code 0, and `get_factory_info`: that owner, treasury and liquidity manager, the pinned router and pTON wallet,
+graduation at 1,500 TON, launch fee 0.05 TON, trade fee 2%, creator share 60%, referrer share 20%, 0 launches. The
+cloud sandbox cannot reach toncenter, so the transaction and those getter values were not read a second time from
+here. Vercel Production: `VITE_FACTORY_ADDRESS` and `FACTORY_ADDRESS` set to the factory,
+`PLATFORM_TREASURY_ADDRESS` to the treasury, `VITE_NETWORK=mainnet`; production deployment
+`dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH` of `clawdbot-permanent` 4a1392f is READY and serves
+https://ton-launchpad-miniapp.vercel.app. Read through Vercel at 10:08 UTC: `/api/health`
+`{"ok":true,"network":"mainnet","factoryConfigured":true,"telegramAuthConfigured":true,"imageUploadConfigured":false}`,
+`/api/tokens` 200 `{"configured":true,"tokens":[]}` (the API read the factory's transactions on mainnet and found no
+launch yet), the app shell 200, no runtime errors. The client bundle's factory address was not read directly; the
+smoke test shows it. `VITE_FACTORY_DEPLOY_PAGE` (Preview, branch `claude/project-thread-ri5mr2`) is set to `off`, so
+new previews no longer serve the deploy page. Not yet done: the smoke test in Telegram, `TONCENTER_API_KEY` in Vercel.
 
 2026-11-19, the wallet-approved factory deploy on 2ef6051 (on top of 4a1392f): contracts build, typecheck and 96/96
 tests (rehearsal build present), wrappers in sync, lint 0 errors (the same 5 warnings), 192/192 app tests, build

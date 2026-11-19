@@ -91,6 +91,8 @@ It replaces only the factory deploy of the script above; nobody types or stores 
    pTON wallet and fees. Only then does it show "deployed and verified" and the address.
 6. Set `FACTORY_ADDRESS`, `VITE_FACTORY_ADDRESS` and `PLATFORM_TREASURY_ADDRESS` in Vercel (Production), check
    `VITE_NETWORK=mainnet`, deploy production from `clawdbot-permanent` and run `/production-check`.
+7. Remove `VITE_FACTORY_DEPLOY_PAGE` from Vercel (or set it to anything but `on`), so later previews do not serve the
+   page. Done 2026-11-19 after the mainnet deploy: it is `off`.
 
 The owner is the connected wallet, and so is the liquidity manager (the deploy script's default). Opening the page
 again with the same wallet finds the factory and only verifies it. If the wallet app does not confirm the send, the
