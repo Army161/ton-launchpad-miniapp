@@ -10,11 +10,11 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4, on fae7421, on d41d543 and on PR #12's head 345365e) |
-| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4, fae7421, d41d543 and 345365e: 0 errors, 5 warnings) |
-| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4, fae7421, d41d543 and 345365e) |
-| Contract tests | PASS | 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` runs on fae7421, d41d543 and 345365e, 2026-11-18 |
-| App/API tests | PASS | 178/178 vitest (2026-11-18, PR #12 on 345365e: a launch whose reads keep failing waits at most a minute; 176/176 on d41d543: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes, the code-review bot's fixes); 172/172 on fae7421; 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
+| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4, on fae7421, on d41d543 and on PR #12's head 345365e; 2026-11-19 on 2ef6051) |
+| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4, fae7421, d41d543 and 345365e: 0 errors, 5 warnings; the same on 2ef6051, 2026-11-19) |
+| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4, fae7421, d41d543 and 345365e; 2026-11-19 on 2ef6051) |
+| Contract tests | PASS | 96/96 on 2ef6051 (2026-11-19: adds the two wallet-app deploy tests); before that 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` runs on fae7421, d41d543 and 345365e, 2026-11-18 |
+| App/API tests | PASS | 192/192 vitest (2026-11-19 on 2ef6051: the wallet-approved factory deploy and its production env rule); 178/178 (2026-11-18, PR #12 on 345365e: a launch whose reads keep failing waits at most a minute; 176/176 on d41d543: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes, the code-review bot's fixes); 172/172 on fae7421; 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
@@ -22,7 +22,7 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Live site | PASS | production deploy of 682021b (2026-11-17); `/api/health` ok, `network: mainnet`, `telegramAuthConfigured: true`, `factoryConfigured: false` until the factory exists |
 | Telegram validation | DONE | @TONLaunchpad_Bot Main App, menu button, return URL `https://t.me/TONLaunchpad_Bot?startapp` |
 | Testnet deployment | PASS | factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed 2026-11-14; it embeds STON.fi's broken testnet router, so redeploy if a working one appears. sell and refund checks passed 2026-11-17 |
-| Mainnet deployment | IN PROGRESS | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17); the founder deploys the factory from a fresh wallet, then Vercel gets the address. The launch script's Vercel upload of `.env.production` was fixed first (SECURITY #23) |
+| Mainnet deployment | IN PROGRESS | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17); the founder deploys the factory, then Vercel gets the address. Since 2026-11-19 he deploys it from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27). The launch script's Vercel upload of `.env.production` was fixed first (SECURITY #23) |
 | TON Connect validation | BLOCKED_HUMAN | testnet factory exists; needs a Tonkeeper testnet wallet run (`docs/EXECUTION.md` 4-7). Also check that the wallet list shows Telegram's wallet once and that it connects (the stale hand-written "Wallet" entry, review finding TC-1, was removed) |
 | Design pixel pass | DEFERRED | `DESIGN_PIXEL_PASS = WAITING_FOR_FOUNDER_ASSET` |
 
@@ -36,7 +36,7 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Factory address (mainnet) | none yet (`VITE_FACTORY_ADDRESS=PENDING_DEPLOY` disables launches in the UI) |
 | Production URL | https://ton-launchpad-miniapp.vercel.app (deployed explicitly from `clawdbot-permanent`; pushes there build previews only, see the branch note above) |
 | Bot | @TONLaunchpad_Bot (Main App) |
-| Liquidity manager | refund fallback only (ADR-009); defaults to the deployer wallet |
+| Liquidity manager | refund fallback only (ADR-009); the deployer wallet (founder's choice, 2026-11-18) |
 | STON.fi router | chosen at deploy (`STON_ROUTER_ADDRESS`); graduation seeds it on-chain |
 
 ## Human blockers (in order)
@@ -67,6 +67,16 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 | Short referral deep links (`startapp`, 64-char limit) | P1 | contract side done (ADR-008); needs launch id + referral code mapping in the API and the Buy page reading `start_param` |
 
 ## Verified at
+
+2026-11-19, the wallet-approved factory deploy on 2ef6051 (on top of 4a1392f): contracts build, typecheck and 96/96
+tests (rehearsal build present), wrappers in sync, lint 0 errors (the same 5 warnings), 192/192 app tests, build
+(1,068 kB JS, gzip 316 kB, and the deploy page's own 266 kB chunk), bundle secret scan clean, no tracked env files.
+Also run in a headless browser against the built app with a simulated Tonkeeper (injected TON Connect bridge) and
+mocked toncenter and STON.fi answers: the wallet received one `sendTransaction` for mainnet (`-239`) with one message,
+the bounceable factory address, `100000000` nanoTON, the state init whose hash is that address and no payload; the
+page then showed "deployed and verified" only after `get_factory_info` matched. A wallet below 0.2 TON, a STON.fi
+answer with pool creation off and a refusal in the wallet each stopped before anything was sent; with the STON.fi
+API unreachable the page went on from the on-chain pTON check, as ADR-011 says. Not yet run against the real network.
 
 2026-11-18, PR #12 on 345365e (on top of d41d543): contracts build, typecheck and 94/94 tests, wrappers in sync, lint 0
 errors (the same 5 warnings), 178/178 app tests, build (1,066 kB JS, gzip 315 kB), bundle secret scan clean, no
