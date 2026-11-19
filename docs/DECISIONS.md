@@ -148,6 +148,11 @@ models people know (Gemini Nano Banana, ChatGPT, Grok, Meta AI).
 - `GET /api/image/selftest` exists because no tool can call the POST endpoint without a Telegram session. It runs one
   real image through the gateway, sharp and Blob, only on a Vercel preview and only with the key in `IMAGE_SELFTEST`
   (32+ characters); otherwise it answers 404. The key is set only while a check runs.
+- Checked 2026-11-19 on a preview: without paid credits AI Gateway serves `spacexai/grok-imagine-image` and
+  `openai/gpt-image-1-mini` and answers 403 for the Meta and Gemini models ("Free tier users do not have access to
+  this model"). Until the team buys credits, `IMAGE_GEN_MODELS` names those two, so the form offers only what works.
+  How many images the free tier allows is not documented where we looked; when it runs out the creator is told to
+  upload or paste instead.
 - Rejected: a provider key per model (four secrets, four bills); a free third-party image API with no account (no
   control over uptime, content or what happens to prompts); resizing in the browser (the raw image would still have to
   be stored or sent back through the 4.5 MB response limit).

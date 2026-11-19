@@ -5,22 +5,24 @@ Updated: 2026-11-19 · Branch: `clawdbot-permanent` (GitHub default; `main` was 
 **Overall: MAINNET FACTORY LIVE, SMOKE TEST OPEN.** The testnet gate passed, the founder wrote "MAINNET GO-LIVE
 APPROVED" on 2026-11-17 and deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on
 2026-11-19. Production runs 4a1392f pointed at that factory on mainnet. What remains is the founder's smoke test in
-Telegram (open the app, connect a wallet, launch and trade a token).
+Telegram (open the app, connect a wallet, launch and trade a token). Image upload is live in production since
+2026-11-19 13:54 UTC. The free AI image generator (ADR-012) is built and proven on a preview; it is not in production
+until its pull request is merged on the founder's ask.
 
 ## Gates
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4, on fae7421, on d41d543 and on PR #12's head 345365e; 2026-11-19 on 2ef6051 and on cc2436d) |
-| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4, fae7421, d41d543 and 345365e: 0 errors, 5 warnings; the same on 2ef6051 and cc2436d, 2026-11-19) |
-| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4, fae7421, d41d543 and 345365e; 2026-11-19 on 2ef6051 and on cc2436d) |
-| Contract tests | PASS | 96/96 on 2ef6051 (2026-11-19: adds the two wallet-app deploy tests) and again on cc2436d; before that 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` runs on fae7421, d41d543 and 345365e, 2026-11-18 |
-| App/API tests | PASS | 196/196 vitest (2026-11-19 on cc2436d: the deploy page's checks before every send, its single unresolved send, the exact router type and the STON.fi time limit); 192/192 (2026-11-19 on 2ef6051: the wallet-approved factory deploy and its production env rule); 178/178 (2026-11-18, PR #12 on 345365e: a launch whose reads keep failing waits at most a minute; 176/176 on d41d543: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes, the code-review bot's fixes); 172/172 on fae7421; 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
+| Build (app, API, scripts) | PASS | `npm run build` (2026-11-19 on 3efb51c, the image generator; before that e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4, on fae7421, on d41d543 and on PR #12's head 345365e; 2026-11-19 on 2ef6051 and on cc2436d) |
+| Lint | PASS | `npm run lint` (0 errors, 5 warnings on 3efb51c, 2026-11-19; before that 0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4, fae7421, d41d543 and 345365e: 0 errors, 5 warnings; the same on 2ef6051 and cc2436d, 2026-11-19) |
+| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (2026-11-19 on 3efb51c; e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4, fae7421, d41d543 and 345365e; 2026-11-19 on 2ef6051 and on cc2436d) |
+| Contract tests | PASS | 96/96 on 3efb51c (2026-11-19, contracts unchanged); 96/96 on 2ef6051 (2026-11-19: adds the two wallet-app deploy tests) and again on cc2436d; before that 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` runs on fae7421, d41d543 and 345365e, 2026-11-18 |
+| App/API tests | PASS | 232/232 vitest (2026-11-19 on 3efb51c: 36 new tests for the image generator, its daily limits and the upload checks); 196/196 (2026-11-19 on cc2436d: the deploy page's checks before every send, its single unresolved send, the exact router type and the STON.fi time limit); 192/192 (2026-11-19 on 2ef6051: the wallet-approved factory deploy and its production env rule); 178/178 (2026-11-18, PR #12 on 345365e: a launch whose reads keep failing waits at most a minute; 176/176 on d41d543: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes, the code-review bot's fixes); 172/172 on fae7421; 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
-| Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`, and again as `dpl_D3x9yK6MSjGMRSBMa93baErrkZst` with `TONCENTER_API_KEY` set); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy |
+| Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`, and again as `dpl_D3x9yK6MSjGMRSBMa93baErrkZst` with `TONCENTER_API_KEY` set); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy. Redeployed 2026-11-19 13:54 UTC as `dpl_3AdMTQunjU2XfbTvkT6yLBpcviux` with Blob storage connected: `imageUploadConfigured: true` |
 | Telegram validation | DONE | @TONLaunchpad_Bot Main App, menu button, return URL `https://t.me/TONLaunchpad_Bot?startapp` |
 | Testnet deployment | PASS | factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed 2026-11-14; it embeds STON.fi's broken testnet router, so redeploy if a working one appears. sell and refund checks passed 2026-11-17 |
 | Mainnet deployment | PASS (factory), smoke test open | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17). On 2026-11-19 the founder deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27); the page verified `get_factory_info` and the address equals the one computed from his wallet and the pinned treasury and router (`docs/VERIFICATION.md`). Vercel Production points at it and was redeployed. Open: the founder's smoke test in Telegram |
@@ -48,11 +50,16 @@ Telegram (open the app, connect a wallet, launch and trade a token).
 3. Add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret so Claude reviews PRs on GitHub (`docs/EXECUTION.md`).
 4. Done 2026-11-19: the founder added `TONCENTER_API_KEY` to Vercel (Production, stored as a sensitive value) and
    production was redeployed (`dpl_D3x9yK6MSjGMRSBMa93baErrkZst`). Without it the API read toncenter at about one
-   request per second from shared Vercel IPs (`docs/ENVIRONMENT.md`). Optional: enable Vercel Blob (image upload).
+   request per second from shared Vercel IPs (`docs/ENVIRONMENT.md`). Done 2026-11-19: Vercel Blob is connected and
+   image upload is live.
 5. Optional, recommended before real volume: independent contract audit (SECURITY #12).
 6. Done 2026-11-19: mainnet factory deployed from the founder's wallet app. Open: the smoke test in Telegram
    (@TONLaunchpad_Bot: open the app, connect a wallet, launch a token, buy and sell a little).
 7. Upload design mockups for the pixel pass.
+8. AI image generator (ADR-012): say "merge PR #14" to put it live. Then Production gets `IMAGE_GENERATION=on` and
+   `IMAGE_GEN_MODELS=spacexai/grok-imagine-image,openai/gpt-image-1-mini`, the two models Vercel AI Gateway serves
+   without paid credits. Optional: buy AI Gateway credits in Vercel to add Meta AI and Gemini Nano Banana, and set
+   an AI Gateway budget there as the hard spending stop (SECURITY #28).
 
 ## Remaining engineering work
 
@@ -63,7 +70,8 @@ Telegram (open the app, connect a wallet, launch and trade a token).
 | `/api/tokens` reads the chain inside one 7 s budget per refresh | P1 | a refresh reads about 46 known or 22 new tokens with `TONCENTER_API_KEY` (about 5 or 2 without), never-read and stalest first, and shows the rest as last read, so successive refreshes cover the list (5 s apart while it is partial). The state is per Vercel instance: a fresh instance's first lists can be partial (`partial: true`, 5 s cache) past about 22 tokens with a key, or 2 without. An indexer removes the limit (ADR-003) |
 | Rate limit per IP on `/api/tokens/*` | P1 | SECURITY #24: a Vercel Firewall rule, about 120 requests a minute per IP (the app polls at most every 3 s per tab). Each instance already stops retrying in a flood of failing lookups, but nothing bounds the total across instances, so a script can still use up the toncenter quota |
 | Pending trades and launches survive leaving the page | P2 | review finding CLIENT-2: Buy, Sell and Create keep the unconfirmed operation in page state, so a page opened again starts idle and allows a second send (the wallet still asks for approval) and drops the "not confirmed yet" notice; Create still navigates to the token page after the user has left it. Keep pending operations in a store keyed by wallet and token |
-| Rate limit on `/api/metadata/upload` | P2 | SECURITY #13 |
+| AI image generator live in production | P1 | built and checked on a preview (ADR-012); needs the founder's merge, the two Production variables and a production deploy; then one generated image from the Create page in Telegram as the live check. How many images AI Gateway's free tier allows is not known |
+| Old test images in Blob | P3 | nothing deletes `selftest/` or unused `generated/` and `uploads/` files; about 50 kB per generated image against a 1 GB store |
 | Bundle size (1.05 MB, mostly TON libraries) | P2 | code-split the trading pages |
 | Independent contract audit | P1 before real volume | SECURITY #12 |
 | Prove on-chain STON.fi graduation on testnet | P0 | ADR-009 built and sandbox-tested; needs a real pool with LP at the zero address |
@@ -170,3 +178,21 @@ confirmation poll times out; the stale "Wallet" entry is gone from the TON Conne
 
 2026-11-05, on-chain graduation branch (ADR-009): contracts build + typecheck + 61/61 tests, wrappers in sync, lint 0 errors, 67/67 app tests, build, bundle
 secret scan clean, no tracked env files. Re-run `/verify` before trusting this table on a later commit.
+
+2026-11-19 13:46 to 14:00 UTC, token images (ADR-012), on the founder's ask for a real upload and a free image
+generator. Upload: a public Vercel Blob store `launchpad-token-images` (`store_kzWeuQRHga10Mm2c`, iad1) was created
+and connected to the project, which set `BLOB_READ_WRITE_TOKEN` for all environments (its value was never read).
+Production was redeployed from `clawdbot-permanent` 4a1392f as `dpl_3AdMTQunjU2XfbTvkT6yLBpcviux` (READY, serves the
+production domain): `/api/health`
+`{"ok":true,"network":"mainnet","factoryConfigured":true,"telegramAuthConfigured":true,"imageUploadConfigured":true}`,
+`/api/tokens` 200. Production still runs the upload code of 4a1392f, without the daily limits and the file-type check
+of 3efb51c (SECURITY #13 is fixed on the branch, not yet in production). No upload was made from here. Generator:
+`/verify` passed on 3efb51c (96 contract tests, 232 app tests, lint 0 errors, build, bundle clean). On its preview
+`dpl_CkDKvmHEHgcnDXSUfv8jGs5WiJ7b`, with `IMAGE_GENERATION=on` and a throwaway `IMAGE_SELFTEST` key set for this
+branch's previews only, `GET /api/image/selftest` made one real image each with Grok Imagine (5.1 s) and GPT Image 1
+Mini (12.7 s) through Vercel AI Gateway, authenticated by the deployment's OIDC token, re-encoded them with sharp to
+15 kB and 39 kB JPEGs and stored them in Blob. Meta Muse and Gemini 2.5 Flash Image answered 403: the team is on AI
+Gateway's free tier, which does not serve those two. The key was then set to `off`; the preview built while it was
+set still answers to it, and the key is random and was discarded. `IMAGE_GEN_MODELS` on the branch's previews now
+names the two working models. Not done from here: looking at the two test images (the sandbox cannot reach the Blob
+host), a `POST /api/image/generate` with a Telegram session, and the Create page in Telegram.

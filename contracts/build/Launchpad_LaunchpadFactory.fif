@@ -1,4 +1,4 @@
-// automatically generated from `@stdlib/std/stdlib.fc` `/home/claude/tlm-prep/contracts/build/Launchpad_LaunchpadFactory.fc` 
+// automatically generated from `@stdlib/std/stdlib.fc` `/home/claude/ton-launchpad-miniapp/contracts/build/Launchpad_LaunchpadFactory.fc` 
 PROGRAM{
   DECLPROC __tact_context_get
   DECLPROC __tact_context_get_sender
