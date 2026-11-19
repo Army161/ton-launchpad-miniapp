@@ -116,6 +116,8 @@ export function Create() {
   }
 
   async function handleGenerate() {
+    // Enter in the description field comes here too, so the button's own guard is repeated.
+    if (generating || uploading) return;
     if (!authToken) {
       showToast('Open the app in Telegram to generate an image');
       return;

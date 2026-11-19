@@ -1,11 +1,15 @@
 import { list } from '@vercel/blob';
+import { createHmac } from 'crypto';
 
 /**
  * Daily limits for the two endpoints that write to Blob storage, counted from the stored files themselves: every file
- * lives under `<kind>/<UTC day>/<Telegram id>/`, so one list call for the day gives both the user's and everyone's
- * count. There is no database in V1; this needs none. Two requests at the same moment can each see the count before
- * the other's file exists, so a limit can be passed by the number of parallel requests, which the per-user cooldown
- * keeps small.
+ * lives under `<kind>/<UTC day>/<owner key>/`, so one list call for the day gives both the user's and everyone's
+ * count. There is no database in V1; this needs none.
+ *
+ * The limits are soft. Nothing is reserved between the count and the write, so requests in flight at the same moment
+ * can each see the count before the others' files exist, and a limit (per user or global, on either endpoint) can be
+ * passed by the number of such requests. The generator's per-user cooldown keeps that small there; uploads have none.
+ * The hard stops are outside this file: the AI Gateway budget for money, and one list page (1000 files) per day.
  */
 
 export type QuotaKind = 'uploads' | 'generated';
@@ -18,9 +22,19 @@ export function dayKey(now = Date.now()): string {
   return new Date(now).toISOString().slice(0, 10);
 }
 
+/**
+ * The name a user's files are filed under. The folder is part of a public address that ends up in a token's on-chain
+ * metadata, next to the creator's wallet, so it must not be the Telegram id: it is a keyed hash of it, the same for
+ * one user as long as JWT_SECRET is, and of no use to anyone without that secret.
+ */
+export function ownerKey(tgId: number, secret: string | undefined = process.env.JWT_SECRET): string {
+  if (!secret) throw new Error('JWT_SECRET is not set');
+  return createHmac('sha256', secret).update(`image-owner:v1:${tgId}`).digest('hex').slice(0, 24);
+}
+
 /** Folder of one user's files of one kind on one day, with a trailing slash. */
 export function quotaFolder(kind: QuotaKind, tgId: number, now = Date.now()): string {
-  return `${kind}/${dayKey(now)}/${tgId}/`;
+  return `${kind}/${dayKey(now)}/${ownerKey(tgId)}/`;
 }
 
 /** Reads today's counts. A day with more files than one list page holds counts as full for everyone. */

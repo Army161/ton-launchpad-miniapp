@@ -59,10 +59,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!data || data.length === 0) return res.status(400).json({ error: 'Invalid or too large image (max 2MB)' });
   if (sniffImageType(data) !== mime) return res.status(415).json({ error: 'The file is not a valid PNG, JPEG, WebP or GIF image' });
 
+  // One accounting time for the count and the file (see api/image/generate.ts).
+  const now = Date.now();
   try {
-    const quota = await readQuota('uploads', user.tgId, UPLOAD_LIMITS);
+    const quota = await readQuota('uploads', user.tgId, UPLOAD_LIMITS, now);
     if (!quota.allowed) return res.status(429).json({ error: 'Upload limit for today reached, paste an image URL instead', scope: quota.scope });
-    const blob = await put(`${quotaFolder('uploads', user.tgId)}${randomUUID()}.${ext}`, data, { access: 'public', contentType: mime });
+    const folder = quotaFolder('uploads', user.tgId, now);
+    const blob = await put(`${folder}${randomUUID()}.${ext}`, data, { access: 'public', contentType: mime });
+    // The only place a stored file is tied to its Telegram user (abuse follow-up); the public address shows neither.
+    console.info('[upload] stored', folder, 'tg', user.tgId);
     return res.status(200).json({ uri: blob.url });
   } catch (err) {
     return serverError(res, 'upload', err);

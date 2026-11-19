@@ -22,7 +22,7 @@ Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator
 | Variable | Required | Purpose |
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | yes | verifies Telegram `initData` |
-| `JWT_SECRET` | yes | signs sessions; 64 hex chars (`openssl rand -hex 32`) |
+| `JWT_SECRET` | yes | signs sessions; 64 hex chars (`openssl rand -hex 32`). Also keys the folder names of stored images (ADR-012), so a new secret restarts that day's image counts |
 | `PLATFORM_TREASURY_ADDRESS` | yes | informational on the server; the on-chain value is fixed in the factory |
 | `FACTORY_ADDRESS` | yes | must equal `VITE_FACTORY_ADDRESS`; the API only lists tokens from this factory |
 | `TONCENTER_API_KEY` | yes in practice on mainnet production (`validate-env production` warns when it is missing but does not fail) | toncenter key for every chain read of `/api/tokens*`. Keyless toncenter allows about 1 request per second per IP, and Vercel's egress IPs are shared with other projects; a free key allows about 10. Without a key the API spaces its requests 1.1 s apart (120 ms with one) inside a 7 s budget per request: a token page with a balance needs 3-4 requests, and a token list refresh reads only about 5 known or 2 new tokens (about 46 or 22 with a key), so a fresh instance needs several refreshes to list every token. Under load, token pages and trade confirmations then answer 503 ("try again shortly") |

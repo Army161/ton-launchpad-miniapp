@@ -125,7 +125,10 @@ Decided 2026-11-19, on the founder's ask for "a real upload and image generator"
 models people know (Gemini Nano Banana, ChatGPT, Grok, Meta AI).
 
 - Storage is one public Vercel Blob store (`launchpad-token-images`, connected to the project). Every stored file is
-  named `<kind>/<UTC day>/<Telegram id>/<uuid>.<ext>` with kind `uploads` or `generated`.
+  named `<kind>/<UTC day>/<owner key>/<uuid>.<ext>` with kind `uploads` or `generated`. The owner key is a keyed hash
+  of the Telegram id (HMAC-SHA256 with `JWT_SECRET`, 24 hex characters), not the id itself: the address is public and
+  ends up in the token's on-chain metadata next to the creator's wallet (SECURITY #30). The function log ties a
+  stored file to its Telegram id. A new `JWT_SECRET` renames the folders, so that day's counts start again.
 - The generator is `POST /api/image/generate`. It calls Vercel AI Gateway, one account that serves all four model
   families, so there is one integration and one bill instead of four provider keys. On Vercel the function
   authenticates with the deployment's own OIDC token (the `x-vercel-oidc-token` request header), so no key is stored
@@ -140,6 +143,8 @@ models people know (Gemini Nano Banana, ChatGPT, Grok, Meta AI).
 - There is no database (ADR-003), so the limits are counted from the stored files: one Blob `list` of the day's
   folder gives the user's and the global count. Two requests at the same instant can both pass, so a limit can be
   exceeded by the number of parallel requests; the cooldown keeps that small and the gateway budget bounds the money.
+  The limits are therefore soft, for uploads too (which have no cooldown). The count and the file use one
+  timestamp, so a request that crosses UTC midnight is filed in the day it was counted in.
 - What is stored is never the provider's bytes: `sharp` turns them into a 512 px square JPEG (about 50 KB), which
   also proves they are an image. A token logo is shown at 40 to 96 px, and megabyte images would fill the store and
   slow every list.

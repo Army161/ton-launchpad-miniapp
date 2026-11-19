@@ -48,8 +48,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: `Wait ${wait} s before generating again`, scope: 'cooldown' });
   }
 
+  // One accounting time for the count and the file: a request that crosses UTC midnight stays in the day it was counted in.
+  const now = Date.now();
   try {
-    const quota = await readQuota('generated', user.tgId, config);
+    const quota = await readQuota('generated', user.tgId, config, now);
     if (!quota.allowed) {
       const error =
         quota.scope === 'user'
@@ -60,10 +62,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const raw = await requestImage(model, prompt, token);
     const image = await toTokenImage(raw);
-    const blob = await put(`${quotaFolder('generated', user.tgId)}${randomUUID()}.jpg`, image, {
+    const folder = quotaFolder('generated', user.tgId, now);
+    const blob = await put(`${folder}${randomUUID()}.jpg`, image, {
       access: 'public',
       contentType: 'image/jpeg',
     });
+    // The only place a stored file is tied to its Telegram user (abuse follow-up); the public address shows neither.
+    console.info('[image/generate] stored', folder, 'tg', user.tgId);
     return res.status(200).json({
       uri: blob.url,
       model: model.id,

@@ -17,7 +17,7 @@
     <li><strong>Telegram profile</strong> — user ID, username, first name (via initData, validated server-side).</li>
     <li><strong>Wallet address</strong> — when you connect via TON Connect (linked to your Telegram ID).</li>
     <li><strong>On-chain data</strong> — token creations and trades are public on TON blockchain.</li>
-    <li><strong>Token images</strong> — an image you upload or generate is stored at a public web address, filed under your Telegram user ID. When you generate an image, the description you type is sent to the AI image provider you pick (through Vercel AI Gateway). Do not put personal information in it.</li>
+    <li><strong>Token images</strong> — an image you upload or generate is stored at a public web address, which becomes part of your token's public details. The address does not contain your Telegram user ID; our server log records which Telegram user ID stored which image, so that abuse can be followed up. When you generate an image, the description you type is sent to the AI image provider you pick (through Vercel AI Gateway). Do not put personal information in it.</li>
   </ul>
   <p>We do not sell your data. Session tokens expire after 24 hours. Bot token and deploy keys are never stored in the app bundle.</p>
   <p><a href="/">← Back to app</a></p>

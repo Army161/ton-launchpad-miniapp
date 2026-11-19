@@ -14,7 +14,7 @@ import {
   requestImage,
 } from '../api/_lib/imageGen';
 import { signJwt } from '../api/_lib/jwt';
-import { createCooldown, dayKey, quotaFolder, readQuota } from '../api/_lib/quota';
+import { createCooldown, dayKey, ownerKey, quotaFolder, readQuota } from '../api/_lib/quota';
 import { toTokenImage, TOKEN_IMAGE_SIZE } from '../api/_lib/tokenImage';
 import { generateTokenImage, fetchImageGenInfo } from '../src/lib/imageApi';
 
@@ -62,6 +62,8 @@ async function call(handler: Handler, { method = 'POST', token, body, query = {}
 
 const session = (tgId: number) => signJwt(tgId, SECRET, 3600, T0);
 const files = (...paths: string[]) => ({ blobs: paths.map((pathname) => ({ pathname })), hasMore: false });
+/** The folder name a Telegram user's files are stored under. */
+const k = (tgId: number) => ownerKey(tgId, SECRET);
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -76,6 +78,7 @@ beforeEach(() => {
   blob.put.mockReset().mockImplementation(async (pathname: string) => ({ url: `https://store.public.blob.vercel-storage.com/${pathname}` }));
   blob.list.mockReset().mockResolvedValue(files());
   vi.spyOn(console, 'warn').mockImplementation(() => {});
+  vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
@@ -224,21 +227,35 @@ describe('daily limits', () => {
     expect(dayKey(T0)).toBe(DAY);
     expect(dayKey(Date.UTC(2026, 10, 19, 23, 59, 59))).toBe(DAY);
     expect(dayKey(Date.UTC(2026, 10, 20, 0, 0, 0))).toBe('2026-11-20');
-    expect(quotaFolder('generated', 42, T0)).toBe(`generated/${DAY}/42/`);
+    expect(quotaFolder('generated', 42, T0)).toBe(`generated/${DAY}/${k(42)}/`);
 
-    const list = vi.fn(async () => files(`generated/${DAY}/42/a.jpg`, `generated/${DAY}/421/b.jpg`, `generated/${DAY}/7/c.jpg`));
+    const list = vi.fn(async () => files(`generated/${DAY}/${k(42)}/a.jpg`, `generated/${DAY}/${k(421)}/b.jpg`, `generated/${DAY}/${k(7)}/c.jpg`));
     await expect(readQuota('generated', 42, limits, T0, list)).resolves.toEqual({ allowed: true, scope: null, userCount: 1, globalCount: 3 });
     expect(list).toHaveBeenCalledWith({ prefix: `generated/${DAY}/`, limit: 1000 });
   });
 
   it('stops the user at their limit and everyone at the global one', async () => {
-    const mine = vi.fn(async () => files(`uploads/${DAY}/42/a.png`, `uploads/${DAY}/42/b.png`));
+    const mine = vi.fn(async () => files(`uploads/${DAY}/${k(42)}/a.png`, `uploads/${DAY}/${k(42)}/b.png`));
     await expect(readQuota('uploads', 42, limits, T0, mine)).resolves.toMatchObject({ allowed: false, scope: 'user', userCount: 2 });
-    const others = vi.fn(async () => files(...[1, 2, 3, 4].map((n) => `uploads/${DAY}/${n}/x.png`)));
+    const others = vi.fn(async () => files(...[1, 2, 3, 4].map((n) => `uploads/${DAY}/${k(n)}/x.png`)));
     await expect(readQuota('uploads', 42, limits, T0, others)).resolves.toMatchObject({ allowed: false, scope: 'global', userCount: 0, globalCount: 4 });
     const overflow = vi.fn(async () => ({ blobs: [], hasMore: true }));
     await expect(readQuota('uploads', 42, { userDailyLimit: 2, globalDailyLimit: 1000 }, T0, overflow)).resolves.toMatchObject({ allowed: false, scope: 'global' });
     await expect(readQuota('uploads', 42, { userDailyLimit: 0, globalDailyLimit: 4 }, T0, vi.fn(async () => files()))).resolves.toMatchObject({ allowed: false, scope: 'user' });
+  });
+
+  it('files a user under a keyed name that does not show the Telegram id', () => {
+    const key = ownerKey(987654321, SECRET);
+    expect(key).toMatch(/^[0-9a-f]{24}$/);
+    expect(key).not.toContain('987654321');
+    expect(ownerKey(987654321, SECRET)).toBe(key);
+    expect(ownerKey(987654322, SECRET)).not.toBe(key);
+    expect(ownerKey(987654321, `${SECRET}x`)).not.toBe(key);
+    // The environment's secret is the default, and without one nothing is named (and so nothing stored).
+    expect(quotaFolder('uploads', 987654321, T0)).toBe(`uploads/${DAY}/${key}/`);
+    expect(() => ownerKey(987654321, '')).toThrow();
+    vi.stubEnv('JWT_SECRET', '');
+    expect(() => quotaFolder('uploads', 987654321, T0)).toThrow();
   });
 
   it('makes a user wait between attempts', () => {
@@ -289,13 +306,13 @@ describe('POST /api/image/generate', () => {
   it('stores a 512 px JPEG under the user and day and returns its URL and what is left', async () => {
     const handler = await load();
     const fetchMock = await gatewayOk();
-    blob.list.mockResolvedValue(files(`generated/${DAY}/101/earlier.jpg`, `generated/${DAY}/999/other.jpg`));
+    blob.list.mockResolvedValue(files(`generated/${DAY}/${k(101)}/earlier.jpg`, `generated/${DAY}/${k(999)}/other.jpg`));
     const answer = await call(handler, { token: session(101), body: { prompt: '  a golden rocket dog ', model: GROK.id } });
     expect(answer).toMatchObject({ status: 200, body: { model: GROK.id, remaining: 3 } });
     expect(answer.headers['cache-control']).toBe('no-store');
 
     const [pathname, data, options] = blob.put.mock.calls[0] as [string, Buffer, Record<string, unknown>];
-    expect(pathname).toMatch(new RegExp(`^generated/${DAY}/101/[0-9a-f-]{36}\\.jpg$`));
+    expect(pathname).toMatch(new RegExp(`^generated/${DAY}/${k(101)}/[0-9a-f-]{36}\\.jpg$`));
     expect(answer.body.uri).toBe(`https://store.public.blob.vercel-storage.com/${pathname}`);
     expect(options).toEqual({ access: 'public', contentType: 'image/jpeg' });
     expect(await sharp(data).metadata()).toMatchObject({ format: 'jpeg', width: 512, height: 512 });
@@ -304,6 +321,33 @@ describe('POST /api/image/generate', () => {
     expect(url).toBe(`${GATEWAY_URL}/images/generations`);
     expect(init.headers).toMatchObject({ Authorization: 'Bearer oidc-token' });
     expect(JSON.parse(init.body as string)).toMatchObject({ model: GROK.id, prompt: buildPrompt('a golden rocket dog') });
+  });
+
+  it('keeps the Telegram id out of the public address and writes it to the log only', async () => {
+    const handler = await load();
+    await gatewayOk();
+    const answer = await call(handler, { token: session(987654321), body: { prompt: 'a frog' } });
+    expect(answer.status).toBe(200);
+    expect(answer.body.uri).not.toContain('987654321');
+    expect(answer.body.uri).toContain(`/generated/${DAY}/${k(987654321)}/`);
+    expect(console.info).toHaveBeenCalledWith('[image/generate] stored', `generated/${DAY}/${k(987654321)}/`, 'tg', 987654321);
+  });
+
+  it('files an image in the day it was counted in when the request crosses UTC midnight', async () => {
+    const handler = await load();
+    const image = await png();
+    vi.setSystemTime(Date.UTC(2026, 10, 19, 23, 59, 50));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        vi.setSystemTime(Date.UTC(2026, 10, 20, 0, 0, 20));
+        return jsonResponse(200, { data: [{ b64_json: image.toString('base64') }] });
+      }),
+    );
+    const answer = await call(handler, { token: signJwt(150, SECRET, 3600, Date.UTC(2026, 10, 19, 23, 0, 0)), body: { prompt: 'a frog' } });
+    expect(answer.status).toBe(200);
+    expect(blob.list).toHaveBeenCalledWith({ prefix: `generated/${DAY}/`, limit: 1000 });
+    expect(blob.put.mock.calls[0][0]).toMatch(new RegExp(`^generated/${DAY}/${k(150)}/`));
   });
 
   it('uses the first enabled model when none is named', async () => {
@@ -320,9 +364,9 @@ describe('POST /api/image/generate', () => {
     const fetchMock = await gatewayOk();
     vi.stubEnv('IMAGE_GEN_USER_DAILY_LIMIT', '2');
     vi.stubEnv('IMAGE_GEN_GLOBAL_DAILY_LIMIT', '3');
-    blob.list.mockResolvedValue(files(`generated/${DAY}/104/a.jpg`, `generated/${DAY}/104/b.jpg`));
+    blob.list.mockResolvedValue(files(`generated/${DAY}/${k(104)}/a.jpg`, `generated/${DAY}/${k(104)}/b.jpg`));
     expect(await call(handler, { token: session(104), body: { prompt: 'a frog' } })).toMatchObject({ status: 429, body: { scope: 'user', remaining: 0 } });
-    blob.list.mockResolvedValue(files(`generated/${DAY}/1/a.jpg`, `generated/${DAY}/2/b.jpg`, `generated/${DAY}/3/c.jpg`));
+    blob.list.mockResolvedValue(files(`generated/${DAY}/${k(1)}/a.jpg`, `generated/${DAY}/${k(2)}/b.jpg`, `generated/${DAY}/${k(3)}/c.jpg`));
     expect(await call(handler, { token: session(105), body: { prompt: 'a frog' } })).toMatchObject({ status: 429, body: { scope: 'global' } });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(blob.put).not.toHaveBeenCalled();
@@ -376,11 +420,13 @@ describe('POST /api/metadata/upload', () => {
     const image = await png(8, 8);
     const answer = await call(handler, { token: session(200), headers: { 'content-type': 'image/png' }, stream: image });
     const [pathname, data, options] = blob.put.mock.calls[0] as [string, Buffer, Record<string, unknown>];
-    expect(pathname).toMatch(new RegExp(`^uploads/${DAY}/200/[0-9a-f-]{36}\\.png$`));
+    expect(pathname).toMatch(new RegExp(`^uploads/${DAY}/${k(200)}/[0-9a-f-]{36}\\.png$`));
     expect(data).toEqual(image);
     expect(options).toEqual({ access: 'public', contentType: 'image/png' });
     expect(answer).toMatchObject({ status: 200, body: { uri: `https://store.public.blob.vercel-storage.com/${pathname}` } });
     expect(blob.list).toHaveBeenCalledWith({ prefix: `uploads/${DAY}/`, limit: 1000 });
+    expect(pathname).not.toContain('/200/');
+    expect(console.info).toHaveBeenCalledWith('[upload] stored', `uploads/${DAY}/${k(200)}/`, 'tg', 200);
   });
 
   it('refuses a file that is not the image it claims to be, and an unknown type', async () => {
@@ -397,7 +443,7 @@ describe('POST /api/metadata/upload', () => {
 
   it('answers 429 once the user has uploaded their daily number', async () => {
     const { default: handler, UPLOAD_LIMITS } = await load();
-    blob.list.mockResolvedValue(files(...Array.from({ length: UPLOAD_LIMITS.userDailyLimit }, (_, i) => `uploads/${DAY}/202/${i}.png`)));
+    blob.list.mockResolvedValue(files(...Array.from({ length: UPLOAD_LIMITS.userDailyLimit }, (_, i) => `uploads/${DAY}/${k(202)}/${i}.png`)));
     const answer = await call(handler as Handler, { token: session(202), headers: { 'content-type': 'image/png' }, stream: await png(8, 8) });
     expect(answer).toMatchObject({ status: 429, body: { scope: 'user' } });
     expect(blob.put).not.toHaveBeenCalled();
