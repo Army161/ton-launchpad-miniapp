@@ -15,9 +15,16 @@
  * constant-product v2 router with pool creation enabled), TON_V4_ENDPOINT
  * (optional tonhub v4 reader; toncenter v2 is the default), TONCENTER_API_KEY.
  * Pin the router with --router for repeatable runs; the API pick can change.
+ *
+ *   npm run rehearse:fork-refund [-- --router <mainnet v2 router>]
+ *
+ * The refusal case (ADR-009 fallback): the same graduation, but the local
+ * clock jumps past the provide_lp deadline between the Migrate transaction and
+ * the router, so the real STON.fi code refuses both legs. PASS = no pool, and
+ * the liquidity manager holds the curve's tokens and its TON (less STON.fi gas).
  */
 import { Address, beginCell, Cell, CellType, Dictionary, toNano, type AccountState } from '@ton/core';
-import { Blockchain, RemoteBlockchainStorage, wrapTonClient4ForRemote, type RemoteBlockchainStorageClient, type SandboxContract, type SendMessageResult } from '@ton/sandbox';
+import { Blockchain, internal, RemoteBlockchainStorage, wrapTonClient4ForRemote, type BlockchainTransaction, type RemoteBlockchainStorageClient, type SandboxContract, type SendMessageResult } from '@ton/sandbox';
 import { JettonMaster, TonClient4 } from '@ton/ton';
 import { StonApiClient } from '@ston-fi/api';
 import * as fs from 'fs';
@@ -31,6 +38,41 @@ type JettonModule = typeof import('../build/Launchpad_LaunchpadJetton');
 
 const OUT = path.join(__dirname, '..', 'build-rehearsal', 'out');
 const ZERO = new Address(0, Buffer.alloc(32));
+/** Mirrors DEX_MIGRATION_COST in contracts/messages.tact: reserve TON that pays the DEX gas. */
+export const DEX_MIGRATION_COST = toNano('0.65');
+/** Mirrors DEX_DEADLINE in contracts/messages.tact (seconds). */
+export const DEX_DEADLINE = 86400;
+/** TON that STON.fi's refund path may keep as gas before the rest reaches the liquidity manager. */
+export const REFUND_GAS_ALLOWANCE = toNano('0.3');
+
+export type RefusalOutcome = {
+    tonLiquidity: bigint;
+    tokenLiquidity: bigint;
+    poolActive: boolean;
+    managerJettons: bigint;
+    managerTonGain: bigint;
+    managerPtonHeld: bigint;
+};
+
+/** PASS/FAIL lines for the refused-graduation rehearsal (pure, unit-tested). */
+export function refusalVerdict(o: RefusalOutcome): { ok: boolean; lines: string[] } {
+    const ton = (n: bigint) => (Number(n) / 1e9).toFixed(4);
+    const lines: string[] = [];
+    let ok = true;
+    const line = (pass: boolean, text: string) => {
+        if (!pass) ok = false;
+        lines.push(`${text}: ${pass ? 'PASS' : 'FAIL'}`);
+    };
+    line(!o.poolActive, o.poolActive ? 'A STON.fi pool was created, so the router did not refuse' : 'No STON.fi pool was created');
+    line(o.managerJettons === o.tokenLiquidity, `Liquidity manager holds ${o.managerJettons} of the ${o.tokenLiquidity} curve tokens`);
+    const tonBack = o.managerTonGain + o.managerPtonHeld;
+    line(tonBack >= o.tonLiquidity - REFUND_GAS_ALLOWANCE,
+        `Liquidity manager got ${ton(tonBack)} of ${ton(o.tonLiquidity)} TON back (allowance ${ton(REFUND_GAS_ALLOWANCE)} for STON.fi gas)`);
+    if (o.managerPtonHeld > 0n) {
+        lines.push(`NOTE: ${ton(o.managerPtonHeld)} of it arrived as pTON, not plain TON; graduate.ts --fallback --ton counts plain TON only`);
+    }
+    return { ok, lines };
+}
 
 function arg(name: string): string | undefined {
     const i = process.argv.indexOf(name);
@@ -173,11 +215,13 @@ async function main() {
     await loadLibs([router, ptonMaster, ptonWallet]);
     console.log(`Mainnet libraries loaded: ${libs.size}`);
 
+    const refuse = process.argv.includes('--refuse');
     const deployer = await chain.treasury('deployer');
+    const manager = refuse ? await chain.treasury('liquidity-manager') : deployer;
     const factory: SandboxContract<InstanceType<FactoryModule['LaunchpadFactory']>> = chain.openContract(
-        await LaunchpadFactory.fromInit(deployer.address, deployer.address, deployer.address, { $$type: 'DexConfig', router, ptonWallet }),
+        await LaunchpadFactory.fromInit(deployer.address, deployer.address, manager.address, { $$type: 'DexConfig', router, ptonWallet }),
     );
-    const fail = (label: string, r: SendMessageResult): never => {
+    const fail = (label: string, r: Pick<SendMessageResult, 'transactions'>): never => {
         for (const t of r.transactions) {
             const d = t.description as { computePhase?: { type: string; exitCode?: number }; aborted?: boolean };
             if (d.aborted) console.log(`  aborted at ${String(t.inMessage?.info.dest ?? '?')} exit ${d.computePhase?.type === 'vm' ? d.computePhase.exitCode : d.computePhase?.type}`);
@@ -207,6 +251,59 @@ async function main() {
     });
     if (!(await jetton.getGetCurveState()).graduated) fail('3. Buy to graduation', r);
     console.log(`3. Bought ${Number(gross) / 1e9} TON, graduated: PASS`);
+
+    const poolOf = async (routerJettonWallet: Address) => {
+        const res = await (await chain.getContract(router)).get('get_pool_address', [
+            { type: 'slice', cell: beginCell().storeAddress(routerJettonWallet).endCell() },
+            { type: 'slice', cell: beginCell().storeAddress(ptonWallet).endCell() },
+        ]);
+        return res.stackReader.readAddress();
+    };
+    const jettonBalance = async (wallet: Address) => {
+        const acc = await chain.getContract(wallet);
+        if (acc.accountState?.type !== 'active') return 0n;
+        return (await acc.get('get_wallet_data')).stackReader.readBigNumber();
+    };
+
+    // Refusal path: STON.fi refuses both legs because the deadline has passed.
+    async function refusedMigration() {
+        const before = await jetton.getGetCurveState();
+        const tonLiquidity = before.realTonRaised - DEX_MIGRATION_COST;
+        const tokenLiquidity = before.virtualTokens;
+        const managerBefore = (await chain.getContract(manager.address)).balance;
+        const txs: BlockchainTransaction[] = [];
+        const iter = await chain.sendMessageIter(internal({
+            from: deployer.address, to: jetton.address, value: toNano('0.1'),
+            body: beginCell().store(storeMigrate({ $$type: 'Migrate', queryId: 0n })).endCell(),
+        }));
+        for await (const tx of iter) {
+            txs.push(tx);
+            // The first transaction is Migrate on the token contract, which stamps
+            // now + DEX_DEADLINE into both legs. Everything after runs a day late.
+            if (txs.length === 1) chain.now = (chain.now ?? Math.floor(Date.now() / 1000)) + DEX_DEADLINE + 3600;
+        }
+        if (!(await jetton.getGetCurveState()).migrated) fail('4. Migrate', { transactions: txs });
+        const aborted = txs.filter((t) => (t.description as { aborted?: boolean }).aborted).length;
+        console.log(`4. Migrated, clock moved past the deadline before STON.fi saw the legs: PASS (${txs.length} transactions, ${aborted} aborted)`);
+
+        const pool = await poolOf(await jetton.getGetWalletAddress(router));
+        const poolActive = (await chain.getContract(pool)).accountState?.type === 'active';
+        const managerJettons = await jettonBalance(await jetton.getGetWalletAddress(manager.address));
+        const managerTonGain = (await chain.getContract(manager.address)).balance - managerBefore;
+        const ptonOfManager = await chain.openContract(JettonMaster.create(ptonMaster)).getWalletAddress(manager.address);
+        const managerPtonHeld = await jettonBalance(ptonOfManager);
+        const { ok, lines } = refusalVerdict({ tonLiquidity, tokenLiquidity, poolActive, managerJettons, managerTonGain, managerPtonHeld });
+        lines.forEach((l, i) => console.log(`${l.startsWith('NOTE') ? '' : `${5 + i}. `}${l}`));
+        if (!ok) {
+            fail('Refused graduation', { transactions: txs });
+        }
+        console.log('PASS: when STON.fi refuses the graduation, the liquidity reaches the liquidity manager.');
+    }
+
+    if (refuse) {
+        await refusedMigration();
+        return;
+    }
 
     r = await deployer.send({
         to: jetton.address, value: toNano('0.1'),

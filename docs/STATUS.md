@@ -42,7 +42,7 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 ## Human blockers (in order)
 
 1. Done 2026-11-17: treasury address provided; "MAINNET GO-LIVE APPROVED" given 2026-11-17.
-2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Sell and refund checks passed 2026-11-17 (`npm run check:trades`, 10/10). Testnet gate PASS.
+2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Sell and refund checks passed 2026-11-17 (`npm run check:trades`, 10/10). Testnet gate PASS. Graduation refused by STON.fi (liquidity-manager fallback): fork rehearsal `npm run rehearse:fork-refund` added 2026-11-19, not run yet.
 3. Add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret so Claude reviews PRs on GitHub (`docs/EXECUTION.md`).
 4. Add `TONCENTER_API_KEY` to Vercel (Production) before launch traffic. Without it the API reads toncenter at about
    one request per second from shared Vercel IPs, so token pages and trade confirmations answer 503 ("try again
