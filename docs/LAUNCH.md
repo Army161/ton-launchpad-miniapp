@@ -19,7 +19,7 @@ machine or into Vercel's secret fields. Public values (addresses, bot username, 
 - Human action required: Enter `JWT_SECRET` (generate with `openssl rand -hex 32`) into the same Vercel screen.
 - Human action required: Enter `DEPLOY_MNEMONIC` into your local `.env.testnet` / `.env.production` only. Never into Vercel.
 - Needed for mainnet traffic: `TONCENTER_API_KEY` (free, from @tonapibot) into Vercel (Production) and your local file. Without it the API reads the chain at about one request per second from Vercel's shared IPs, and token pages and trade confirmations answer "try again shortly" under load (`docs/ENVIRONMENT.md`). The production check in step 4 of the launch script prints `WARN TONCENTER_API_KEY` when your local file lacks it.
-- Done 2026-11-19: Vercel Blob store `launchpad-token-images` is connected, so image upload works. Optional: `IMAGE_GENERATION=on` for free AI token images (ADR-012; set an AI Gateway budget first).
+- Done 2026-11-19: Vercel Blob store `launchpad-token-images` is connected, so image upload works. Done 2026-11-19: `IMAGE_GENERATION=on` and `IMAGE_GEN_MODELS` (Grok and GPT Image 1 Mini) are set in Production for free AI token images (ADR-012). Optional: an AI Gateway budget in Vercel as the hard spending stop.
 
 ```bash
 cp .env.example .env.testnet        # and later .env.production; both are gitignored

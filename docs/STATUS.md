@@ -4,10 +4,11 @@ Updated: 2026-11-19 · Branch: `clawdbot-permanent` (GitHub default; `main` was 
 
 **Overall: MAINNET FACTORY LIVE, SMOKE TEST OPEN.** The testnet gate passed, the founder wrote "MAINNET GO-LIVE
 APPROVED" on 2026-11-17 and deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on
-2026-11-19. Production runs 4a1392f pointed at that factory on mainnet. What remains is the founder's smoke test in
-Telegram (open the app, connect a wallet, launch and trade a token). Image upload is live in production since
-2026-11-19 13:54 UTC. The free AI image generator (ADR-012) is built and proven on a preview; it is not in production
-until its pull request is merged on the founder's ask.
+2026-11-19. Production runs df7a7fa (PR #14 merged) pointed at that factory on mainnet. What remains is the founder's
+smoke test in Telegram (open the app, connect a wallet, launch and trade a token). Image upload is live in production
+since 2026-11-19 13:54 UTC. The free AI image generator (ADR-012) is live in production since 2026-11-19 21:30 UTC,
+with Grok and ChatGPT (GPT Image 1 Mini), on the founder's go-ahead; his first generated image in Telegram is the
+remaining proof.
 
 ## Gates
 
@@ -22,7 +23,7 @@ until its pull request is merged on the founder's ask.
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
 | Environment validation | READY, not run on real values | `scripts/validate-env.ts`; needs the founder's local `.env.*` |
-| Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`, and again as `dpl_D3x9yK6MSjGMRSBMa93baErrkZst` with `TONCENTER_API_KEY` set); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy. Redeployed 2026-11-19 13:54 UTC as `dpl_3AdMTQunjU2XfbTvkT6yLBpcviux` with Blob storage connected: `imageUploadConfigured: true` |
+| Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`, and again as `dpl_D3x9yK6MSjGMRSBMa93baErrkZst` with `TONCENTER_API_KEY` set); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy. Redeployed 2026-11-19 13:54 UTC as `dpl_3AdMTQunjU2XfbTvkT6yLBpcviux` with Blob storage connected: `imageUploadConfigured: true`. Redeployed 2026-11-19 21:30 UTC as `dpl_6MEEZ3zPzFZHTiMEsEJqckF5pS7K` from df7a7fa (PR #14 merged) with the AI image generator on: `imageGenerationConfigured: true`, `/api/tokens` 200, no runtime errors in the hour around the deploy |
 | Telegram validation | DONE | @TONLaunchpad_Bot Main App, menu button, return URL `https://t.me/TONLaunchpad_Bot?startapp` |
 | Testnet deployment | PASS | factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed 2026-11-14; it embeds STON.fi's broken testnet router, so redeploy if a working one appears. sell and refund checks passed 2026-11-17 |
 | Mainnet deployment | PASS (factory), smoke test open | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17). On 2026-11-19 the founder deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27); the page verified `get_factory_info` and the address equals the one computed from his wallet and the pinned treasury and router (`docs/VERIFICATION.md`). Vercel Production points at it and was redeployed. Open: the founder's smoke test in Telegram |
@@ -56,10 +57,12 @@ until its pull request is merged on the founder's ask.
 6. Done 2026-11-19: mainnet factory deployed from the founder's wallet app. Open: the smoke test in Telegram
    (@TONLaunchpad_Bot: open the app, connect a wallet, launch a token, buy and sell a little).
 7. Upload design mockups for the pixel pass.
-8. AI image generator (ADR-012): say "merge PR #14" to put it live. Then Production gets `IMAGE_GENERATION=on` and
+8. Done 2026-11-19: the founder chose "Yes, put it live" for the AI image generator (ADR-012). PR #14 is merged,
+   Production has `IMAGE_GENERATION=on` and
    `IMAGE_GEN_MODELS=spacexai/grok-imagine-image,openai/gpt-image-1-mini`, the two models Vercel AI Gateway serves
-   without paid credits. Optional: buy AI Gateway credits in Vercel to add Meta AI and Gemini Nano Banana, and set
-   an AI Gateway budget there as the hard spending stop (SECURITY #28).
+   without paid credits, and production is redeployed. Open: his first generated image and first upload in Telegram.
+   Optional: buy AI Gateway credits in Vercel to add Meta AI and Gemini Nano Banana (then extend
+   `IMAGE_GEN_MODELS`), and set an AI Gateway budget there as the hard spending stop (SECURITY #28).
 
 ## Remaining engineering work
 
@@ -202,4 +205,22 @@ build, bundle clean). The automatic review of PR #14 found that stored images we
 which would have put that id into the public image address in a token's immutable metadata, next to the creator's
 wallet (SECURITY #30). The folder is now a keyed hash of the id; the id is written only to the function log.
 Production never ran the affected code (it stores uploads as `tokens/<uuid>`). The two self-test images of the
-preview sit under `selftest/` and carry no id. Not checked on a preview after this change.
+preview sit under `selftest/` and carry no id. The preview of 0eefa12 (`dpl_5kGZ5uoAN9XVmmCSmnSeUvNfjTMr`) was read
+after this change: `/api/health` showed upload and generation configured, `GET /api/image/generate` listed Grok and
+ChatGPT with a daily limit of 5, and the privacy page showed the new text. The keyed folder itself was not exercised
+there (storing a file needs a Telegram session).
+
+Go-live of the generator, 2026-11-19 21:30 UTC. The founder chose "Yes, put it live" at 21:26 UTC. PR #14 was merged
+into `clawdbot-permanent` as df7a7fa; its tree is identical to 0eefa12, the head whose code `/verify` passed on
+(e623b19) and whose checks were green on GitHub. Production got `IMAGE_GENERATION=on` and
+`IMAGE_GEN_MODELS=spacexai/grok-imagine-image,openai/gpt-image-1-mini` (plain values, Production only) and was
+deployed explicitly as `dpl_6MEEZ3zPzFZHTiMEsEJqckF5pS7K` (READY, serves the production domain). Read through Vercel
+at 21:31 UTC: `/api/health`
+`{"ok":true,"network":"mainnet","factoryConfigured":true,"telegramAuthConfigured":true,"imageUploadConfigured":true,"imageGenerationConfigured":true}`;
+`GET /api/image/generate` lists Grok and ChatGPT with `userDailyLimit: 5` and `promptMax: 300`; `/api/tokens` 200
+`{"configured":true,"tokens":[]}`; `/api/image/selftest` 404; no runtime errors in the last hour. Production has no
+`VITE_FACTORY_DEPLOY_PAGE`, so the deploy page is not in its build. The upload limits and file-type check
+(SECURITY #13) and the keyed image folder (SECURITY #30) are now in production too. Not done from here: a
+`POST /api/image/generate` or an upload with a Telegram session, and the Create page in Telegram; the founder's first
+generated image is that check. The size of AI Gateway's free allowance is not known; an AI Gateway budget in Vercel is
+the hard spending stop (SECURITY #28).
