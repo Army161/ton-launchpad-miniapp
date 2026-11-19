@@ -85,7 +85,8 @@ It replaces only the factory deploy of the script above; nobody types or stores 
 3. The page checks the pinned STON.fi router as the deploy script does (the pTON master on-chain must name the pinned
    pTON wallet; the STON.fi API must describe a v2 constant-product router with pool creation on), shows the owner,
    treasury, router and the factory address, and offers "Deploy the factory".
-4. Approve the one transaction in the wallet app: 0.1 TON to the factory address with its state init.
+4. Tap "Deploy the factory". The page runs the router checks once more (about ten seconds) and only then opens the
+   wallet app. Approve the one transaction there: 0.1 TON to the factory address with its state init.
 5. The page waits for the factory, reads `get_factory_info` and compares owner, treasury, liquidity manager, router,
    pTON wallet and fees. Only then does it show "deployed and verified" and the address.
 6. Set `FACTORY_ADDRESS`, `VITE_FACTORY_ADDRESS` and `PLATFORM_TREASURY_ADDRESS` in Vercel (Production), check
@@ -93,7 +94,9 @@ It replaces only the factory deploy of the script above; nobody types or stores 
 
 The owner is the connected wallet, and so is the liquidity manager (the deploy script's default). Opening the page
 again with the same wallet finds the factory and only verifies it. If the wallet app does not confirm the send, the
-page offers a check and no second send. Another wallet gets another factory address, which is never ours.
+page offers "Check again" and no second send, also after a reload, until the factory appears or the request has
+expired (twelve minutes after the tap; the page shows the time). A refusal in the wallet app is the one case that
+brings the deploy button back at once. Another wallet gets another factory address, which is never ours.
 
 ## Graduation trigger
 

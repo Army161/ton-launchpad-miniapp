@@ -19,6 +19,10 @@ export const MAINNET_FACTORY = {
 /** Same amounts as contracts/scripts/deploy.ts. */
 export const DEPLOY_VALUE = toNano('0.1');
 export const MIN_DEPLOYER_BALANCE = toNano('0.2');
+/** How long the wallet app may take to send what the page asked for (TON Connect `validUntil`). */
+export const SEND_VALID_SECONDS = 600;
+/** After `validUntil` the wallet's transaction can no longer be accepted. The margin covers clocks and the last blocks. */
+export const SEND_EXPIRY_MARGIN_SECONDS = 120;
 
 export type FactoryPlan = {
   owner: Address;
@@ -100,7 +104,8 @@ export function checkRouterInfo(body: unknown, expected: { router: Address; pton
   const minor = field(r, 'minor_version', 'minorVersion');
   const type = String(field(r, 'router_type', 'routerType') ?? '');
   if (major !== 2) throw new Error(`Router is v${String(major)}; graduation needs a STON.fi v2 router.`);
-  if (!/constant/i.test(type)) throw new Error(`Router type is ${type || 'unknown'}; it must be constant product.`);
+  // The API's exact name; a looser match would also take a type such as "ConstantSum".
+  if (type !== 'ConstantProduct') throw new Error(`Router type is ${type || 'unknown'}; it must be constant product.`);
   if (field(r, 'pool_creation_enabled', 'poolCreationEnabled') !== true) throw new Error('This router does not allow pool creation.');
   if (!address(field(r, 'pton_master_address', 'ptonMasterAddress'), 'pTON master').equals(expected.ptonMaster)) {
     throw new Error('STON.fi names another pTON master for this router.');
@@ -109,4 +114,60 @@ export function checkRouterInfo(body: unknown, expected: { router: Address; pton
     throw new Error('STON.fi names another pTON wallet for this router.');
   }
   return `v${String(major)}.${String(minor ?? '?')}, ${type}`;
+}
+
+/** Where the page keeps the one send it asked a wallet for: the browser's storage, so a reload does not forget it. */
+export type SendStore = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+/** One entry per factory, so a try with another wallet does not erase what was asked of the first. */
+const pendingSendKey = (factory: Address) => `factory-deploy:pending-send:${factory.toRawString()}`;
+
+/** A store that never throws and still works for this page view when the browser's storage is closed. */
+export function safeSendStore(storage: () => SendStore | undefined): SendStore {
+  const memory = new Map<string, string>();
+  const real = <T>(read: (s: SendStore) => T): T | undefined => {
+    try {
+      const s = storage();
+      return s ? read(s) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  return {
+    getItem: (key) => real((s) => s.getItem(key)) ?? memory.get(key) ?? null,
+    setItem: (key, value) => {
+      memory.set(key, value);
+      real((s) => s.setItem(key, value));
+    },
+    removeItem: (key) => {
+      memory.delete(key);
+      real((s) => s.removeItem(key));
+    },
+  };
+}
+
+/** Called before the wallet is asked: from now until it is refused, seen on-chain or expired, this send is unresolved. */
+export function rememberSend(store: SendStore, factory: Address, validUntil: number): void {
+  store.setItem(pendingSendKey(factory), JSON.stringify({ validUntil }));
+}
+
+export function forgetSend(store: SendStore, factory: Address): void {
+  store.removeItem(pendingSendKey(factory));
+}
+
+/**
+ * The send this page asked a wallet for and that nothing has resolved, for this factory: `until` is the time
+ * (unix seconds) up to which it may still reach the network, and `expired` says that time has passed. While it
+ * has not, the page must only verify and never offer a second send. Null when there is none.
+ */
+export function pendingSend(store: SendStore, factory: Address, nowSeconds: number): { until: number; expired: boolean } | null {
+  const raw = store.getItem(pendingSendKey(factory));
+  if (!raw) return null;
+  try {
+    const saved = JSON.parse(raw) as { validUntil?: unknown } | null;
+    if (typeof saved?.validUntil !== 'number' || !Number.isFinite(saved.validUntil)) return null;
+    const until = saved.validUntil + SEND_EXPIRY_MARGIN_SECONDS;
+    return { until, expired: nowSeconds > until };
+  } catch {
+    return null;
+  }
 }

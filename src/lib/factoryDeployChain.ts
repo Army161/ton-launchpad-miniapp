@@ -1,7 +1,7 @@
 import { Address, beginCell, type ContractProvider } from '@ton/core';
 import { TonClient } from '@ton/ton';
 import { LaunchpadFactory, type FactoryInfo } from '../contracts/LaunchpadFactory';
-import { checkRouterInfo } from './factoryDeploy';
+import { checkRouterInfo, type FactoryPlan } from './factoryDeploy';
 
 // Mainnet reads for the factory deploy page, straight from the browser: toncenter for the chain and the STON.fi API
 // for the router. The page works on any deployment, with or without the server's variables.
@@ -11,6 +11,8 @@ const STONFI_API = 'https://api.ston.fi';
 /** toncenter allows about one request a second without a key. */
 const GAP_MS = 1100;
 const RETRIES = 3;
+/** The page waits this long for the STON.fi API, headers and body together. */
+const ROUTER_API_TIMEOUT_MS = 10_000;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -68,16 +70,30 @@ export function mainnetReader(client: Pick<TonClient, 'getBalance' | 'isContract
 /** The STON.fi API gave no answer (network error, rate limit or server error): not the same as a wrong answer. */
 export class RouterApiUnreachable extends Error {}
 
-export async function fetchRouterInfo(router: Address, fetchFn: typeof fetch = fetch): Promise<unknown> {
-  let res: Response;
+export async function fetchRouterInfo(router: Address, fetchFn: typeof fetch = fetch, timeoutMs = ROUTER_API_TIMEOUT_MS): Promise<unknown> {
+  // One clock for the request and the reading of its body: an API that hangs is an API that gives no answer.
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), timeoutMs);
+  const unreachable = (err: unknown) => new RouterApiUnreachable(abort.signal.aborted ? 'timed out' : err instanceof Error ? err.message : 'network error');
   try {
-    res = await fetchFn(`${STONFI_API}/v1/routers/${router.toString()}`, { headers: { accept: 'application/json' } });
-  } catch (err) {
-    throw new RouterApiUnreachable(err instanceof Error ? err.message : 'network error');
+    let res: Response;
+    try {
+      res = await fetchFn(`${STONFI_API}/v1/routers/${router.toString()}`, { headers: { accept: 'application/json' }, signal: abort.signal });
+    } catch (err) {
+      throw unreachable(err);
+    }
+    if (res.status === 429 || res.status >= 500) throw new RouterApiUnreachable(`HTTP ${res.status}`);
+    if (!res.ok) throw new Error(`STON.fi does not know this router (HTTP ${res.status}).`);
+    try {
+      return await res.json();
+    } catch (err) {
+      // A body that arrived and is not JSON is a wrong answer; a body that did not arrive is no answer.
+      if (err instanceof SyntaxError && !abort.signal.aborted) throw new Error('STON.fi answered with something that is not JSON.');
+      throw unreachable(err);
+    }
+  } finally {
+    clearTimeout(timer);
   }
-  if (res.status === 429 || res.status >= 500) throw new RouterApiUnreachable(`HTTP ${res.status}`);
-  if (!res.ok) throw new Error(`STON.fi does not know this router (HTTP ${res.status}).`);
-  return res.json();
 }
 
 export type DexCheck = { router: Address; ptonWallet: Address; source: string; apiChecked: boolean };
@@ -112,4 +128,22 @@ export async function checkMainnetDex(
   }
   const described = checkRouterInfo(body, expected);
   return { router: expected.router, ptonWallet: onChain, source: `STON.fi API: ${described}; pTON master on-chain`, apiChecked: true };
+}
+
+/**
+ * The last step before the wallet is asked, on every send and every retry: the DEX checks again, now, and that they
+ * cover the plan about to be sent. Throws with the reason when anything differs, so nothing is sent. Answers
+ * 'deployed' when the factory is already there: then there is nothing to send, only to verify.
+ */
+export async function confirmBeforeSend(
+  reader: Pick<MainnetReader, 'isDeployed' | 'ptonWalletOf'>,
+  expected: { router: Address; ptonMaster: Address; ptonWallet: Address },
+  plan: Pick<FactoryPlan, 'factory' | 'router' | 'ptonWallet'>,
+  routerInfo?: () => Promise<unknown>,
+): Promise<'send' | 'deployed'> {
+  const dex = await checkMainnetDex(reader, expected, routerInfo);
+  if (!dex.router.equals(plan.router) || !dex.ptonWallet.equals(plan.ptonWallet)) {
+    throw new Error('The router checks no longer match the factory this page showed.');
+  }
+  return (await reader.isDeployed(plan.factory)) ? 'deployed' : 'send';
 }

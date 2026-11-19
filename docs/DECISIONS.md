@@ -103,9 +103,15 @@ machine that agents also work on, or in a chat, is a worse risk than anything th
   body. The wallet app shows and signs it over TON Connect, on mainnet only.
 - The owner is the connected wallet and, as the founder chose on 2026-11-18, also the liquidity manager. The treasury,
   the STON.fi router and its pTON master and wallet are pinned in `src/lib/factoryDeploy.ts` from the founder's message
-  and the mainnet checks of 2026-11-14, and checked again before every send: the pTON master on-chain must name the
-  pinned wallet, and the STON.fi API must describe the router as the script requires. Only if that API gives no answer
-  at all does the page go on without it (its version and type cannot change); an answer that differs stops it.
+  and the mainnet checks of 2026-11-14, and checked when the wallet connects and again right before every send and
+  every retry: the pTON master on-chain must name the pinned wallet, and the STON.fi API must describe the router as
+  the script requires (v2, type exactly `ConstantProduct`, pool creation on). Only if that API gives no answer at all
+  within ten seconds does the page go on without it (its version and type cannot change); an answer that differs
+  stops it before the wallet is asked.
+- One send at a time. The page records the request in the browser's storage before the wallet opens. Until the wallet
+  refuses it, the factory is seen on-chain, or the request's `validUntil` (ten minutes) plus two minutes has passed,
+  the page only verifies and offers no second send, also after a reload. A second send would deploy nothing and leave
+  another 0.1 TON in the factory.
 - After the send the page verifies `get_factory_info` as the script does, and the owner as well.
 - The approval rule is unchanged: the page is used only after the testnet gate and "MAINNET GO-LIVE APPROVED"
   (ADR-007). It is not served in Production. Anyone who opens it with another wallet deploys a factory of their own at

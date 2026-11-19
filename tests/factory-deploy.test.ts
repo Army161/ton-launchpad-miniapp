@@ -5,11 +5,18 @@ import {
   checkRouterInfo,
   DEPLOY_VALUE,
   factoryInfoProblem,
+  forgetSend,
   MAINNET_FACTORY,
   MIN_DEPLOYER_BALANCE,
+  pendingSend,
   planFactoryDeploy,
+  rememberSend,
+  safeSendStore,
+  SEND_EXPIRY_MARGIN_SECONDS,
+  SEND_VALID_SECONDS,
+  type SendStore,
 } from '../src/lib/factoryDeploy';
-import { checkMainnetDex, fetchRouterInfo, mainnetReader, RouterApiUnreachable, spacedQueue } from '../src/lib/factoryDeployChain';
+import { checkMainnetDex, confirmBeforeSend, fetchRouterInfo, mainnetReader, RouterApiUnreachable, spacedQueue } from '../src/lib/factoryDeployChain';
 
 const OWNER = Address.parse('UQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqEBI');
 const OTHER = Address.parse('EQD__________________________________________0vo');
@@ -154,6 +161,10 @@ describe('the router is checked before the deploy', () => {
     expect(() => checkRouterInfo(routerBody({ address: OTHER.toString() }), expected)).toThrow(/another router/);
     expect(() => checkRouterInfo(routerBody({ major_version: 1 }), expected)).toThrow(/v2 router/);
     expect(() => checkRouterInfo(routerBody({ router_type: 'Stableswap' }), expected)).toThrow(/constant product/);
+    // Only the API's exact name passes: a name that merely contains "constant" does not.
+    expect(() => checkRouterInfo(routerBody({ router_type: 'ConstantSum' }), expected)).toThrow(/constant product/);
+    expect(() => checkRouterInfo(routerBody({ router_type: 'WeightedConstantProduct' }), expected)).toThrow(/constant product/);
+    expect(() => checkRouterInfo(routerBody({ router_type: undefined }), expected)).toThrow(/unknown/);
     expect(() => checkRouterInfo(routerBody({ pool_creation_enabled: false }), expected)).toThrow(/pool creation/);
     expect(() => checkRouterInfo(routerBody({ pton_master_address: OTHER.toString() }), expected)).toThrow(/another pTON master/);
     expect(() => checkRouterInfo(routerBody({ pton_wallet_address: OTHER.toString() }), expected)).toThrow(/another pTON wallet/);
@@ -208,6 +219,122 @@ describe('the router is checked before the deploy', () => {
     const notFound = fetchRouterInfo(expected.router, (async () => new Response('', { status: 404 })) as never);
     await expect(notFound).rejects.toThrow(/HTTP 404/);
     await expect(notFound).rejects.not.toBeInstanceOf(RouterApiUnreachable);
+  });
+
+  it('gives the STON.fi API ten seconds, headers and body together, and counts a hang as no answer', async () => {
+    vi.useFakeTimers();
+    try {
+      // The request itself hangs until it is aborted.
+      const hangs = vi.fn(
+        (_url: string | URL | Request, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => init!.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))),
+      );
+      const slow = fetchRouterInfo(expected.router, hangs as never);
+      const slowResult = expect(slow).rejects.toBeInstanceOf(RouterApiUnreachable);
+      await vi.advanceTimersByTimeAsync(9_999);
+      expect(hangs.mock.calls[0][1]!.signal!.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      await slowResult;
+      await expect(slow).rejects.toThrow(/timed out/);
+
+      // The headers arrive and the body never does.
+      const noBody = (async (_url: string | URL | Request, init?: RequestInit) => ({
+        status: 200,
+        ok: true,
+        json: () => new Promise((_resolve, reject) => init!.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))),
+      })) as never;
+      const stalled = fetchRouterInfo(expected.router, noBody, 500);
+      const stalledResult = expect(stalled).rejects.toBeInstanceOf(RouterApiUnreachable);
+      await vi.advanceTimersByTimeAsync(500);
+      await stalledResult;
+    } finally {
+      vi.useRealTimers();
+    }
+
+    // A body that arrives and is not JSON is a wrong answer, which stops the deploy.
+    const garbled = fetchRouterInfo(expected.router, (async () => new Response('<html>', { status: 200 })) as never);
+    await expect(garbled).rejects.toThrow(/not JSON/);
+    await expect(garbled).rejects.not.toBeInstanceOf(RouterApiUnreachable);
+  });
+
+  it('runs the checks again before every send, and stops before the wallet when they differ', async () => {
+    const p = await plan();
+    const r = { isDeployed: vi.fn(async (a: Address) => a.equals(expected.router)), ptonWalletOf: vi.fn(async () => expected.ptonWallet) };
+    const api = vi.fn(async () => routerBody());
+
+    expect(await confirmBeforeSend(r, expected, p, api)).toBe('send');
+    expect(await confirmBeforeSend(r, expected, p, api)).toBe('send');
+    // Each call asked the chain and the API again; nothing is remembered from the first.
+    expect(api).toHaveBeenCalledTimes(2);
+    expect(r.ptonWalletOf).toHaveBeenCalledTimes(2);
+    expect(r.isDeployed.mock.calls.map(([a]) => a.toString())).toEqual([expected.router, p.factory, expected.router, p.factory].map(String));
+
+    // The API changed its answer between the first look and the send.
+    await expect(confirmBeforeSend(r, expected, p, async () => routerBody({ pool_creation_enabled: false }))).rejects.toThrow(/pool creation/);
+    // The pTON master changed its answer.
+    const moved = { isDeployed: r.isDeployed, ptonWalletOf: vi.fn(async () => OTHER) };
+    await expect(confirmBeforeSend(moved, expected, p, api)).rejects.toThrow(/pTON master names another/);
+    // The plan on the page is not the one the checks cover.
+    await expect(confirmBeforeSend(r, expected, { ...p, ptonWallet: OTHER }, api)).rejects.toThrow(/no longer match/);
+
+    // The factory appeared in the meantime (an earlier send arrived): nothing to send.
+    const there = { isDeployed: vi.fn(async () => true), ptonWalletOf: r.ptonWalletOf };
+    expect(await confirmBeforeSend(there, expected, p, api)).toBe('deployed');
+  });
+});
+
+describe('a send that is not resolved allows no second send', () => {
+  const memory = (): SendStore & { data: Map<string, string> } => {
+    const data = new Map<string, string>();
+    return { data, getItem: (k) => data.get(k) ?? null, setItem: (k, v) => void data.set(k, v), removeItem: (k) => void data.delete(k) };
+  };
+  const T = 1_800_000_000;
+
+  it('stays pending until the wallet request has expired, with a margin, and survives a reload', async () => {
+    const p = await plan();
+    const store = memory();
+    expect(pendingSend(store, p.factory, T)).toBeNull();
+
+    rememberSend(store, p.factory, T + SEND_VALID_SECONDS);
+    const until = T + SEND_VALID_SECONDS + SEND_EXPIRY_MARGIN_SECONDS;
+    expect(pendingSend(store, p.factory, T)).toEqual({ until, expired: false });
+    expect(pendingSend(store, p.factory, until)).toEqual({ until, expired: false });
+    expect(pendingSend(store, p.factory, until + 1)).toEqual({ until, expired: true });
+    // "A reload": another reader of the same storage sees it.
+    expect(pendingSend(safeSendStore(() => store), p.factory, T + 5)).toEqual({ until, expired: false });
+
+    // Another wallet's factory is another matter: a try with it neither sees nor erases the first.
+    const other = await planFactoryDeploy({ owner: OTHER, treasury, router: expected.router, ptonWallet: expected.ptonWallet });
+    expect(pendingSend(store, other.factory, T)).toBeNull();
+    rememberSend(store, other.factory, T + 30 + SEND_VALID_SECONDS);
+    forgetSend(store, other.factory);
+    expect(pendingSend(store, other.factory, T)).toBeNull();
+    expect(pendingSend(store, p.factory, T)).toEqual({ until, expired: false });
+
+    forgetSend(store, p.factory);
+    expect(pendingSend(store, p.factory, T)).toBeNull();
+    expect(store.data.size).toBe(0);
+  });
+
+  it('ignores what it did not write, and works without browser storage', async () => {
+    const p = await plan();
+    const store = memory();
+    for (const junk of ['', 'not json', 'null', '{}', JSON.stringify({ validUntil: 'soon' })]) {
+      store.setItem(`factory-deploy:pending-send:${p.factory.toRawString()}`, junk);
+      expect(pendingSend(store, p.factory, T)).toBeNull();
+    }
+
+    const closed = safeSendStore(() => {
+      throw new Error('SecurityError');
+    });
+    rememberSend(closed, p.factory, T + SEND_VALID_SECONDS);
+    expect(pendingSend(closed, p.factory, T)).toMatchObject({ expired: false });
+    forgetSend(closed, p.factory);
+    expect(pendingSend(closed, p.factory, T)).toBeNull();
+
+    const full = safeSendStore(() => ({ getItem: () => null, setItem: () => { throw new Error('QuotaExceededError'); }, removeItem: () => undefined }));
+    rememberSend(full, p.factory, T + SEND_VALID_SECONDS);
+    expect(pendingSend(full, p.factory, T)).toMatchObject({ expired: false });
   });
 });
 
