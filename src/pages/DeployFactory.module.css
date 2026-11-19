@@ -1,0 +1,46 @@
+.wrap {
+  padding-top: 24px;
+}
+
+.wrap h1 {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.wrap p {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  padding: 14px;
+  margin: 0;
+}
+
+.rows dt {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.rows dt:first-child {
+  margin-top: 0;
+}
+
+.rows dd {
+  margin: 0;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.warn {
+  color: var(--negative);
+}
+
+.ok {
+  color: var(--positive);
+  font-weight: 700;
+}

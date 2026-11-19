@@ -12,6 +12,7 @@ and exits non-zero on any failure.
 | `VITE_FACTORY_ADDRESS` | factory address | valid TON address; `PENDING_DEPLOY` disables launches |
 | `VITE_TONAPI_BASE` | `https://tonapi.io` | optional |
 | `VITE_NETWORK` | `mainnet` | `mainnet` or `testnet` |
+| `VITE_FACTORY_DEPLOY_PAGE` | unset | `on` serves `/deploy-factory`, the one-time wallet-approved mainnet factory deploy (ADR-011). Set it for Preview only; leave it unset in Production |
 
 Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator and CI reject it.
 `VITE_TONAPI_KEY` was removed: the browser uses TonAPI without a key.
@@ -58,4 +59,4 @@ Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator
 |---|---|
 | `deploy-testnet` | treasury (testnet-only addresses allowed), deploy mnemonic |
 | `deploy-mainnet` | treasury (mainnet), deploy mnemonic, `MAINNET_GO_LIVE_APPROVED=yes` |
-| `production` | bot token, JWT secret, treasury, both factory vars (equal), return URL, manifest URL, `VITE_NETWORK=mainnet`, no deploy mnemonic, no secret-looking `VITE_*`; `--network` also fetches the manifest and its icon/terms/privacy URLs |
+| `production` | bot token, JWT secret, treasury, both factory vars (equal), return URL, manifest URL, `VITE_NETWORK=mainnet`, no deploy mnemonic, no `VITE_FACTORY_DEPLOY_PAGE`, no secret-looking `VITE_*`; `--network` also fetches the manifest and its icon/terms/privacy URLs |

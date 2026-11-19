@@ -63,6 +63,12 @@ Alternative without the Vercel CLI: in `contracts/`, run `MAINNET_GO_LIVE_APPROV
 `FACTORY_ADDRESS` and `VITE_FACTORY_ADDRESS` to the printed factory and `PLATFORM_TREASURY_ADDRESS`, check
 `VITE_NETWORK=mainnet`, and redeploy production. The bot token and JWT secret already in Vercel stay as they are.
 
+Alternative without a recovery phrase in any file: deploy the factory from your wallet app. Open the
+`/deploy-factory` link Claude sends, connect the wallet that will own the factory (at least 0.2 TON in it), tap
+"Deploy the factory" and approve the 0.1 TON transaction in the wallet. The page verifies the factory on-chain and
+shows its address; send that address to Claude, who sets the Vercel variables and deploys production
+(`docs/EXECUTION.md`, "Factory deploy from a wallet app"). Never type or send your recovery phrase to anyone.
+
 ## 5. BotFather
 
 ```

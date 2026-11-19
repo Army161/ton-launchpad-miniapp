@@ -130,6 +130,8 @@ export async function validate(profile: Profile, env: Env): Promise<Finding[]> {
     findings.push(checkHttpsUrl('VITE_MANIFEST_URL', env.VITE_MANIFEST_URL));
     findings.push(env.VITE_NETWORK === 'mainnet' ? pass('VITE_NETWORK', 'mainnet') : fail('VITE_NETWORK', 'must be "mainnet" for production'));
     if (env.DEPLOY_MNEMONIC) findings.push(fail('DEPLOY_MNEMONIC', 'must not be set in the production runtime; keep it local'));
+    // The one-time wallet-approved factory deploy page is for a preview deployment only (ADR-011).
+    if (env.VITE_FACTORY_DEPLOY_PAGE) findings.push(fail('VITE_FACTORY_DEPLOY_PAGE', 'must not be set for production; set it for Preview only'));
     // Not required, so not a failure; but without a key toncenter allows about 1 request/s per (shared) Vercel IP.
     findings.push(
       env.TONCENTER_API_KEY?.trim()

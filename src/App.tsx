@@ -1,4 +1,5 @@
 import { TonConnectUIProvider, THEME } from '@tonconnect/ui-react';
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
 import { AuthProvider } from './context/AuthContext';
@@ -14,7 +15,10 @@ import { Profile } from './pages/Profile';
 import { Sell } from './pages/Sell';
 import { TokenDetail } from './pages/TokenDetail';
 
-const HIDE_NAV = ['/create', '/token/', '/buy/', '/sell/'];
+// The one-time factory deploy (docs/EXECUTION.md, "Factory deploy from a wallet app"): its own chunk, and a route only where it is switched on.
+const DeployFactory = lazy(() => import('./pages/DeployFactory').then((m) => ({ default: m.DeployFactory })));
+
+const HIDE_NAV = ['/create', '/token/', '/buy/', '/sell/', '/deploy-factory'];
 
 function Shell() {
   const { pathname } = useLocation();
@@ -41,6 +45,16 @@ function Shell() {
         />
         <Route path="/my-tokens" element={<MyTokens />} />
         <Route path="/profile" element={<Profile />} />
+        {CONFIG.factoryDeployPage && (
+          <Route
+            path="/deploy-factory"
+            element={
+              <Suspense fallback={<div className="page loading-pulse">Loading…</div>}>
+                <DeployFactory />
+              </Suspense>
+            }
+          />
+        )}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       {!hideNav && <BottomNav />}

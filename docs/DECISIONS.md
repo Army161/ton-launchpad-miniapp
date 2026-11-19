@@ -91,3 +91,24 @@ sent by that token's jetton wallet owned by the router, so that one wallet is th
   seller's jetton wallet).
 - Consequence for operators: the liquidity manager's fallback deposit (`provide_lp` from its own wallet) is refused for
   the first 10 minutes after migration; the graduation tool must wait for `get_dex_guard`.
+
+## ADR-011 The mainnet factory may be deployed from a wallet app
+
+Decided 2026-11-19. The deploy script signs with `DEPLOY_MNEMONIC` from a local file. The founder keeps his wallet
+in Tonkeeper, could not do that step, and asked whether to send his recovery phrase in chat. A phrase in a file on a
+machine that agents also work on, or in a chat, is a worse risk than anything the script protects against.
+
+- `/deploy-factory` (served only where `VITE_FACTORY_DEPLOY_PAGE=on`) builds the same message as
+  `contracts/scripts/deploy.ts`: 0.1 TON, bounceable, to the factory's address, with its state init and an empty
+  body. The wallet app shows and signs it over TON Connect, on mainnet only.
+- The owner is the connected wallet and, as the founder chose on 2026-11-18, also the liquidity manager. The treasury,
+  the STON.fi router and its pTON master and wallet are pinned in `src/lib/factoryDeploy.ts` from the founder's message
+  and the mainnet checks of 2026-11-14, and checked again before every send: the pTON master on-chain must name the
+  pinned wallet, and the STON.fi API must describe the router as the script requires. Only if that API gives no answer
+  at all does the page go on without it (its version and type cannot change); an answer that differs stops it.
+- After the send the page verifies `get_factory_info` as the script does, and the owner as well.
+- The approval rule is unchanged: the page is used only after the testnet gate and "MAINNET GO-LIVE APPROVED"
+  (ADR-007). It is not served in Production. Anyone who opens it with another wallet deploys a factory of their own at
+  another address, which the app never lists.
+- Consequence: no `deployed.mainnet.json` is written; the factory address and transaction go into `docs/STATUS.md`
+  and `docs/VERIFICATION.md` by hand.
