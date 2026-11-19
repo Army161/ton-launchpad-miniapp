@@ -59,8 +59,11 @@ liquidity goes to the liquidity manager, which seeds manually with `graduate.ts 
 | `POST /api/auth/telegram` | verifies `initData`, returns a 24 h JWT and the Telegram profile |
 | `GET /api/tokens` | lists launches found in the factory's transactions, newest first; every token is proven to come from our factory (address re-derived from `(factory, creator, salt)`). Cached for 20 s in memory and 15 s at the edge. A token a refresh does not read (no time left, or the read failed) is shown as last read on that instance, but once a read of that refresh failed (or none could start) only if that was in the last 30 minutes; a token never read there, or not in that time, is left out and the list says `partial: true`, and then (or while a launch of the last minute still reads as not deployed) the list is cached for only 5 s (`s-maxage=5`). One refresh at a time per instance. If the factory's transactions cannot be read, the last list is served again for 5 s as long as it was read in the last 5 minutes; after that, or with no list yet, 503 with `Retry-After` |
 | `GET /api/tokens/:address[?holder=]` | live curve state and optionally the holder's balance, never cached. 404 only when the chain answers that the address is not one of our tokens; 503 with `Retry-After` and `no-store` when toncenter cannot be read. When only the balance cannot be read, 200 with the token and no `balance` |
-| `POST /api/metadata/upload` | authenticated image upload to Vercel Blob (503 if Blob is not enabled) |
-| `GET /api/health` | configuration presence flags only |
+| `POST /api/metadata/upload` | authenticated image upload to Vercel Blob (503 if Blob is not enabled): PNG, JPEG, WebP or GIF up to 2 MB whose first bytes match the declared type, 10 per user and 300 in total per UTC day (429 beyond) |
+| `GET /api/image/generate` | what the Create page may offer: `enabled`, the models, the per-user daily number, the prompt length. No session, reads nothing |
+| `POST /api/image/generate` | authenticated AI token image (ADR-012): `{prompt, model?}` → one image from Vercel AI Gateway → 512 px JPEG in Vercel Blob → `{uri, model, remaining}`. 400 bad prompt or model, 422 the provider refused the prompt, 429 daily limit or the 8 s pause, 503 switched off or the gateway cannot serve (no credits, down). Runs up to 60 s (`vercel.json`) |
+| `GET /api/image/selftest` | preview-only end-to-end check of the generator, 404 without the `IMAGE_SELFTEST` key (SECURITY #29) |
+| `GET /api/health` | configuration presence flags only, incl. `imageUploadConfigured` and `imageGenerationConfigured` |
 
 There is no database: the chain is the source of truth for tokens, and sessions are stateless (ADR-003).
 

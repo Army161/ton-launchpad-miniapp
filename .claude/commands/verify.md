@@ -9,7 +9,7 @@ failure; never skip, weaken or edit a test to make it pass.
 (cd contracts && npm ci --legacy-peer-deps && npm run build && npm run typecheck && npm test)
 git diff --exit-code -- src/contracts          # generated wrappers match the Tact source
 npm ci && npm run lint && npm test && npm run build
-grep -rlE 'TELEGRAM_BOT_TOKEN|JWT_SECRET|DEPLOY_MNEMONIC|TONCENTER_API_KEY|BLOB_READ_WRITE_TOKEN' dist && echo "LEAK" || echo "bundle clean"
+grep -rlE 'TELEGRAM_BOT_TOKEN|JWT_SECRET|DEPLOY_MNEMONIC|TONCENTER_API_KEY|BLOB_READ_WRITE_TOKEN|AI_GATEWAY_API_KEY|IMAGE_SELFTEST' dist && echo "LEAK" || echo "bundle clean"
 git ls-files | grep -E '^\.env' | grep -v '^\.env\.example$' && echo "TRACKED ENV FILE" || echo "no tracked env files"
 ```
 

@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { serverFactory, serverNetwork } from './_lib/chain.js';
+import { gatewayToken, imageGenConfig } from './_lib/imageGen.js';
 
 /** Configuration sanity for monitoring. Reports presence only, never values. */
-export default function handler(_req: VercelRequest, res: VercelResponse) {
+export default function handler(req: VercelRequest, res: VercelResponse) {
   const factory = serverFactory();
   res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({
@@ -11,5 +12,7 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     factoryConfigured: factory !== null,
     telegramAuthConfigured: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.JWT_SECRET),
     imageUploadConfigured: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+    // Switched on, storage present and a gateway credential on this request. Not a promise that credits are left.
+    imageGenerationConfigured: imageGenConfig().enabled && gatewayToken(req.headers) !== null,
   });
 }

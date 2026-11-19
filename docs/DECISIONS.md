@@ -91,3 +91,75 @@ sent by that token's jetton wallet owned by the router, so that one wallet is th
   seller's jetton wallet).
 - Consequence for operators: the liquidity manager's fallback deposit (`provide_lp` from its own wallet) is refused for
   the first 10 minutes after migration; the graduation tool must wait for `get_dex_guard`.
+
+## ADR-011 The mainnet factory may be deployed from a wallet app
+
+Decided 2026-11-19. The deploy script signs with `DEPLOY_MNEMONIC` from a local file. The founder keeps his wallet
+in Tonkeeper, could not do that step, and asked whether to send his recovery phrase in chat. A phrase in a file on a
+machine that agents also work on, or in a chat, is a worse risk than anything the script protects against.
+
+- `/deploy-factory` (served only where `VITE_FACTORY_DEPLOY_PAGE=on`) builds the same message as
+  `contracts/scripts/deploy.ts`: 0.1 TON, bounceable, to the factory's address, with its state init and an empty
+  body. The wallet app shows and signs it over TON Connect, on mainnet only.
+- The owner is the connected wallet and, as the founder chose on 2026-11-18, also the liquidity manager. The treasury,
+  the STON.fi router and its pTON master and wallet are pinned in `src/lib/factoryDeploy.ts` from the founder's message
+  and the mainnet checks of 2026-11-14, and checked when the wallet connects and again right before every send and
+  every retry: the pTON master on-chain must name the pinned wallet, and the STON.fi API must describe the router as
+  the script requires (v2, type exactly `ConstantProduct`, pool creation on). Only if that API gives no answer at all
+  within ten seconds does the page go on without it (its version and type cannot change); an answer that differs
+  stops it before the wallet is asked.
+- One send at a time. The page records the request in the browser's storage before the wallet opens. Until the wallet
+  refuses it, the factory is seen on-chain, or the request's `validUntil` (ten minutes) plus two minutes has passed,
+  the page only verifies and offers no second send, also after a reload. A second send would deploy nothing and leave
+  another 0.1 TON in the factory.
+- After the send the page verifies `get_factory_info` as the script does, and the owner as well.
+- The approval rule is unchanged: the page is used only after the testnet gate and "MAINNET GO-LIVE APPROVED"
+  (ADR-007). It is not served in Production. Anyone who opens it with another wallet deploys a factory of their own at
+  another address, which the app never lists.
+- Consequence: no `deployed.mainnet.json` is written; the factory address and transaction go into `docs/STATUS.md`
+  and `docs/VERIFICATION.md` by hand.
+
+## ADR-012 Token images: Blob storage, and free AI images through Vercel AI Gateway
+
+Decided 2026-11-19, on the founder's ask for "a real upload and image generator" that makes free images with the
+models people know (Gemini Nano Banana, ChatGPT, Grok, Meta AI).
+
+- Storage is one public Vercel Blob store (`launchpad-token-images`, connected to the project). Every stored file is
+  named `<kind>/<UTC day>/<owner key>/<uuid>.<ext>` with kind `uploads` or `generated`. The owner key is a keyed hash
+  of the Telegram id (HMAC-SHA256 with `JWT_SECRET`, 24 hex characters), not the id itself: the address is public and
+  ends up in the token's on-chain metadata next to the creator's wallet (SECURITY #30). The function log ties a
+  stored file to its Telegram id. A new `JWT_SECRET` renames the folders, so that day's counts start again.
+- The generator is `POST /api/image/generate`. It calls Vercel AI Gateway, one account that serves all four model
+  families, so there is one integration and one bill instead of four provider keys. On Vercel the function
+  authenticates with the deployment's own OIDC token (the `x-vercel-oidc-token` request header), so no key is stored
+  anywhere; `AI_GATEWAY_API_KEY` is read first if someone sets one. Models: `meta/muse-image-1.0`,
+  `spacexai/grok-imagine-image`, `openai/gpt-image-1-mini` (medium quality) through the gateway's Images endpoint, and
+  `google/gemini-2.5-flash-image` through Chat Completions with image output. `IMAGE_GEN_MODELS` narrows the list.
+- "Free" means free for the creator. The platform pays the gateway per image (about 1 to 4 US cents, 2026-11-19
+  catalog prices), so the feature is off unless `IMAGE_GENERATION=on` and it is bounded: `IMAGE_GEN_USER_DAILY_LIMIT`
+  (default 5) and `IMAGE_GEN_GLOBAL_DAILY_LIMIT` (default 50, at most 1000) per UTC day, one attempt per user every
+  8 s. At the defaults the worst case is about 2 USD a day. The hard stop is a budget on the Vercel team's AI Gateway,
+  which only the founder can set.
+- There is no database (ADR-003), so the limits are counted from the stored files: one Blob `list` of the day's
+  folder gives the user's and the global count. Two requests at the same instant can both pass, so a limit can be
+  exceeded by the number of parallel requests; the cooldown keeps that small and the gateway budget bounds the money.
+  The limits are therefore soft, for uploads too (which have no cooldown). The count and the file use one
+  timestamp, so a request that crosses UTC midnight is filed in the day it was counted in.
+- What is stored is never the provider's bytes: `sharp` turns them into a 512 px square JPEG (about 50 KB), which
+  also proves they are an image. A token logo is shown at 40 to 96 px, and megabyte images would fill the store and
+  slow every list.
+- The same day folders give uploads a limit (10 per user, 300 for everyone per day), and an uploaded file must start
+  with the bytes of the image type it declares. This closes SECURITY #13.
+- `GET /api/image/selftest` exists because no tool can call the POST endpoint without a Telegram session. It runs one
+  real image through the gateway, sharp and Blob, only on a Vercel preview and only with the key in `IMAGE_SELFTEST`
+  (32+ characters); otherwise it answers 404. The key is set only while a check runs.
+- Checked 2026-11-19 on a preview: without paid credits AI Gateway serves `spacexai/grok-imagine-image` and
+  `openai/gpt-image-1-mini` and answers 403 for the Meta and Gemini models ("Free tier users do not have access to
+  this model"). Until the team buys credits, `IMAGE_GEN_MODELS` names those two, so the form offers only what works.
+  How many images the free tier allows is not documented where we looked; when it runs out the creator is told to
+  upload or paste instead.
+- Rejected: a provider key per model (four secrets, four bills); a free third-party image API with no account (no
+  control over uptime, content or what happens to prompts); resizing in the browser (the raw image would still have to
+  be stored or sent back through the 4.5 MB response limit).
+- Consequence: prompts leave the platform (to Vercel and the chosen provider); `public/privacy.html` says so. The
+  metadata still only stores an https URL, so the contracts and the token format are unchanged.

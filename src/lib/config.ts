@@ -10,6 +10,8 @@ export const CONFIG = {
   factoryAddress: import.meta.env.VITE_FACTORY_ADDRESS ?? '',
   tonApiBase: import.meta.env.VITE_TONAPI_BASE || 'https://tonapi.io',
   network: (import.meta.env.VITE_NETWORK === 'testnet' ? 'testnet' : 'mainnet') as 'mainnet' | 'testnet',
+  /** Serves /deploy-factory, the one-time wallet-approved mainnet factory deploy. Off unless set to "on". */
+  factoryDeployPage: import.meta.env.VITE_FACTORY_DEPLOY_PAGE === 'on',
   launchFee: 0.05,
   graduationTarget: 1500,
   tradeFeePercent: 2,

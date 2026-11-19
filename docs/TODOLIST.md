@@ -23,7 +23,7 @@ Current state and evidence: `docs/STATUS.md`, `docs/VERIFICATION.md`. Founder st
 - [x] Graduation decided: on-chain STON.fi with LP locked (ADR-009); prove it on testnet
 - [ ] Fund a testnet deployer wallet and run the testnet gate (`docs/EXECUTION.md`)
 - [ ] Add `TONCENTER_API_KEY` in Vercel before launch traffic (`docs/ENVIRONMENT.md`)
-- [ ] Optional: enable Vercel Blob
+- [x] Vercel Blob enabled (2026-11-19, image upload live)
 - [ ] Write "MAINNET GO-LIVE APPROVED", then run the launch script locally
 - [ ] Upload design mockups for the pixel pass
 - [ ] Optional: GitHub secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` for CI deploys
@@ -32,6 +32,6 @@ Current state and evidence: `docs/STATUS.md`, `docs/VERIFICATION.md`. Founder st
 
 - [ ] Record testnet and mainnet evidence in STATUS and VERIFICATION
 - [ ] `/api/tokens` pagination past the ~100 most recent factory transactions
-- [ ] Upload rate limit
+- [x] Upload rate limit (2026-11-19)
 - [ ] Code-split trading pages (bundle 1.05 MB)
 - [ ] Independent contract audit before real volume

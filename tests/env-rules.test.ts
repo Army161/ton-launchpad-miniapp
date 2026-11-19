@@ -133,6 +133,12 @@ describe('env rules', () => {
     expect(failed).toEqual(expect.arrayContaining(['VITE_FACTORY_ADDRESS', 'DEPLOY_MNEMONIC', 'VITE_NETWORK', 'TELEGRAM_BOT_TOKEN', 'JWT_SECRET']));
   });
 
+  it('production profile refuses the one-time factory deploy page', async () => {
+    const failed = (env: Record<string, string>) => validate('production', env).then((all) => all.filter((f) => !f.ok).map((f) => f.name));
+    expect(await failed({ VITE_FACTORY_DEPLOY_PAGE: 'on' })).toContain('VITE_FACTORY_DEPLOY_PAGE');
+    expect(await failed({})).not.toContain('VITE_FACTORY_DEPLOY_PAGE');
+  });
+
   it('deploy-mainnet requires the go-live flag', async () => {
     const words = (await mnemonicNew()).join(' ');
     const base = { PLATFORM_TREASURY_ADDRESS: MAINNET_ADDR, DEPLOY_MNEMONIC: words, STON_ROUTER_ADDRESS: MAINNET_ADDR };

@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_FACTORY_ADDRESS?: string;
   readonly VITE_TONAPI_BASE?: string;
   readonly VITE_NETWORK?: string;
+  readonly VITE_FACTORY_DEPLOY_PAGE?: string;
 }
 
 interface ImportMeta {

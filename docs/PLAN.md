@@ -17,8 +17,8 @@ Engineering status is tracked in `docs/STATUS.md`; evidence in `docs/VERIFICATIO
 - [x] 2% trading fee → 60% creator / 40% platform, on-chain
 - [x] Graduation at 1,500 TON; contract seeds STON.fi and locks LP on-chain (ADR-009)
 - [x] Live feeds: STON.fi, DexScreener, CoinGecko, TonAPI (fail safe)
-- [ ] Testnet gate (founder wallet)
-- [ ] Mainnet factory deploy (after "MAINNET GO-LIVE APPROVED")
+- [x] Testnet gate (founder wallet), passed 2026-11-17
+- [x] Mainnet factory deploy (after "MAINNET GO-LIVE APPROVED"), 2026-11-19, see `docs/STATUS.md`
 - [ ] Vercel production on this code + BotFather; Cloudflare custom domain later
 
 ## V2 — Advanced Economics (documented, not built)

@@ -74,6 +74,32 @@ runtime configuration (including the live manifest), writes Vercel variables wit
 Secrets) and deploys. Re-running it is safe. See `docs/LAUNCH.md` for the founder's steps, the dashboard alternative
 and the smoke test.
 
+### Factory deploy from a wallet app
+
+For a founder who keeps the owner wallet in a wallet app and will not put its recovery phrase in a file (ADR-011).
+It replaces only the factory deploy of the script above; nobody types or stores a mnemonic.
+
+1. Build a deployment with `VITE_FACTORY_DEPLOY_PAGE=on` (a preview deployment; the variable is set for Preview only)
+   and open `/deploy-factory` on it.
+2. Connect the mainnet wallet that will own the factory. It needs at least 0.2 TON.
+3. The page checks the pinned STON.fi router as the deploy script does (the pTON master on-chain must name the pinned
+   pTON wallet; the STON.fi API must describe a v2 constant-product router with pool creation on), shows the owner,
+   treasury, router and the factory address, and offers "Deploy the factory".
+4. Tap "Deploy the factory". The page runs the router checks once more (about ten seconds) and only then opens the
+   wallet app. Approve the one transaction there: 0.1 TON to the factory address with its state init.
+5. The page waits for the factory, reads `get_factory_info` and compares owner, treasury, liquidity manager, router,
+   pTON wallet and fees. Only then does it show "deployed and verified" and the address.
+6. Set `FACTORY_ADDRESS`, `VITE_FACTORY_ADDRESS` and `PLATFORM_TREASURY_ADDRESS` in Vercel (Production), check
+   `VITE_NETWORK=mainnet`, deploy production from `clawdbot-permanent` and run `/production-check`.
+7. Remove `VITE_FACTORY_DEPLOY_PAGE` from Vercel (or set it to anything but `on`), so later previews do not serve the
+   page. Done 2026-11-19 after the mainnet deploy: it is `off`.
+
+The owner is the connected wallet, and so is the liquidity manager (the deploy script's default). Opening the page
+again with the same wallet finds the factory and only verifies it. If the wallet app does not confirm the send, the
+page offers "Check again" and no second send, also after a reload, until the factory appears or the request has
+expired (twelve minutes after the tap; the page shows the time). A refusal in the wallet app is the one case that
+brings the deploy button back at once. Another wallet gets another factory address, which is never ours.
+
 ## Graduation trigger
 
 `Migrate` is permissionless; the contract seeds STON.fi and locks the LP itself (ADR-009).
