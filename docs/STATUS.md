@@ -70,7 +70,7 @@ remaining proof.
 
 | Item | Priority | Notes |
 |---|---|---|
-| Record the first official token | P1 | the smoke test (TEST1) is recorded (2026-11-19). When the founder launches QRECON, add its address and launch transaction here and in VERIFICATION. A full-size sell (the test sold 0.1 TEST1) and a buy that names a referrer have not been run on mainnet |
+| Record the first official token | P1 | the smoke test (TEST1) is recorded (2026-11-19). When the founder launches QRECON, add its address and launch transaction here and in VERIFICATION. A buy that names a referrer has not been run on mainnet (the full-size sell was run on TEST1 at 22:37 UTC, see below) |
 | Pagination past the ~100 most recent factory transactions in `/api/tokens` | P1 | fine at launch volume; needs an indexer or DB later (ADR-003) |
 | `/api/tokens` reads the chain inside one 7 s budget per refresh | P1 | a refresh reads about 46 known or 22 new tokens with `TONCENTER_API_KEY` (about 5 or 2 without), never-read and stalest first, and shows the rest as last read, so successive refreshes cover the list (5 s apart while it is partial). The state is per Vercel instance: a fresh instance's first lists can be partial (`partial: true`, 5 s cache) past about 22 tokens with a key, or 2 without. An indexer removes the limit (ADR-003) |
 | Rate limit per IP on `/api/tokens/*` | P1 | SECURITY #24: a Vercel Firewall rule, about 120 requests a minute per IP (the app polls at most every 3 s per tab). Each instance already stops retrying in a flood of failing lookups, but nothing bounds the total across instances, so a script can still use up the toncenter quota |
@@ -245,4 +245,13 @@ three succeeded, exit code 0) and from production `/api/tokens`.
   treasury and "Sell proceeds" (2 nanoTON plus the unused network fee, 0.0978 TON in all) to the seller.
 - State afterwards: `realTonRaised` 97,999,997 nanoTON, `totalSupply` 3,256,030.201016678 TEST1, `tradeCount` 2.
   Tonkeeper lists TEST1 among the wallet's tokens with its "unverified token" label, as it does for any new jetton.
-- Not covered: a full-size sell, a buy that names a referrer, graduation on mainnet, and an AI-generated image.
+- Full-size sell, 22:37:49 UTC (Sell, then Max): the wallet's transaction
+  `ba8dcd7d89549782ab74f67eb2fb92a011b9eb6311ddff0fb0148b1d0c6d4a03` burned all 3,256,030.201016678 TEST1 with the
+  SELL payload and 0.1 TON attached. The minter paid 1,176,000 nanoTON "Creator fee" to the creator
+  (`6026f8954e5188bb20ebffef64b64ba58ea578255a8f03132fe38e2465385e86`), 784,000 "Platform fee" to the treasury
+  (`bd68863cb6f85d001cf1501f2828835cff677ba2c97ba6a89e273f0f18cab6e1`) and 193,631,061 "Sell proceeds" to the seller
+  (`890f2f1bb0079c02eebc3938e474705306e0ca23f561a1347ad2f919ef26e66a`; 96,039,996 for the tokens plus the unused
+  network fee). The fees are 2% of the 97,999,996 nanoTON gross, split 60/40. State afterwards from production
+  `/api/tokens`: `realTonRaised` 1 nanoTON, `totalSupply` 0, `tradeCount` 3. The hashes are the receiving accounts'
+  transactions, read from tonapi.io at 22:39 UTC; tonapi's page for the minter itself had not yet indexed the trade.
+- Not covered: a buy that names a referrer, graduation on mainnet, and an AI-generated image.
