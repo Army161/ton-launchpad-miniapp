@@ -2,11 +2,12 @@
 
 Updated: 2026-11-19 · Branch: `clawdbot-permanent` (GitHub default; `main` was merged into it by PR #3 and deleted. Vercel's production branch setting still names `main`, so a push or merge to `clawdbot-permanent` builds a preview and production is deployed explicitly)
 
-**Overall: MAINNET FACTORY LIVE, SMOKE TEST OPEN.** The testnet gate passed, the founder wrote "MAINNET GO-LIVE
+**Overall: MAINNET LIVE, SMOKE TEST PASSED.** The testnet gate passed, the founder wrote "MAINNET GO-LIVE
 APPROVED" on 2026-11-17 and deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on
-2026-11-19. Production runs df7a7fa (PR #14 merged) pointed at that factory on mainnet. What remains is the founder's
-smoke test in Telegram (open the app, connect a wallet, launch and trade a token). Image upload is live in production
-since 2026-11-19 13:54 UTC. The free AI image generator (ADR-012) is live in production since 2026-11-19 21:30 UTC,
+2026-11-19. Production runs df7a7fa (PR #14 merged) pointed at that factory on mainnet. The founder's smoke test in Telegram passed on
+2026-11-19 22:20 to 22:24 UTC: he uploaded an image, launched the test token TEST1, bought and sold, and the launch
+and trade fees reached the treasury and the creator wallet (see "First mainnet launch" below). Image upload is live
+in production since 2026-11-19 13:54 UTC and proven by that upload. The free AI image generator (ADR-012) is live in production since 2026-11-19 21:30 UTC,
 with Grok and ChatGPT (GPT Image 1 Mini), on the founder's go-ahead; his first generated image in Telegram is the
 remaining proof.
 
@@ -26,7 +27,7 @@ remaining proof.
 | Live site | PASS | production deploy of 4a1392f (2026-11-19, `dpl_9Wm6GpBfYoFTDGj9Yg1DcyvKsNsH`, and again as `dpl_D3x9yK6MSjGMRSBMa93baErrkZst` with `TONCENTER_API_KEY` set); `/api/health` ok, `network: mainnet`, `factoryConfigured: true`, `telegramAuthConfigured: true`; `/api/tokens` 200 `{"configured":true,"tokens":[]}`; no runtime errors in the hour around the deploy. Redeployed 2026-11-19 13:54 UTC as `dpl_3AdMTQunjU2XfbTvkT6yLBpcviux` with Blob storage connected: `imageUploadConfigured: true`. Redeployed 2026-11-19 21:30 UTC as `dpl_6MEEZ3zPzFZHTiMEsEJqckF5pS7K` from df7a7fa (PR #14 merged) with the AI image generator on: `imageGenerationConfigured: true`, `/api/tokens` 200, no runtime errors in the hour around the deploy |
 | Telegram validation | DONE | @TONLaunchpad_Bot Main App, menu button, return URL `https://t.me/TONLaunchpad_Bot?startapp` |
 | Testnet deployment | PASS | factory `kQBHQEBnG5xWWNNCZr6C81vZv1jJij3KyJkiTJjtMXXwhRnx` deployed 2026-11-14; it embeds STON.fi's broken testnet router, so redeploy if a working one appears. sell and refund checks passed 2026-11-17 |
-| Mainnet deployment | PASS (factory), smoke test open | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17). On 2026-11-19 the founder deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27); the page verified `get_factory_info` and the address equals the one computed from his wallet and the pinned treasury and router (`docs/VERIFICATION.md`). Vercel Production points at it and was redeployed. Open: the founder's smoke test in Telegram |
+| Mainnet deployment | PASS (factory and smoke test) | testnet gate PASS and "MAINNET GO-LIVE APPROVED" (2026-11-17). On 2026-11-19 the founder deployed the factory `EQBJLEGjCAaZ7hLmW1LoJNa59nU6h4F56vhlk4s-4GKh9-55` from his wallet app on `/deploy-factory` (ADR-011, `docs/EXECUTION.md` "Factory deploy from a wallet app"), because the mnemonic-in-a-file step could not be done safely (SECURITY #27); the page verified `get_factory_info` and the address equals the one computed from his wallet and the pinned treasury and router (`docs/VERIFICATION.md`). Vercel Production points at it and was redeployed. Smoke test PASS 2026-11-19 22:24 UTC: token TEST1 `EQCeZtdMKQQ11QO15H6P9bSPzcbk0ZJFBguzpI-pxXHt04sY` launched, bought and sold from the founder's wallet, fees paid as specified (`docs/VERIFICATION.md`) |
 | TON Connect validation | BLOCKED_HUMAN | testnet factory exists; needs a Tonkeeper testnet wallet run (`docs/EXECUTION.md` 4-7). Also check that the wallet list shows Telegram's wallet once and that it connects (the stale hand-written "Wallet" entry, review finding TC-1, was removed) |
 | Design pixel pass | DEFERRED | `DESIGN_PIXEL_PASS = WAITING_FOR_FOUNDER_ASSET` |
 
@@ -54,13 +55,14 @@ remaining proof.
    request per second from shared Vercel IPs (`docs/ENVIRONMENT.md`). Done 2026-11-19: Vercel Blob is connected and
    image upload is live.
 5. Optional, recommended before real volume: independent contract audit (SECURITY #12).
-6. Done 2026-11-19: mainnet factory deployed from the founder's wallet app. Open: the smoke test in Telegram
-   (@TONLaunchpad_Bot: open the app, connect a wallet, launch a token, buy and sell a little).
+6. Done 2026-11-19: mainnet factory deployed from the founder's wallet app, and the smoke test in Telegram
+   (@TONLaunchpad_Bot: image upload, launch of TEST1, a buy and a sell) passed at 22:24 UTC.
 7. Upload design mockups for the pixel pass.
 8. Done 2026-11-19: the founder chose "Yes, put it live" for the AI image generator (ADR-012). PR #14 is merged,
    Production has `IMAGE_GENERATION=on` and
    `IMAGE_GEN_MODELS=spacexai/grok-imagine-image,openai/gpt-image-1-mini`, the two models Vercel AI Gateway serves
-   without paid credits, and production is redeployed. Open: his first generated image and first upload in Telegram.
+   without paid credits, and production is redeployed. His first upload is done (2026-11-19, the TEST1 image). Open, as a separate check:
+   his first AI-generated image in Telegram.
    Optional: buy AI Gateway credits in Vercel to add Meta AI and Gemini Nano Banana (then extend
    `IMAGE_GEN_MODELS`), and set an AI Gateway budget there as the hard spending stop (SECURITY #28).
 
@@ -68,7 +70,7 @@ remaining proof.
 
 | Item | Priority | Notes |
 |---|---|---|
-| Record the mainnet smoke test | P0 | factory address and transaction are recorded (2026-11-19); add the first launch, buy and sell with their fee payments here and in VERIFICATION once the founder has run them |
+| Record the first official token | P1 | the smoke test (TEST1) is recorded (2026-11-19). When the founder launches QRECON, add its address and launch transaction here and in VERIFICATION. A full-size sell (the test sold 0.1 TEST1) and a buy that names a referrer have not been run on mainnet |
 | Pagination past the ~100 most recent factory transactions in `/api/tokens` | P1 | fine at launch volume; needs an indexer or DB later (ADR-003) |
 | `/api/tokens` reads the chain inside one 7 s budget per refresh | P1 | a refresh reads about 46 known or 22 new tokens with `TONCENTER_API_KEY` (about 5 or 2 without), never-read and stalest first, and shows the rest as last read, so successive refreshes cover the list (5 s apart while it is partial). The state is per Vercel instance: a fresh instance's first lists can be partial (`partial: true`, 5 s cache) past about 22 tokens with a key, or 2 without. An indexer removes the limit (ADR-003) |
 | Rate limit per IP on `/api/tokens/*` | P1 | SECURITY #24: a Vercel Firewall rule, about 120 requests a minute per IP (the app polls at most every 3 s per tab). Each instance already stops retrying in a flood of failing lookups, but nothing bounds the total across instances, so a script can still use up the toncenter quota |
@@ -101,7 +103,7 @@ https://ton-launchpad-miniapp.vercel.app. Read through Vercel at 10:08 UTC: `/ap
 `/api/tokens` 200 `{"configured":true,"tokens":[]}` (the API read the factory's transactions on mainnet and found no
 launch yet), the app shell 200, no runtime errors. The client bundle's factory address was not read directly; the
 smoke test shows it. `VITE_FACTORY_DEPLOY_PAGE` (Preview, branch `claude/project-thread-ri5mr2`) is set to `off`, so
-new previews no longer serve the deploy page. Not yet done: the smoke test in Telegram.
+new previews no longer serve the deploy page. Not yet done at that time: the smoke test in Telegram (passed 2026-11-19 22:24 UTC, see "First mainnet launch").
 
 2026-11-19 10:23 UTC, toncenter key: the founder added `TONCENTER_API_KEY` in Vercel (Production only, sensitive; its
 value was never read from here). Production was redeployed from `clawdbot-permanent` 4a1392f as
@@ -220,7 +222,27 @@ at 21:31 UTC: `/api/health`
 `GET /api/image/generate` lists Grok and ChatGPT with `userDailyLimit: 5` and `promptMax: 300`; `/api/tokens` 200
 `{"configured":true,"tokens":[]}`; `/api/image/selftest` 404; no runtime errors in the last hour. Production has no
 `VITE_FACTORY_DEPLOY_PAGE`, so the deploy page is not in its build. The upload limits and file-type check
-(SECURITY #13) and the keyed image folder (SECURITY #30) are now in production too. Not done from here: a
-`POST /api/image/generate` or an upload with a Telegram session, and the Create page in Telegram; the founder's first
-generated image is that check. The size of AI Gateway's free allowance is not known; an AI Gateway budget in Vercel is
+(SECURITY #13) and the keyed image folder (SECURITY #30) are now in production too. Not done from here, and tracked as two separate
+checks: an upload with a Telegram session (`POST /api/metadata/upload`; done by the founder at about 22:10 UTC, see
+"First mainnet launch") and an AI-generated image with a Telegram session (`POST /api/image/generate`; still open). The size of AI Gateway's free allowance is not known; an AI Gateway budget in Vercel is
 the hard spending stop (SECURITY #28).
+
+First mainnet launch (smoke test), 2026-11-19 22:10 to 22:24 UTC, by the founder in Telegram with the owner wallet
+`UQAilXDBqbF_t4Bd1qRJEqgLoJVXom6-LOIDkVYZt8lRkhCH`. Read at 22:25 UTC from the token's transactions on tonapi.io (all
+three succeeded, exit code 0) and from production `/api/tokens`.
+- Upload: his first try with a logo file over 2 MB was refused in the app ("Image max 2MB") and stored nothing. A
+  512 px PNG (0.44 MB) uploaded; the stored address is `uploads/2026-11-19/<24 hex characters>/<uuid>.png`, the keyed
+  folder of SECURITY #30, with no Telegram id in it.
+- Launch, 22:20:21 UTC, `638fe7c27b396ab8cdbf7fd221cc496f3c4a4910e4c076d6cd9db728c58fbaa9`: token TEST1
+  `EQCeZtdMKQQ11QO15H6P9bSPzcbk0ZJFBguzpI-pxXHt04sY` created by the factory; 0.05 TON "Launch fee" to the treasury
+  `UQBNwH67i7p23n2LYgEJtEEWp9p44HlqoDzZHBXm2mcUKyF3`; 0.0937 TON of unused network fee back to the creator. The API
+  lists it with the creator wallet, the uploaded image and the pinned STON.fi router.
+- Buy of 0.1 TON, 22:23:02 UTC, `6d17d1f23b24fd6bd8788de092ee325d389adcde34b595b05b2090e30f1eef1c`: 0.0012 TON
+  "Creator fee" to the creator wallet and 0.0008 TON "Platform fee" to the treasury (2% split 60/40);
+  3,256,030.301016678 TEST1 minted to the buyer; 0.098 TON entered the curve.
+- Sell, 22:24:02 UTC, `0cb1f10b460ab47b66a89ea9db8f2c2ccc87feb5bdbee623e6e681a7cc7da070`: the founder entered 0.1 in
+  the sell box, which counts tokens, so 0.1 TEST1 was burned for 3 nanoTON gross; 1 nanoTON "Platform fee" to the
+  treasury and "Sell proceeds" (2 nanoTON plus the unused network fee, 0.0978 TON in all) to the seller.
+- State afterwards: `realTonRaised` 97,999,997 nanoTON, `totalSupply` 3,256,030.201016678 TEST1, `tradeCount` 2.
+  Tonkeeper lists TEST1 among the wallet's tokens with its "unverified token" label, as it does for any new jetton.
+- Not covered: a full-size sell, a buy that names a referrer, graduation on mainnet, and an AI-generated image.
