@@ -10,11 +10,11 @@ the founder's factory deploy from their own wallet, pointing Vercel at the facto
 
 | Gate | Status | Evidence |
 |---|---|---|
-| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4, on fae7421, on d41d543 and on PR #12's head 345365e; 2026-11-19 on 2ef6051) |
-| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4, fae7421, d41d543 and 345365e: 0 errors, 5 warnings; the same on 2ef6051, 2026-11-19) |
-| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4, fae7421, d41d543 and 345365e; 2026-11-19 on 2ef6051) |
-| Contract tests | PASS | 96/96 on 2ef6051 (2026-11-19: adds the two wallet-app deploy tests); before that 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` runs on fae7421, d41d543 and 345365e, 2026-11-18 |
-| App/API tests | PASS | 192/192 vitest (2026-11-19 on 2ef6051: the wallet-approved factory deploy and its production env rule); 178/178 (2026-11-18, PR #12 on 345365e: a launch whose reads keep failing waits at most a minute; 176/176 on d41d543: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes, the code-review bot's fixes); 172/172 on fae7421; 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
+| Build (app, API, scripts) | PASS | `npm run build` (e113ccf, 2026-11-17; again 2026-11-17 with the API read-path change on 933a165, and 2026-11-18 on 3df8aa4, on fae7421, on d41d543 and on PR #12's head 345365e; 2026-11-19 on 2ef6051 and on cc2436d) |
+| Lint | PASS | `npm run lint` (0 errors, e113ccf; again with the API read-path change, and 2026-11-18 on 3df8aa4, fae7421, d41d543 and 345365e: 0 errors, 5 warnings; the same on 2ef6051 and cc2436d, 2026-11-19) |
+| Contract compile | PASS | `cd contracts && npm run build`, wrappers in sync (e113ccf; again 2026-11-18 in the `/verify` runs on 3df8aa4, fae7421, d41d543 and 345365e; 2026-11-19 on 2ef6051 and on cc2436d) |
+| Contract tests | PASS | 96/96 on 2ef6051 (2026-11-19: adds the two wallet-app deploy tests) and again on cc2436d; before that 94/94 sandbox and script tests against the compiled contracts (93 + the rehearsal-build suite, which runs after `npm run build:rehearsal`), incl. the ADR-010 router wallet guard; e113ccf, 2026-11-17; 93 passed + 1 skipped (no rehearsal build) in the `/verify` run of the API review follow-up on 3df8aa4, 2026-11-18; 94/94 in the `/verify` runs on fae7421, d41d543 and 345365e, 2026-11-18 |
+| App/API tests | PASS | 196/196 vitest (2026-11-19 on cc2436d: the deploy page's checks before every send, its single unresolved send, the exact router type and the STON.fi time limit); 192/192 (2026-11-19 on 2ef6051: the wallet-approved factory deploy and its production env rule); 178/178 (2026-11-18, PR #12 on 345365e: a launch whose reads keep failing waits at most a minute; 176/176 on d41d543: trading only on a live read, retry budget per instance, age limits on last-good data, the final review fixes, the code-review bot's fixes); 172/172 on fae7421; 136/136 on 3df8aa4 (list refresh coalesced and filled from the last read, short cache for a partial list, retryable errors in the client); 119/119 with the API read-path change on 933a165; 68/68 at e113ccf |
 | Claude PR review on GitHub | READY, needs secret | `claude-code-review.yml` + `claude.yml`; founder adds `CLAUDE_CODE_OAUTH_TOKEN` (`docs/EXECUTION.md`) |
 | GitHub Actions | PASS | "CI and deploy" green on 6638371 (2026-11-05); billing lock is gone |
 | Security review | PASS with notes | `docs/SECURITY.md`: no open CRITICAL/HIGH in our code (2026-11-12: pool pre-seeding attack #20 fixed by ADR-010, needs testnet proof); dependency notes #18–19; no independent audit yet (#12) |
@@ -77,6 +77,15 @@ the bounceable factory address, `100000000` nanoTON, the state init whose hash i
 page then showed "deployed and verified" only after `get_factory_info` matched. A wallet below 0.2 TON, a STON.fi
 answer with pool creation off and a refusal in the wallet each stopped before anything was sent; with the STON.fi
 API unreachable the page went on from the on-chain pTON check, as ADR-011 says. Not yet run against the real network.
+
+2026-11-19, the review follow-up of that page on cc2436d: contracts build, typecheck and 96/96 tests, wrappers in
+sync, lint 0 errors (the same 5 warnings), 196/196 app tests, build (1,068 kB JS, gzip 316 kB, and the deploy page's
+268 kB chunk), bundle secret scan clean, no tracked env files. The headless-browser run with the simulated wallet
+again: each tap on "Deploy the factory" asked toncenter and STON.fi once more before the wallet was asked, also on the
+retry after a refusal; a STON.fi answer that turned to "pool creation off" between the first look and the tap stopped
+with "Nothing was sent" and the wallet was never asked; after a send the wallet neither confirmed nor refused, "Check
+again" and a reload both kept the page on "Do not send again" with no deploy button, and the button came back only
+once the stored request was older than its `validUntil` plus two minutes. Still not run against the real network.
 
 2026-11-18, PR #12 on 345365e (on top of d41d543): contracts build, typecheck and 94/94 tests, wrappers in sync, lint 0
 errors (the same 5 warnings), 178/178 app tests, build (1,066 kB JS, gzip 315 kB), bundle secret scan clean, no
