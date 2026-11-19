@@ -21,6 +21,7 @@ import {
   randomSalt,
 } from '../lib/contracts';
 import { CONFIG, isConfigured, friendlyAddress } from '../lib/config';
+import { fetchImageGenInfo, generateTokenImage, type ImageGenInfo } from '../lib/imageApi';
 import { waitForToken } from '../lib/launchpadApi';
 import { buildOnchainContent, METADATA_LIMITS, validateMetadata } from '../lib/metadata';
 
@@ -40,8 +41,15 @@ export function Create() {
   const [imageUri, setImageUri] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadAvailable, setUploadAvailable] = useState(false);
+  const [imageGen, setImageGen] = useState<ImageGenInfo | null>(null);
+  const [genPrompt, setGenPrompt] = useState('');
+  const [genModel, setGenModel] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [genLeft, setGenLeft] = useState<number | null>(null);
+  // The image URL whose preview did not load; another URL gets a fresh chance.
+  const [failedPreview, setFailedPreview] = useState('');
 
-  // Only offer file upload when the server has image storage configured.
+  // Only offer file upload and the AI generator when the server has them configured.
   useEffect(() => {
     let cancelled = false;
     fetch('/api/health')
@@ -50,6 +58,11 @@ export function Create() {
         if (!cancelled) setUploadAvailable(Boolean(h?.imageUploadConfigured));
       })
       .catch(() => {});
+    void fetchImageGenInfo().then((info) => {
+      if (cancelled || !info) return;
+      setImageGen(info);
+      setGenModel(info.models[0].id);
+    });
     return () => {
       cancelled = true;
     };
@@ -88,6 +101,10 @@ export function Create() {
       if (res.ok) {
         const { uri } = (await res.json()) as { uri: string };
         setImageUri(uri);
+      } else if (res.status === 429) {
+        showToast('Upload limit for today reached, paste an image URL instead');
+      } else if (res.status === 415) {
+        showToast('Use a PNG, JPEG, WebP or GIF image');
       } else {
         showToast(res.status === 503 ? 'Upload unavailable, paste an image URL instead' : 'Image upload failed');
       }
@@ -95,6 +112,27 @@ export function Create() {
       showToast('Image upload failed');
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleGenerate() {
+    if (!authToken) {
+      showToast('Open the app in Telegram to generate an image');
+      return;
+    }
+    const prompt = genPrompt.trim();
+    if (prompt.length < 3) {
+      showToast('Describe the image first, e.g. "a golden rocket dog"');
+      return;
+    }
+    setGenerating(true);
+    const result = await generateTokenImage(authToken, prompt, genModel || undefined);
+    setGenerating(false);
+    if (result.status === 'ok') {
+      setImageUri(result.uri);
+      setGenLeft(result.remaining);
+    } else {
+      showToast(result.message);
     }
   }
 
@@ -193,8 +231,59 @@ export function Create() {
         {uploadAvailable && (
           <label>
             <span className="muted" style={{ fontSize: 13 }}>…or upload an image {uploading ? '(uploading…)' : ''}</span>
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImage} style={{ marginTop: 4 }} disabled={uploading} />
+            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImage} style={{ marginTop: 4 }} disabled={uploading || generating} />
           </label>
+        )}
+        {imageGen && (
+          <div className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span className="muted" style={{ fontSize: 13 }}>
+              …or generate one with AI, free ({genLeft ?? imageGen.userDailyLimit} left today)
+            </span>
+            <input
+              className="input"
+              value={genPrompt}
+              onChange={(e) => setGenPrompt(e.target.value)}
+              placeholder="e.g. a golden rocket dog, cartoon style"
+              maxLength={imageGen.promptMax}
+              aria-label="Describe the image"
+              onKeyDown={(e) => {
+                // Enter here makes an image; it must not submit the launch form.
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (!generating) void handleGenerate();
+                }
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              {imageGen.models.length > 1 && (
+                <select className="input" value={genModel} onChange={(e) => setGenModel(e.target.value)} aria-label="Image model" style={{ flex: 1 }} disabled={generating}>
+                  {imageGen.models.map((m) => (
+                    <option key={m.id} value={m.id}>{m.label}</option>
+                  ))}
+                </select>
+              )}
+              <button
+                type="button"
+                className="btn-ghost"
+                style={{ flex: 1, justifyContent: 'center', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginTop: 4 }}
+                onClick={handleGenerate}
+                disabled={generating || uploading || genLeft === 0}
+              >
+                {generating ? 'Generating… (up to a minute)' : 'Generate image'}
+              </button>
+            </div>
+          </div>
+        )}
+        {imageUri.trim().startsWith('https://') && imageUri.trim() !== failedPreview && (
+          <img
+            src={imageUri.trim()}
+            alt="Token image preview"
+            width={96}
+            height={96}
+            style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', alignSelf: 'center' }}
+            referrerPolicy="no-referrer"
+            onError={() => setFailedPreview(imageUri.trim())}
+          />
         )}
         <label>
           <span className="muted" style={{ fontSize: 13 }}>Initial buy (TON, 0–{formatTon(MAX_INITIAL_BUY)})</span>
@@ -224,7 +313,7 @@ export function Create() {
           </div>
         </div>
 
-        <button type="submit" className="btn-primary" style={{ marginTop: 8 }} disabled={busy || uploading || !isConfigured()}>
+        <button type="submit" className="btn-primary" style={{ marginTop: 8 }} disabled={busy || uploading || generating || !isConfigured()}>
           {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? 'Launch token' : 'Connect wallet to launch'}
         </button>
       </form>

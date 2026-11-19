@@ -118,3 +118,38 @@ machine that agents also work on, or in a chat, is a worse risk than anything th
   another address, which the app never lists.
 - Consequence: no `deployed.mainnet.json` is written; the factory address and transaction go into `docs/STATUS.md`
   and `docs/VERIFICATION.md` by hand.
+
+## ADR-012 Token images: Blob storage, and free AI images through Vercel AI Gateway
+
+Decided 2026-11-19, on the founder's ask for "a real upload and image generator" that makes free images with the
+models people know (Gemini Nano Banana, ChatGPT, Grok, Meta AI).
+
+- Storage is one public Vercel Blob store (`launchpad-token-images`, connected to the project). Every stored file is
+  named `<kind>/<UTC day>/<Telegram id>/<uuid>.<ext>` with kind `uploads` or `generated`.
+- The generator is `POST /api/image/generate`. It calls Vercel AI Gateway, one account that serves all four model
+  families, so there is one integration and one bill instead of four provider keys. On Vercel the function
+  authenticates with the deployment's own OIDC token (the `x-vercel-oidc-token` request header), so no key is stored
+  anywhere; `AI_GATEWAY_API_KEY` is read first if someone sets one. Models: `meta/muse-image-1.0`,
+  `spacexai/grok-imagine-image`, `openai/gpt-image-1-mini` (medium quality) through the gateway's Images endpoint, and
+  `google/gemini-2.5-flash-image` through Chat Completions with image output. `IMAGE_GEN_MODELS` narrows the list.
+- "Free" means free for the creator. The platform pays the gateway per image (about 1 to 4 US cents, 2026-11-19
+  catalog prices), so the feature is off unless `IMAGE_GENERATION=on` and it is bounded: `IMAGE_GEN_USER_DAILY_LIMIT`
+  (default 5) and `IMAGE_GEN_GLOBAL_DAILY_LIMIT` (default 50, at most 1000) per UTC day, one attempt per user every
+  8 s. At the defaults the worst case is about 2 USD a day. The hard stop is a budget on the Vercel team's AI Gateway,
+  which only the founder can set.
+- There is no database (ADR-003), so the limits are counted from the stored files: one Blob `list` of the day's
+  folder gives the user's and the global count. Two requests at the same instant can both pass, so a limit can be
+  exceeded by the number of parallel requests; the cooldown keeps that small and the gateway budget bounds the money.
+- What is stored is never the provider's bytes: `sharp` turns them into a 512 px square JPEG (about 50 KB), which
+  also proves they are an image. A token logo is shown at 40 to 96 px, and megabyte images would fill the store and
+  slow every list.
+- The same day folders give uploads a limit (10 per user, 300 for everyone per day), and an uploaded file must start
+  with the bytes of the image type it declares. This closes SECURITY #13.
+- `GET /api/image/selftest` exists because no tool can call the POST endpoint without a Telegram session. It runs one
+  real image through the gateway, sharp and Blob, only on a Vercel preview and only with the key in `IMAGE_SELFTEST`
+  (32+ characters); otherwise it answers 404. The key is set only while a check runs.
+- Rejected: a provider key per model (four secrets, four bills); a free third-party image API with no account (no
+  control over uptime, content or what happens to prompts); resizing in the browser (the raw image would still have to
+  be stored or sent back through the 4.5 MB response limit).
+- Consequence: prompts leave the platform (to Vercel and the chosen provider); `public/privacy.html` says so. The
+  metadata still only stores an https URL, so the contracts and the token format are unchanged.

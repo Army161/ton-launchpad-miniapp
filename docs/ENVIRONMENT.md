@@ -27,7 +27,13 @@ Never put a key, token, secret or mnemonic in a `VITE_*` variable. The validator
 | `FACTORY_ADDRESS` | yes | must equal `VITE_FACTORY_ADDRESS`; the API only lists tokens from this factory |
 | `TONCENTER_API_KEY` | yes in practice on mainnet production (`validate-env production` warns when it is missing but does not fail) | toncenter key for every chain read of `/api/tokens*`. Keyless toncenter allows about 1 request per second per IP, and Vercel's egress IPs are shared with other projects; a free key allows about 10. Without a key the API spaces its requests 1.1 s apart (120 ms with one) inside a 7 s budget per request: a token page with a balance needs 3-4 requests, and a token list refresh reads only about 5 known or 2 new tokens (about 46 or 22 with a key), so a fresh instance needs several refreshes to list every token. Under load, token pages and trade confirmations then answer 503 ("try again shortly") |
 | `TON_NETWORK` | optional | overrides `VITE_NETWORK` for the API |
-| `BLOB_READ_WRITE_TOKEN` | optional | set automatically when Vercel Blob is enabled; enables image upload |
+| `BLOB_READ_WRITE_TOKEN` | optional | set automatically when Vercel Blob is enabled; enables image upload. Set since 2026-11-19 (store `launchpad-token-images`, all environments) |
+| `IMAGE_GENERATION` | optional | `on` switches the AI image generator on (ADR-012); it also needs `BLOB_READ_WRITE_TOKEN`. Anything else: off. Costs the platform money per image |
+| `IMAGE_GEN_USER_DAILY_LIMIT` | optional | free images per Telegram user per UTC day, default 5 (0 to 100) |
+| `IMAGE_GEN_GLOBAL_DAILY_LIMIT` | optional | free images for everyone per UTC day, default 50 (0 to 1000) |
+| `IMAGE_GEN_MODELS` | optional | comma-separated AI Gateway model ids to offer, out of `meta/muse-image-1.0`, `spacexai/grok-imagine-image`, `openai/gpt-image-1-mini`, `google/gemini-2.5-flash-image`; default all four. A list with no known id switches the generator off |
+| `AI_GATEWAY_API_KEY` | optional secret | only where the deployment's OIDC token is not available; on Vercel the function uses that token and no key is needed |
+| `IMAGE_SELFTEST` | preview only | throwaway key (32+ characters) that opens `GET /api/image/selftest` on a preview; `off` or unset otherwise. Never set in Production |
 | `TONAPI_KEY` | not used | reserved; no code reads it |
 
 ## Local deployment only (never in Vercel, never committed)

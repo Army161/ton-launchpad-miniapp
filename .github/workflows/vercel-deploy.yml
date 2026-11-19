@@ -45,7 +45,7 @@ jobs:
 
       - name: No secrets in the client bundle
         run: |
-          if grep -rEl "TELEGRAM_BOT_TOKEN|JWT_SECRET|DEPLOY_MNEMONIC|TONCENTER_API_KEY|BLOB_READ_WRITE_TOKEN" dist; then
+          if grep -rEl "TELEGRAM_BOT_TOKEN|JWT_SECRET|DEPLOY_MNEMONIC|TONCENTER_API_KEY|BLOB_READ_WRITE_TOKEN|AI_GATEWAY_API_KEY|IMAGE_SELFTEST" dist; then
             echo "::error::Server-only variable names found in the client bundle"; exit 1
           fi
 

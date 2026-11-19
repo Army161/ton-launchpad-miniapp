@@ -2,6 +2,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "functions": {
+    "api/image/*.ts": { "maxDuration": 60 }
+  },
   "headers": [
     {
       "source": "/tonconnect-manifest.json",
