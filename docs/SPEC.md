@@ -41,7 +41,8 @@ fractions of a nanoton and is recorded in ADR-004.
 ## Token creation
 
 A creator can connect a wallet, enter metadata (name ≤ 32, ticker 2–10 A–Z/0–9, description ≤ 200, https image,
-optional https://t.me link), send one real transaction to the factory, see it confirmed, and land on the token page.
+optional project links: website, X, Telegram, YouTube, Instagram, Facebook, each https and on that platform's own
+site, ADR-013), send one real transaction to the factory, see it confirmed, and land on the token page.
 Metadata is stored on-chain (TEP-64). No demo path may masquerade as a real transaction.
 
 ## Trading

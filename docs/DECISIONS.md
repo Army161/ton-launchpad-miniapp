@@ -163,3 +163,33 @@ models people know (Gemini Nano Banana, ChatGPT, Grok, Meta AI).
   be stored or sent back through the 4.5 MB response limit).
 - Consequence: prompts leave the platform (to Vercel and the chosen provider); `public/privacy.html` says so. The
   metadata still only stores an https URL, so the contracts and the token format are unchanged.
+
+## ADR-013 Project links in the token metadata
+
+Decided 2026-11-20, on the founder's ask for website, X, Facebook, Instagram and YouTube links next to the Telegram
+link, "only if it's the correct way" and by the standard.
+
+- TEP-64 (the TON token metadata standard) defines `name`, `description`, `image`, `image_data`, `symbol`,
+  `decimals`, `amount_style`, `render_type` and `uri`. It has no key for a website or social account (checked
+  2026-11-20 against docs.ton.org "Token metadata" and Tonkeeper's `tongo/tep64`). The on-chain format is a dictionary
+  keyed by the SHA-256 of each key name, so readers look up the keys they know and never see others. The app already
+  stored `telegram` this way.
+- So each link is one more optional key in the same dictionary: `website`, `twitter` (X), `telegram`, `youtube`,
+  `instagram`, `facebook`. The names follow the common launchpad convention (`twitter`, `telegram`, `website`).
+  They are permanent: renaming one would hide the links of every token already launched with it.
+- Where they show: on the token page of this app, with a note that the creator added them and the app did not check
+  them. Wallets (Tonkeeper) and explorers (Tonviewer) skip unknown keys, so they do not show them; Tonkeeper shows
+  socials only for jettons in its curated `ton-assets` list, which is a separate request a project makes to Tonkeeper.
+- Each link must be https, at most 256 characters, without a user:password part, and, except the website, on that
+  platform's own domain (or its `www.`/`m.` form; Telegram stays exactly `t.me`). The API applies the same check when
+  it reads a token, because a launch made outside the app can store anything (SECURITY #31).
+- Contracts unchanged: the factory and the token store the content cell as given. The sandbox test "launches with
+  metadata larger than the Create page allows" launches a token whose content is a byte-level upper bound for anything
+  Create accepts (emoji name and description, every link at 256 characters; about 2.3 KB in 42 cells,
+  against about 0.2 KB before), checks the content, the initial buy, a later buy and solvency, and that the creator's
+  cost stays within the existing gas. Cost: bigger forward fees at launch (inside `CREATE_GAS`) and storage rent on the
+  token contract of up to about 0.02 TON a year at the maximum size (about 0.005 before), from the contract's own
+  balance.
+- Rejected: an off-chain JSON file (`uri`) with `social`/`websites` arrays, which some indexers read. It needs a host
+  that stays up forever, and the token would then depend on that host; on-chain keys keep the token self-contained.
+

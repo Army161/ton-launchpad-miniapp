@@ -3,13 +3,15 @@ import type { CurveReserves } from '../lib/contracts';
 import { spotPriceTon } from '../lib/contracts';
 import { CONFIG } from '../lib/config';
 import { fetchLaunchpadToken, type TokenView } from '../lib/launchpadApi';
+import { isValidLink, LINK_KEYS, type LinkKey } from '../lib/metadata';
 
 export type Token = {
   id: string;
   name: string;
   ticker: string;
   description?: string;
-  telegram?: string;
+  /** Project links (ADR-013), only those that pass isValidLink, in LINK_KEYS order. */
+  links?: { key: LinkKey; url: string }[];
   creator?: string;
   priceUsd: number;
   priceTon: number;
@@ -47,7 +49,10 @@ export function launchpadToToken(v: TokenView): Token {
     name: v.name || 'Unnamed',
     ticker: v.symbol || '???',
     description: v.description,
-    telegram: v.telegram,
+    links: LINK_KEYS.flatMap((key) => {
+      const url = v[key];
+      return typeof url === 'string' && url && isValidLink(key, url) ? [{ key, url }] : [];
+    }),
     creator: v.creator,
     priceUsd: 0,
     priceTon,

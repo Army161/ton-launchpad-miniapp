@@ -17,6 +17,7 @@ import {
 } from '../components/Icons';
 import { useToken } from '../data/tokens';
 import { CONFIG, explorerUrl } from '../lib/config';
+import { LINK_LABELS } from '../lib/metadata';
 import styles from './TokenDetail.module.css';
 
 export function TokenDetail() {
@@ -147,6 +148,19 @@ export function TokenDetail() {
       </div>
 
       {token.description && <p className="muted" style={{ fontSize: 13 }}>{token.description}</p>}
+
+      {token.links && token.links.length > 0 && (
+        <section aria-label="Project links" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {token.links.map(({ key, url }) => (
+              <a key={key} href={url} target="_blank" rel="noopener noreferrer nofollow ugc" className="btn-ghost" style={{ fontSize: 12 }}>
+                {LINK_LABELS[key].label}
+              </a>
+            ))}
+          </div>
+          <span className="muted" style={{ fontSize: 11 }}>Links are added by the creator and are not checked by TON Launchpad.</span>
+        </section>
+      )}
 
       <div className={styles.actions}>
         {onCurve ? (
