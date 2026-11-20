@@ -57,6 +57,12 @@ Needs: a testnet deployer wallet (Tonkeeper → Settings → Dev mode → Testne
    (`TON_V4_ENDPOINT` switches to a tonhub v4 reader; the public tonhub endpoint now answers 403).
    PASS = pool active and the zero-address LP wallet holds at least 99% of LP supply (STON.fi locks a small minimum).
    Needs internet access to mainnet APIs; `TONCENTER_API_KEY` is optional.
+8c. Refusal leg on a mainnet fork (no TON spent, nothing signed): `cd contracts && npm run rehearse:fork-refund`
+   (pin the router with `-- --router <address>` as in 8b). Same graduation, but the local clock jumps past the
+   provide_lp deadline between the Migrate transaction and the router, so the real STON.fi v2 code refuses both legs.
+   PASS = no pool, the liquidity manager holds every curve token, and it got the curve's TON back less at most
+   0.3 TON of STON.fi gas (a NOTE line says if any came back as pTON instead of plain TON). This proves the ADR-009
+   fallback that `graduate.ts --fallback` relies on.
 9. Record factory, token and transaction hashes in `docs/STATUS.md` and mark rows in `docs/VERIFICATION.md`.
 
 Any failure → stop, fix, re-run the whole gate.

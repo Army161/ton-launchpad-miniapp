@@ -12,6 +12,7 @@
     "build:rehearsal": "node scripts/build-rehearsal.mjs",
     "rehearse:graduation": "npm run build:rehearsal && ts-node scripts/rehearse-graduation.ts",
     "rehearse:fork": "npm run build:rehearsal && ts-node scripts/fork-graduation.ts",
+    "rehearse:fork-refund": "npm run build:rehearsal && ts-node scripts/fork-graduation.ts --refuse",
     "check:trades": "ts-node scripts/trade-check.ts"
   },
   "devDependencies": {

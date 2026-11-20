@@ -46,7 +46,7 @@ until its pull request is merged on the founder's ask.
 ## Human blockers (in order)
 
 1. Done 2026-11-17: treasury address provided; "MAINNET GO-LIVE APPROVED" given 2026-11-17.
-2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Sell and refund checks passed 2026-11-17 (`npm run check:trades`, 10/10). Testnet gate PASS.
+2. Testnet gate (2026-11-14): factory deployed and graduation steps 1-4 passed on testnet; STON.fi's testnet router is broken, so the pool leg ran on a mainnet fork (`npm run rehearse:fork`): PASS, pool created and LP burned on the real mainnet router code. Sell and refund checks passed 2026-11-17 (`npm run check:trades`, 10/10). Testnet gate PASS. Graduation refused by STON.fi (liquidity-manager fallback): fork rehearsal `npm run rehearse:fork-refund` added 2026-11-19, not run yet.
 3. Add the `CLAUDE_CODE_OAUTH_TOKEN` repository secret so Claude reviews PRs on GitHub (`docs/EXECUTION.md`).
 4. Done 2026-11-19: the founder added `TONCENTER_API_KEY` to Vercel (Production, stored as a sensitive value) and
    production was redeployed (`dpl_D3x9yK6MSjGMRSBMa93baErrkZst`). Without it the API read toncenter at about one

@@ -1,5 +1,5 @@
-import { Address, beginCell, Cell } from '@ton/core';
-import { libraryRefs, toncenterRemote } from '../scripts/fork-graduation';
+import { Address, beginCell, Cell, toNano } from '@ton/core';
+import { libraryRefs, refusalVerdict, REFUND_GAS_ALLOWANCE, toncenterRemote } from '../scripts/fork-graduation';
 
 function libCell(hash: Buffer): Cell {
     const bits = beginCell().storeUint(2, 8).storeBuffer(hash).endCell().bits;
@@ -58,5 +58,42 @@ describe('fork rehearsal toncenter reader', () => {
     it('throws on a toncenter error', async () => {
         const remote = toncenterRemote('https://x/api/v2', undefined, async () => reply(500, { ok: false, error: 'boom' }));
         await expect(remote.getLastBlockSeqno()).rejects.toThrow('boom');
+    });
+});
+
+describe('fork rehearsal refusal verdict', () => {
+    const base = {
+        tonLiquidity: toNano('0.85'),
+        tokenLiquidity: 1_000_000n,
+        poolActive: false,
+        managerJettons: 1_000_000n,
+        managerTonGain: toNano('0.8'),
+        managerPtonHeld: 0n,
+    };
+
+    it('passes when there is no pool and the liquidity manager holds the tokens and the TON', () => {
+        const v = refusalVerdict(base);
+        expect(v.ok).toBe(true);
+        expect(v.lines.every((l) => l.endsWith('PASS'))).toBe(true);
+    });
+
+    it('fails when a pool was created anyway', () => {
+        expect(refusalVerdict({ ...base, poolActive: true }).ok).toBe(false);
+    });
+
+    it('fails when any curve token is missing from the liquidity manager', () => {
+        expect(refusalVerdict({ ...base, managerJettons: 999_999n }).ok).toBe(false);
+        expect(refusalVerdict({ ...base, managerJettons: 0n }).ok).toBe(false);
+    });
+
+    it('allows STON.fi gas up to the allowance and no more', () => {
+        expect(refusalVerdict({ ...base, managerTonGain: base.tonLiquidity - REFUND_GAS_ALLOWANCE }).ok).toBe(true);
+        expect(refusalVerdict({ ...base, managerTonGain: base.tonLiquidity - REFUND_GAS_ALLOWANCE - 1n }).ok).toBe(false);
+    });
+
+    it('counts TON that came back as pTON and says so', () => {
+        const v = refusalVerdict({ ...base, managerTonGain: 0n, managerPtonHeld: toNano('0.8') });
+        expect(v.ok).toBe(true);
+        expect(v.lines.some((l) => l.startsWith('NOTE') && l.includes('pTON'))).toBe(true);
     });
 });
