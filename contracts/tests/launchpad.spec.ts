@@ -229,8 +229,9 @@ describe('Launchpad', () => {
             await expectSolvent(jetton);
         });
 
-        it('launches with the largest metadata the Create page allows (every project link at full length)', async () => {
-            // Worst case per field: 4-byte emoji for the text, every link at the 256-character limit (ADR-013).
+        it('launches with metadata larger than the Create page allows (every project link at full length)', async () => {
+            // Upper bound in bytes: 32 and 200 four-byte emoji (128 B and 800 B) exceed the most Create accepts
+            // (32 and 200 UTF-16 units, at most 96 B and 600 B); every link at the 256-character limit (ADR-013).
             const link = (base: string) => base + 'a'.repeat(256 - base.length);
             const big = buildOnchainContent({
                 name: '🚀'.repeat(32),

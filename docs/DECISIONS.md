@@ -183,8 +183,9 @@ link, "only if it's the correct way" and by the standard.
 - Each link must be https, at most 256 characters, without a user:password part, and, except the website, on that
   platform's own domain (or its `www.`/`m.` form; Telegram stays exactly `t.me`). The API applies the same check when
   it reads a token, because a launch made outside the app can store anything (SECURITY #31).
-- Contracts unchanged: the factory and the token store the content cell as given. The sandbox test "launches with the
-  largest metadata the Create page allows" launches a token with every field at its limit (about 2.3 KB in 42 cells,
+- Contracts unchanged: the factory and the token store the content cell as given. The sandbox test "launches with
+  metadata larger than the Create page allows" launches a token whose content is a byte-level upper bound for anything
+  Create accepts (emoji name and description, every link at 256 characters; about 2.3 KB in 42 cells,
   against about 0.2 KB before), checks the content, the initial buy, a later buy and solvency, and that the creator's
   cost stays within the existing gas. Cost: bigger forward fees at launch (inside `CREATE_GAS`) and storage rent on the
   token contract of up to about 0.02 TON a year at the maximum size (about 0.005 before), from the contract's own
