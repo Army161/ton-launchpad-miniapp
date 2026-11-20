@@ -85,11 +85,11 @@ describe('Launchpad', () => {
         expect(deploy.transactions).toHaveTransaction({ to: factory.address, deploy: true, success: true });
     });
 
-    async function launch(salt = 1n, initialBuyTon = 0n, by = creator, value?: bigint) {
+    async function launch(salt = 1n, initialBuyTon = 0n, by = creator, value?: bigint, content = CONTENT) {
         const res = await factory.send(
             by.getSender(),
             { value: value ?? LAUNCH_FEE + initialBuyTon + CREATE_GAS },
-            { $$type: 'CreateToken', queryId: 7n, salt, content: CONTENT, initialBuyTon },
+            { $$type: 'CreateToken', queryId: 7n, salt, content, initialBuyTon },
         );
         const jetton = blockchain.openContract(await LaunchpadJetton.fromInit(factory.address, by.address, salt));
         return { res, jetton };
@@ -226,6 +226,41 @@ describe('Launchpad', () => {
             const q = expectedBuy({ virtualTon: VIRTUAL_TON, virtualTokens: VIRTUAL_TOKENS }, initial);
             expect(await balanceOf(jetton, creator.address)).toBe(q.tokensOut);
             expect((await curve(jetton)).realTonRaised).toBe(q.tonAfterFee);
+            await expectSolvent(jetton);
+        });
+
+        it('launches with the largest metadata the Create page allows (every project link at full length)', async () => {
+            // Worst case per field: 4-byte emoji for the text, every link at the 256-character limit (ADR-013).
+            const link = (base: string) => base + 'a'.repeat(256 - base.length);
+            const big = buildOnchainContent({
+                name: '🚀'.repeat(32),
+                symbol: 'ABCDEFGHIJ',
+                description: '🚀'.repeat(200),
+                image: link('https://img.example/'),
+                decimals: '9',
+                website: link('https://qrecon.org/'),
+                twitter: link('https://x.com/'),
+                telegram: link('https://t.me/'),
+                youtube: link('https://youtube.com/'),
+                instagram: link('https://instagram.com/'),
+                facebook: link('https://facebook.com/'),
+            });
+            const initial = toNano('1');
+            const before = await tonBalance(creator.address);
+            const { res, jetton } = await launch(1n, initial, creator, undefined, big);
+            expect(res.transactions).toHaveTransaction({ to: jetton.address, deploy: true, success: true });
+            expect(res.transactions).not.toHaveTransaction({ success: false });
+            expect((await jetton.getGetJettonData()).content.equals(big)).toBe(true);
+            const q = expectedBuy({ virtualTon: VIRTUAL_TON, virtualTokens: VIRTUAL_TOKENS }, initial);
+            expect(await balanceOf(jetton, creator.address)).toBe(q.tokensOut);
+            await expectSolvent(jetton);
+            // The bigger content costs only forward fees, paid from the attached gas: the creator still spends
+            // less than the launch fee + initial buy + minter reserve + 0.05 TON.
+            const spent = before - (await tonBalance(creator.address));
+            expect(spent).toBeLessThan(LAUNCH_FEE + initial + MINTER_MIN_STORAGE + toNano('0.05'));
+            // Trading still works on the token.
+            const b = await buy(jetton, alice, toNano('2'));
+            expect(b.transactions).not.toHaveTransaction({ success: false });
             await expectSolvent(jetton);
         });
 

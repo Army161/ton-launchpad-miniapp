@@ -88,7 +88,8 @@ not derive means "not our token". Running out of retries or budget throws `Chain
 endpoints answer with 503. Getter exit codes, malformed responses and other 4xx are never retried. A token read is 1
 request (`get_curve_state`), plus `get_jetton_data` the first time an instance reads the token: the jetton content
 is written once by the factory's setup and never changes, so it is kept in memory. The text is held to the Create
-page's limits first (name 32, symbol 10, description 200 characters; an image or Telegram link over 256 is dropped),
+page's limits first (name 32, symbol 10, description 200 characters; an image over 256 is dropped, and a project link
+is listed only if it passes the Create page's own check, ADR-013 and SECURITY #31),
 since a launch made outside the app can store far more and every list would carry it. A holder balance is 2 more
 requests (account state, `get_wallet_data`).
 

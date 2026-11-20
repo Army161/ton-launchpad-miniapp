@@ -23,7 +23,7 @@ import {
 import { CONFIG, isConfigured, friendlyAddress } from '../lib/config';
 import { fetchImageGenInfo, generateTokenImage, type ImageGenInfo } from '../lib/imageApi';
 import { waitForToken } from '../lib/launchpadApi';
-import { buildOnchainContent, METADATA_LIMITS, validateMetadata } from '../lib/metadata';
+import { buildOnchainContent, LINK_KEYS, LINK_LABELS, METADATA_LIMITS, validateMetadata, type LinkKey } from '../lib/metadata';
 
 type Phase = 'idle' | 'signing' | 'confirming';
 
@@ -36,7 +36,9 @@ export function Create() {
   const [name, setName] = useState('');
   const [ticker, setTicker] = useState('');
   const [description, setDescription] = useState('');
-  const [telegramLink, setTelegramLink] = useState('');
+  const [links, setLinks] = useState<Record<LinkKey, string>>(
+    () => Object.fromEntries(LINK_KEYS.map((k) => [k, ''])) as Record<LinkKey, string>,
+  );
   const [initialBuy, setInitialBuy] = useState('0');
   const [imageUri, setImageUri] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -145,7 +147,7 @@ export function Create() {
       symbol: ticker,
       description,
       image: imageUri.trim(),
-      telegram: telegramLink.trim() || undefined,
+      ...Object.fromEntries(LINK_KEYS.map((k) => [k, links[k].trim() || undefined])),
     };
     const problems = validateMetadata(meta);
     if (problems.length > 0) {
@@ -223,10 +225,6 @@ export function Create() {
           <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's the meme?" maxLength={METADATA_LIMITS.description} />
         </label>
         <label>
-          <span className="muted" style={{ fontSize: 13 }}>Telegram link (optional)</span>
-          <input className="input" value={telegramLink} onChange={(e) => setTelegramLink(e.target.value)} placeholder="https://t.me/yourchannel" />
-        </label>
-        <label>
           <span className="muted" style={{ fontSize: 13 }}>Token image URL (https)</span>
           <input className="input" value={imageUri} onChange={(e) => setImageUri(e.target.value)} placeholder="https://…/logo.png" maxLength={METADATA_LIMITS.url} />
         </label>
@@ -287,6 +285,28 @@ export function Create() {
             onError={() => setFailedPreview(imageUri.trim())}
           />
         )}
+        <fieldset style={{ border: 0, padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <legend className="muted" style={{ fontSize: 13, padding: 0, marginBottom: 4 }}>
+            Project links (optional). Like everything above, they cannot be changed after launch.
+          </legend>
+          {LINK_KEYS.map((key) => (
+            <label key={key}>
+              <span className="muted" style={{ fontSize: 13 }}>{LINK_LABELS[key].label}</span>
+              <input
+                className="input"
+                type="url"
+                inputMode="url"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                value={links[key]}
+                onChange={(e) => setLinks((prev) => ({ ...prev, [key]: e.target.value }))}
+                placeholder={LINK_LABELS[key].placeholder}
+                maxLength={METADATA_LIMITS.url}
+              />
+            </label>
+          ))}
+        </fieldset>
         <label>
           <span className="muted" style={{ fontSize: 13 }}>Initial buy (TON, 0–{formatTon(MAX_INITIAL_BUY)})</span>
           <input className="input" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder="0" />
