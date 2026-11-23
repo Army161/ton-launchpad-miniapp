@@ -182,7 +182,6 @@
 }
 
 .genBtn {
-  white-space: nowrap;
   flex: 1;
   margin-top: 6px;
   padding: 10px 12px;
