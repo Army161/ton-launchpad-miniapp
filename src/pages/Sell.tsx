@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Address } from '@ton/core';
 import { IconBack, IconCheck, IconInfo, IconShield } from '../components/Icons';
+import { Cloth, Drips } from '../components/Brand';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { TokenUnavailable } from '../components/TokenUnavailable';
 import { useToast } from '../context/ToastContext';
@@ -110,16 +111,24 @@ export function Sell() {
   const busy = phase !== 'idle';
   return (
     <div className={`page page--no-nav ${styles.page}`}>
+      <Cloth corner="right" />
       <header className={styles.header}>
         <div className={styles.headerLeft}>
           <Link to={`/token/${token.id}`} className={styles.back} aria-label="Back"><IconBack size={22} /></Link>
-          <h1>Sell</h1>
+          <h1>
+            <span className={styles.titleWhite}>Sell</span>{' '}
+            <span className={styles.titleBlue}>
+              ${token.ticker}
+              <Drips className={styles.titleDrips} />
+            </span>
+          </h1>
         </div>
       </header>
 
       <div className={`card ${styles.card}`}>
         <label className={styles.label} htmlFor="sell-amount">
-          Amount ({token.ticker}){connected && balance !== null ? ` · you hold ${formatTokens(held)}` : ''}
+          Amount ({token.ticker})
+          {connected && balance !== null ? <> · you hold <span className={styles.labelNum}>{formatTokens(held)}</span></> : null}
         </label>
         <div className={styles.amountRow}>
           <input id="sell-amount" className={styles.amountInput} value={amount} placeholder="0" onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))} inputMode="decimal" />

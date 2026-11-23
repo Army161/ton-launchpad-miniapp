@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BrandHero } from '../components/Brand';
 import { ConnectButton } from '../components/ConnectButton';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { useWallet } from '../context/WalletContext';
@@ -49,11 +50,8 @@ export function MyTokens() {
   if (!connected) {
     return (
       <div className="page">
-        <header className="home-header">
-          <h1 className="home-title">My Tokens</h1>
-          <ConnectButton compact />
-        </header>
-        <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>
+        <BrandHero title="My" accent="Tokens" aside={<ConnectButton compact />} subtitle="Tokens you hold and tokens you launched." />
+        <p style={{ textAlign: 'center', marginTop: 28, color: '#dbe6f5' }}>
           Connect your wallet to see held and created tokens.
         </p>
         <button type="button" className="btn-primary" style={{ marginTop: 16 }} onClick={connect}>
@@ -65,10 +63,7 @@ export function MyTokens() {
 
   return (
     <div className="page">
-      <header className="home-header">
-        <h1 className="home-title">My Tokens</h1>
-        <ConnectButton compact />
-      </header>
+      <BrandHero title="My" accent="Tokens" aside={<ConnectButton compact />} subtitle="Tokens you hold and tokens you launched." />
 
       {loading ? (
         <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>Loading...</p>
@@ -76,7 +71,7 @@ export function MyTokens() {
         <>
           {(created.length > 0 || createdIncomplete) && (
             <>
-              <h2 style={{ fontSize: 14, color: 'var(--text-muted)' }}>Created</h2>
+              <h2 className="section-title">Created</h2>
               {createdIncomplete && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                   <p className="muted" style={{ fontSize: 13 }}>Could not load all launchpad tokens, so some you created may be missing.</p>
@@ -97,7 +92,7 @@ export function MyTokens() {
             </>
           )}
 
-          <h2 style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 12 }}>Holdings</h2>
+          <h2 className="section-title" style={{ marginTop: 12 }}>Holdings</h2>
           {jettons.length === 0 ? (
             <p className="muted">No jetton balances found.</p>
           ) : (

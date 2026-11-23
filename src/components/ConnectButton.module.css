@@ -2,14 +2,15 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 12px;
+  padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface);
+  border: 1.5px solid #6cc4ff;
+  background: rgba(2, 4, 9, 0.9);
   color: #fff;
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
+  box-shadow: 0 0 14px rgba(31, 155, 255, 0.5);
   transition: border-color 0.15s, background 0.15s;
 }
 
@@ -18,6 +19,10 @@
 }
 
 .connected {
+  border-color: rgba(46, 229, 138, 0.55);
+  box-shadow: 0 0 12px rgba(46, 229, 138, 0.22);
+}
+
+.connected svg {
   color: var(--success);
-  border-color: rgba(52, 199, 89, 0.4);
 }

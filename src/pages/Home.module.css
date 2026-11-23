@@ -1,0 +1,206 @@
+.page {
+  gap: 14px;
+}
+
+.tonPrice {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(60, 140, 255, 0.5);
+  background: rgba(2, 4, 9, 0.88);
+}
+
+.segBtn {
+  position: relative;
+  isolation: isolate;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--brand-font);
+  font-size: 17px;
+  letter-spacing: 0.03em;
+  padding: 10px 8px;
+  border-radius: 12px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.segActive {
+  color: #fff;
+  text-shadow: 1px 2px 0 rgba(0, 40, 110, 0.55);
+  filter: drop-shadow(0 0 8px rgba(31, 155, 255, 0.6));
+}
+
+/* The chosen list is a stroke of spray paint. */
+.segActive::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 14px 8px 15px 9px / 10px 14px 9px 13px;
+  background:
+    radial-gradient(60% 90% at 22% 0%, rgba(255, 255, 255, 0.38), transparent 60%),
+    linear-gradient(100deg, #52c8ff 0%, #1f8cff 50%, #0d5fe0 100%);
+  filter: url(#spray-edge);
+}
+
+.launchBtn {
+  font-size: 21px;
+  padding: 15px 20px;
+  margin-bottom: 6px;
+}
+
+.empty {
+  text-align: center;
+  margin-top: 40px;
+  font-family: var(--brand-font);
+  font-size: 18px;
+  color: #dbe6f5;
+}
+
+/* Token cards in a two-column grid, as in the bandanna mockup. */
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(60, 140, 255, 0.6);
+  background:
+    radial-gradient(120% 70% at 100% 0%, rgba(22, 80, 220, 0.3), transparent 60%),
+    linear-gradient(180deg, rgba(12, 22, 42, 0.94), rgba(4, 7, 13, 0.97));
+  box-shadow: 0 0 14px rgba(31, 120, 255, 0.25), inset 0 1px 0 rgba(108, 196, 255, 0.12);
+  overflow: hidden;
+  transition: transform 0.12s;
+}
+
+/* A bandanna corner on each card. */
+.row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 84px;
+  height: 70px;
+  background-image: url('../assets/brand/bandanna.svg');
+  background-size: 44px 44px;
+  opacity: 0.55;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(100% 100% at 100% 0%, #000 10%, transparent 70%);
+  mask-image: radial-gradient(100% 100% at 100% 0%, #000 10%, transparent 70%);
+}
+
+.row:first-child {
+  border-color: rgba(138, 120, 255, 0.75);
+  box-shadow: 0 0 16px rgba(110, 90, 255, 0.4), inset 0 1px 0 rgba(180, 170, 255, 0.12);
+}
+
+.row:active {
+  transform: scale(0.98);
+}
+
+.rowTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatarRing {
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(108, 196, 255, 0.85), rgba(10, 92, 216, 0.45));
+  box-shadow: 0 0 12px rgba(31, 155, 255, 0.4);
+  flex-shrink: 0;
+  display: flex;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rowName {
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowTicker {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rowPrice {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.rowPrice > span:last-child:not(:first-child) {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.miniTrack {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(108, 160, 220, 0.15);
+  overflow: hidden;
+}
+
+.miniFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1677ff, #6cc4ff);
+  box-shadow: 0 0 8px rgba(31, 155, 255, 0.8);
+}
+
+.miniPct {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ton-blue-light);
+}
+
+.gradTag {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(46, 229, 138, 0.5);
+  color: var(--positive);
+}

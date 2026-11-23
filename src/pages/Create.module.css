@@ -1,0 +1,261 @@
+.page {
+  position: relative;
+  gap: 10px;
+  isolation: isolate;
+}
+
+.back {
+  width: 36px;
+  height: 36px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: rgba(2, 4, 9, 0.75);
+  border: 1.5px solid rgba(108, 196, 255, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.head {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.splatter {
+  right: 50px;
+  top: -6px;
+  width: 110px;
+}
+
+.can {
+  margin: -26px 6px 0 0;
+}
+
+/* Name and Ticker side by side, as in the mockup. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.title {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: var(--brand-font);
+  font-weight: 400;
+  font-size: 42px;
+  line-height: 0.98;
+  transform: rotate(-4deg);
+  transform-origin: left bottom;
+}
+
+.titleWhite {
+  color: #fff;
+  text-shadow: 2px 3px 0 #5b2bd6, 0 0 2px #000, 0 0 16px rgba(0, 0, 0, 0.9);
+}
+
+.titleBlue {
+  position: relative;
+  display: inline-block;
+  margin-left: 14px;
+  background: linear-gradient(180deg, #b0e8ff 0%, #36aaff 45%, #1677ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(2px 2px 0 #062a66) drop-shadow(0 0 10px rgba(31, 155, 255, 0.55));
+}
+
+.titleDrips {
+  position: absolute;
+  left: 6%;
+  bottom: -14px;
+  width: 86%;
+  height: 14px;
+  opacity: 0.85;
+}
+
+.subtitle {
+  margin-top: 18px;
+  color: #e3ecf8;
+  font-size: 14px;
+  text-shadow: 0 1px 2px #000;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.form label {
+  display: block;
+}
+
+.iconInput {
+  position: relative;
+  display: block;
+}
+
+.iconInput svg {
+  position: absolute;
+  left: 13px;
+  top: calc(50% + 3px);
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.iconInput :global(.input) {
+  padding-left: 40px;
+}
+
+.form .drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 16px 14px;
+  border: 1.5px dashed rgba(108, 196, 255, 0.7);
+  border-radius: 14px;
+  background: rgba(4, 7, 13, 0.6);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop:focus-within,
+.drop:hover {
+  border-color: var(--ton-blue);
+  background: rgba(31, 155, 255, 0.06);
+}
+
+.dropBusy {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.dropText {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dropText strong {
+  font-family: var(--brand-font);
+  font-size: 16px;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.aiCard {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aiLabel {
+  font-size: 13px;
+  color: #dbe6f5;
+  font-weight: 600;
+}
+
+.aiRow {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.genBtn {
+  flex: 1;
+  margin-top: 6px;
+  padding: 11px 12px;
+  font-size: 15px;
+}
+
+/* Generate is the mockup's blue-to-violet stroke. */
+.genBtn::before {
+  background:
+    radial-gradient(60% 90% at 22% 0%, rgba(255, 255, 255, 0.4), transparent 60%),
+    linear-gradient(100deg, #52c8ff 0%, #1f8cff 50%, #7a4dff 100%);
+}
+
+.genBtn::after {
+  display: none;
+}
+
+.preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  align-self: center;
+  border: 2px solid var(--ton-blue);
+  box-shadow: 0 0 16px rgba(31, 155, 255, 0.45);
+}
+
+.fees {
+  padding: 14px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fees > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fees > div > span:first-child {
+  color: var(--text-muted);
+}
+
+.fees > div > span:last-child {
+  font-weight: 600;
+  text-align: right;
+}
+
+.launch {
+  margin: 6px 0 14px;
+  font-size: 24px;
+  padding: 16px 20px;
+}
+
+/* Project links (website, X, Telegram): one sprayed card of link fields. */
+.linksBox {
+  margin: 4px 0 0;
+  padding: 14px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1.5px solid rgba(60, 140, 255, 0.5);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(14, 24, 44, 0.9), rgba(5, 9, 17, 0.94));
+  box-shadow: 0 0 16px rgba(31, 120, 255, 0.2), inset 0 1px 0 rgba(108, 196, 255, 0.1);
+}
+
+.linksBox legend {
+  padding: 0 8px;
+  margin-left: -4px;
+}
+
+.linksNote {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: -4px;
+}

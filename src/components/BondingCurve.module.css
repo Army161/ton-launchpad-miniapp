@@ -1,7 +1,6 @@
 .wrap {
-  padding: 14px 14px 10px;
-  background: var(--surface);
-  border-color: var(--border);
+  padding: 16px 16px 12px;
+  border-radius: 18px;
 }
 
 .header {
@@ -9,7 +8,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 }
 
 .headerLeft {
@@ -19,46 +18,92 @@
 }
 
 .title {
-  color: var(--ton-blue);
-  font-weight: 700;
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-family: var(--brand-font);
+  font-weight: 400;
+  font-size: 21px;
+  letter-spacing: 0.02em;
+  text-shadow: 2px 2px 0 #0a3a8a;
+  transform: rotate(-1.5deg);
+  transform-origin: left center;
+}
+
+/* A crown tagged on the chart, as in the mockup. */
+.tag {
+  position: absolute;
+  left: 12%;
+  top: 34%;
+  transform: rotate(-8deg);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.info {
+  color: var(--text-muted);
 }
 
 .progress {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .raised {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
   color: var(--ton-blue);
   white-space: nowrap;
-  padding-top: 1px;
+  padding-top: 2px;
 }
 
 .chartWrap {
   position: relative;
+  height: 150px;
 }
 
 .svg {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
+  overflow: visible;
+}
+
+.grid line {
+  stroke: rgba(108, 160, 220, 0.13);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.line {
+  filter: drop-shadow(0 0 5px rgba(31, 155, 255, 1));
+}
+
+.dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(31, 155, 255, 0.6), 0 0 14px rgba(31, 155, 255, 0.9);
 }
 
 .axis {
   position: relative;
   height: 18px;
-  margin: 0 6px 2px;
-  font-size: 11px;
-  color: var(--text-dim);
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .axisEdge {
   position: absolute;
   left: 0;
   top: 0;
+  color: var(--ton-blue);
+  font-weight: 700;
 }
 
 .axisMid {
@@ -72,12 +117,4 @@
   position: absolute;
   right: 0;
   top: 0;
-}
-
-.axisActive {
-  position: absolute;
-  top: 0;
-  transform: translateX(-50%);
-  color: var(--ton-blue);
-  font-weight: 700;
 }

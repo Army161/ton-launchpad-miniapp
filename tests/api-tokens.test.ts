@@ -31,6 +31,8 @@ const view = (address: string, tradeCount = 0): TokenView => ({
   description: '',
   image: '',
   telegram: '',
+  website: '',
+  twitter: '',
   virtualTon: '30000000000',
   virtualTokens: '1000000000000000000',
   realTonRaised: '0',

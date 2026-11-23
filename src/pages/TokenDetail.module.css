@@ -1,63 +1,42 @@
 .page {
-  padding-top: 12px;
+  position: relative;
+  padding-top: 10px;
   display: flex;
   flex-direction: column;
   min-height: 100%;
-}
-
-.topBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  min-height: 28px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-weight: 700;
-  font-size: 15px;
-  color: #fff;
-}
-
-.brand svg:first-child {
-  color: #fff;
-}
-
-.topActions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.iconBtn {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  border-radius: 8px;
-}
-
-.tokenHead {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  isolation: isolate;
 }
 
 .backBtn {
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   margin-left: -4px;
+  margin-bottom: 10px;
+  border-radius: 50%;
+  background: rgba(2, 4, 9, 0.75);
+  border: 1.5px solid rgba(108, 196, 255, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   flex-shrink: 0;
+}
+
+.tokenHead {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.avatarRing {
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(108, 196, 255, 0.85), rgba(10, 92, 216, 0.45));
+  box-shadow: 0 0 16px rgba(31, 155, 255, 0.4);
+  flex-shrink: 0;
+  display: flex;
 }
 
 .tokenNames {
@@ -65,99 +44,116 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
+/* The token's name as a graffiti tag with a crown, as in the mockup. */
 .tokenNames h1 {
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  font-family: var(--brand-font);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: #fff;
+  text-shadow: 2px 3px 0 #0a3a8a, 0 0 2px #000, 0 0 16px rgba(0, 0, 0, 0.9);
+  transform: rotate(-3deg);
+  transform-origin: left bottom;
+}
+
+.nameText {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px 4px 4px 0;
+}
+
+.nameCrown {
+  margin-top: -6px;
+  transform: rotate(10deg);
+}
+
+.headSplatter {
+  right: 0;
+  bottom: -14px;
+  width: 120px;
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .tickerPill {
   display: inline-flex;
   align-self: flex-start;
-  padding: 2px 10px;
-  background: transparent;
+  padding: 3px 12px;
+  background: rgba(31, 155, 255, 0.12);
   border: 1.5px solid var(--ton-blue);
   color: var(--ton-blue-light);
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.01em;
+  box-shadow: 0 0 10px rgba(31, 155, 255, 0.3);
 }
 
-.watch {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface);
-  color: #fff;
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
+.gradPill {
+  border-color: var(--positive);
+  color: var(--positive);
+  background: rgba(46, 229, 138, 0.1);
+  box-shadow: none;
 }
 
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .stat {
-  padding: 12px 10px;
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
-  background: var(--surface);
-  border-color: var(--border);
+  border-color: var(--border-subtle);
+  border-radius: 16px;
 }
 
 .statIcon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  color: var(--ton-blue);
+  filter: drop-shadow(0 0 6px rgba(31, 155, 255, 0.8));
 }
 
-.statIconFilled {
-  background: rgba(48, 161, 245, 0.35);
-  color: #fff;
-}
-
-.statIconOutline {
-  background: transparent;
-  border: 1.5px solid rgba(0, 152, 234, 0.55);
-  color: var(--ton-blue-light);
+.statIcon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .statLabel {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
   font-weight: 500;
 }
 
 .stat strong {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 800;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
   letter-spacing: -0.01em;
 }
 
 .statDelta {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--ton-blue-light);
   white-space: nowrap;
@@ -166,29 +162,71 @@
 }
 
 .statSub {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.about {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+
+.about p {
+  color: #c9d6e8;
+  font-size: 14px;
+}
+
+.links {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.linkPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(108, 196, 255, 0.6);
+  background: rgba(2, 4, 9, 0.85);
+  font-family: var(--brand-font);
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: var(--text);
 }
 
 .actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
   margin-top: auto;
-  padding-top: 20px;
+  padding-top: 26px;
 }
 
 .actionBtn {
   text-decoration: none;
-  font-size: 15px;
-  padding: 15px 12px;
-  border-radius: 14px;
+  font-size: clamp(13px, 4.4vw, 18px);
+  line-height: 1.15;
+  padding: 15px 8px;
+  gap: 6px;
+  margin-bottom: 8px;
+  text-align: center;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
-.sellBtn {
-  background: #0a0a0a;
-  border: 1px solid var(--border-subtle);
+.actionBtn svg {
+  flex-shrink: 0;
+}
+
+.linksNote {
+  font-size: 11px;
+  color: var(--text-muted);
 }

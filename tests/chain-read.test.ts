@@ -100,6 +100,26 @@ describe('readLaunchpadToken', () => {
     expect(view).toMatchObject({ name: '🚀'.repeat(32), symbol: 'S'.repeat(10), description: 'd'.repeat(200), image: '', telegram: 'https://t.me/doge' });
   });
 
+  it('lists only project links that pass the Create page check, so a launch made elsewhere cannot add a bad link', async () => {
+    const t = await launched();
+    const content = buildOnchainContent({
+      name: 'Doge',
+      symbol: 'DOGE',
+      description: '',
+      image: 'https://img.example/d.png',
+      website: 'javascript:alert(1)',
+      twitter: 'https://x.com/doge',
+      telegram: 'https://t.me.evil.io/doge',
+    });
+    const chain = fakeChain({ curve: async () => t.state, jetton: async () => ({ ...t.data, content }) });
+    const view = await readLaunchpadToken(t.address, FACTORY, chain.session);
+    expect(view).toMatchObject({
+      website: '',
+      twitter: 'https://x.com/doge',
+      telegram: '',
+    });
+  });
+
   it.each([
     ['exit code 11 (no such getter)', 11],
     ['exit code -13 (nothing deployed)', -13],

@@ -2,7 +2,8 @@ import type { FormEvent, ChangeEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Address } from '@ton/core';
-import { IconBack } from '../components/Icons';
+import { Cloth, Drips, Splatter, SprayCan } from '../components/Brand';
+import { IconBack, IconLink, IconRocket, IconSparkle, IconTelegram, IconUpload } from '../components/Icons';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useWallet } from '../context/WalletContext';
@@ -23,7 +24,8 @@ import {
 import { CONFIG, isConfigured, friendlyAddress } from '../lib/config';
 import { fetchImageGenInfo, generateTokenImage, type ImageGenInfo } from '../lib/imageApi';
 import { waitForToken } from '../lib/launchpadApi';
-import { buildOnchainContent, METADATA_LIMITS, validateMetadata } from '../lib/metadata';
+import { buildOnchainContent, LINK_KEYS, LINK_LABELS, METADATA_LIMITS, validateMetadata, type LinkKey } from '../lib/metadata';
+import styles from './Create.module.css';
 
 type Phase = 'idle' | 'signing' | 'confirming';
 
@@ -36,7 +38,9 @@ export function Create() {
   const [name, setName] = useState('');
   const [ticker, setTicker] = useState('');
   const [description, setDescription] = useState('');
-  const [telegramLink, setTelegramLink] = useState('');
+  const [links, setLinks] = useState<Record<LinkKey, string>>(
+    () => Object.fromEntries(LINK_KEYS.map((k) => [k, ''])) as Record<LinkKey, string>,
+  );
   const [initialBuy, setInitialBuy] = useState('0');
   const [imageUri, setImageUri] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -145,7 +149,7 @@ export function Create() {
       symbol: ticker,
       description,
       image: imageUri.trim(),
-      telegram: telegramLink.trim() || undefined,
+      ...Object.fromEntries(LINK_KEYS.map((k) => [k, links[k].trim() || undefined])),
     };
     const problems = validateMetadata(meta);
     if (problems.length > 0) {
@@ -202,43 +206,68 @@ export function Create() {
   const busy = phase !== 'idle';
 
   return (
-    <div className="page page--no-nav" style={{ gap: 16 }}>
-      <Link to="/" className="btn-ghost" style={{ alignSelf: 'flex-start' }}>
-        <IconBack size={14} /> Back
+    <div className={`page page--no-nav ${styles.page}`}>
+      <Cloth corner="right" />
+      <Link to="/" className={styles.back} aria-label="Back">
+        <IconBack size={22} />
       </Link>
-      <h1>Creator Studio</h1>
-      <p className="muted">Launch a new meme-coin on the TON bonding curve.</p>
+      <header className={styles.head}>
+        <h1 className={styles.title}>
+          <span className={styles.titleWhite}>Creator</span>{' '}
+          <span className={styles.titleBlue}>
+            Studio
+            <Drips className={styles.titleDrips} />
+          </span>
+        </h1>
+        <Splatter className={styles.splatter} />
+        <SprayCan size={58} className={styles.can} />
+      </header>
+      <p className={styles.subtitle}>Launch a new meme-coin on the TON bonding curve.</p>
 
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%' }}>
+      <form onSubmit={submit} className={styles.form}>
+        <div className={styles.pair}>
         <label>
-          <span className="muted" style={{ fontSize: 13 }}>Name</span>
+          <span className="field-label">Name</span>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Super Doge" maxLength={METADATA_LIMITS.name} />
         </label>
         <label>
-          <span className="muted" style={{ fontSize: 13 }}>Ticker</span>
+          <span className="field-label">Ticker</span>
           <input className="input" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} placeholder="e.g. SDOGE" maxLength={METADATA_LIMITS.symbol} />
         </label>
+        </div>
         <label>
-          <span className="muted" style={{ fontSize: 13 }}>Description</span>
+          <span className="field-label">Description</span>
           <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's the meme?" maxLength={METADATA_LIMITS.description} />
         </label>
         <label>
-          <span className="muted" style={{ fontSize: 13 }}>Telegram link (optional)</span>
-          <input className="input" value={telegramLink} onChange={(e) => setTelegramLink(e.target.value)} placeholder="https://t.me/yourchannel" />
-        </label>
-        <label>
-          <span className="muted" style={{ fontSize: 13 }}>Token image URL (https)</span>
-          <input className="input" value={imageUri} onChange={(e) => setImageUri(e.target.value)} placeholder="https://…/logo.png" maxLength={METADATA_LIMITS.url} />
+          <span className="field-label">Token image URL (https)</span>
+          <span className={styles.iconInput}>
+            <IconLink size={17} />
+            <input className="input" value={imageUri} onChange={(e) => setImageUri(e.target.value)} placeholder="https://…/logo.png" maxLength={METADATA_LIMITS.url} />
+          </span>
         </label>
         {uploadAvailable && (
-          <label>
-            <span className="muted" style={{ fontSize: 13 }}>…or upload an image {uploading ? '(uploading…)' : ''}</span>
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={handleImage} style={{ marginTop: 4 }} disabled={uploading || generating} />
-          </label>
+          <div>
+            <span className="field-label">…or upload an image</span>
+            <label className={`${styles.drop}${uploading || generating ? ` ${styles.dropBusy}` : ''}`}>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                onChange={handleImage}
+                disabled={uploading || generating}
+                className="sr-only"
+              />
+              <IconUpload size={26} />
+              <span className={styles.dropText}>
+                <strong>{uploading ? 'Uploading…' : 'Tap to upload'}</strong>
+                <span>PNG, JPG, WebP, GIF (max 2 MB)</span>
+              </span>
+            </label>
+          </div>
         )}
         {imageGen && (
-          <div className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <span className="muted" style={{ fontSize: 13 }}>
+          <div className={`card ${styles.aiCard}`}>
+            <span className={styles.aiLabel}>
               …or generate one with AI, free ({genLeft ?? imageGen.userDailyLimit} left today)
             </span>
             <input
@@ -256,7 +285,7 @@ export function Create() {
                 }
               }}
             />
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className={styles.aiRow}>
               {imageGen.models.length > 1 && (
                 <select className="input" value={genModel} onChange={(e) => setGenModel(e.target.value)} aria-label="Image model" style={{ flex: 1 }} disabled={generating}>
                   {imageGen.models.map((m) => (
@@ -266,11 +295,11 @@ export function Create() {
               )}
               <button
                 type="button"
-                className="btn-ghost"
-                style={{ flex: 1, justifyContent: 'center', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', marginTop: 4 }}
+                className={`btn-primary ${styles.genBtn}`}
                 onClick={handleGenerate}
                 disabled={generating || uploading || genLeft === 0}
               >
+                <IconSparkle size={16} />
                 {generating ? 'Generating… (up to a minute)' : 'Generate image'}
               </button>
             </div>
@@ -282,13 +311,37 @@ export function Create() {
             alt="Token image preview"
             width={96}
             height={96}
-            style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', alignSelf: 'center' }}
+            className={styles.preview}
             referrerPolicy="no-referrer"
             onError={() => setFailedPreview(imageUri.trim())}
           />
         )}
+        <fieldset className={styles.linksBox}>
+          <legend className="section-title">Project links</legend>
+          <p className={styles.linksNote}>Optional. Like everything above, they cannot be changed after launch.</p>
+          {LINK_KEYS.map((key) => (
+            <label key={key}>
+              <span className="field-label">{LINK_LABELS[key].label}</span>
+              <span className={styles.iconInput}>
+                {key === 'telegram' ? <IconTelegram size={18} /> : <IconLink size={17} />}
+                <input
+                  className="input"
+                  type="url"
+                  inputMode="url"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  value={links[key]}
+                  onChange={(e) => setLinks((prev) => ({ ...prev, [key]: e.target.value }))}
+                  placeholder={LINK_LABELS[key].placeholder}
+                  maxLength={METADATA_LIMITS.url}
+                />
+              </span>
+            </label>
+          ))}
+        </fieldset>
         <label>
-          <span className="muted" style={{ fontSize: 13 }}>Initial buy (TON, 0–{formatTon(MAX_INITIAL_BUY)})</span>
+          <span className="field-label">Initial buy (TON, 0–{formatTon(MAX_INITIAL_BUY)})</span>
           <input className="input" value={initialBuy} onChange={(e) => setInitialBuy(e.target.value.replace(/[^\d.]/g, ''))} inputMode="decimal" placeholder="0" />
           {initialBuyError && <span className="negative" style={{ fontSize: 12 }}>{initialBuyError}</span>}
           {initialQuote && initialQuote.tokensOut > 0n && (
@@ -296,26 +349,27 @@ export function Create() {
           )}
         </label>
 
-        <div className="card" style={{ padding: 12, fontSize: 13 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span className="muted">Launch fee</span>
+        <div className={`card ${styles.fees}`}>
+          <div>
+            <span>Launch fee</span>
             <span>{CONFIG.launchFee} TON</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-            <span className="muted">Network fee (unused part refunded)</span>
+          <div>
+            <span>Network fee (unused part refunded)</span>
             <span>{formatTon(CREATE_GAS)} TON</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-            <span className="muted">Trading fee</span>
+          <div>
+            <span>Trading fee</span>
             <span>{CONFIG.tradeFeePercent}% ({CONFIG.creatorFeeShare}/{CONFIG.platformFeeShare})</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-            <span className="muted">Graduation</span>
-            <span>{CONFIG.graduationTarget} TON → STON.fi</span>
+          <div>
+            <span>Graduation</span>
+            <span>{CONFIG.graduationTarget.toLocaleString('en-US')} TON → STON.fi</span>
           </div>
         </div>
 
-        <button type="submit" className="btn-primary" style={{ marginTop: 8 }} disabled={busy || uploading || generating || !isConfigured()}>
+        <button type="submit" className={`btn-primary ${styles.launch}`} disabled={busy || uploading || generating || !isConfigured()}>
+          <IconRocket size={20} />
           {phase === 'signing' ? 'Confirm in your wallet…' : phase === 'confirming' ? 'Waiting for confirmation…' : connected ? 'Launch token' : 'Connect wallet to launch'}
         </button>
       </form>

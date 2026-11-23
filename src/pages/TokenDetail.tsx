@@ -2,21 +2,20 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { BondingCurve } from '../components/BondingCurve';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { TokenUnavailable } from '../components/TokenUnavailable';
+import { Cloth, Crown, Splatter } from '../components/Brand';
 import {
   IconArrowDown,
   IconBack,
   IconChart,
-  IconExpand,
-  IconMore,
+  IconExternal,
   IconPeople,
-  IconStar,
-  IconTelegram,
   IconTrend,
-  IconVerified,
   IconWallet,
 } from '../components/Icons';
 import { useToken } from '../data/tokens';
 import { CONFIG, explorerUrl } from '../lib/config';
+import { formatTonPrice, formatUsdPrice } from '../lib/format';
+import { LINK_LABELS } from '../lib/metadata';
 import styles from './TokenDetail.module.css';
 
 export function TokenDetail() {
@@ -46,40 +45,26 @@ export function TokenDetail() {
 
   return (
     <div className={`page page--no-nav ${styles.page}`}>
-      <header className={styles.topBar}>
-        <div className={styles.brand}>
-          <IconTelegram size={18} />
-          <span>TON Launchpad</span>
-          <IconVerified size={15} />
-        </div>
-        <div className={styles.topActions}>
-          <a href={tonviewerUrl} target="_blank" rel="noopener noreferrer" className={styles.iconBtn} aria-label="Tonviewer">
-            <IconExpand size={18} />
-          </a>
-          <button type="button" className={styles.iconBtn} aria-label="Menu">
-            <IconMore size={18} />
-          </button>
-        </div>
-      </header>
+      <Cloth corner="right" />
+      <Link to="/" className={styles.backBtn} aria-label="Back">
+        <IconBack size={22} />
+      </Link>
 
       <div className={styles.tokenHead}>
-        <Link to="/" className={styles.backBtn} aria-label="Back">
-          <IconBack size={22} />
-        </Link>
-        <TokenAvatar emoji={token.emoji} color={token.color} imageUrl={token.imageUrl} size={42} />
+        <span className={styles.avatarRing}>
+          <TokenAvatar emoji={token.emoji} color={token.color} imageUrl={token.imageUrl} size={60} />
+        </span>
         <div className={styles.tokenNames}>
-          <h1>{token.name}</h1>
-          <span className={styles.tickerPill}>${token.ticker}</span>
-          {token.graduated && (
-            <span className={styles.tickerPill} style={{ background: 'var(--positive)', marginLeft: 4 }}>
-              STON.fi
-            </span>
-          )}
+          <h1>
+            <span className={styles.nameText}>{token.name}</span>
+            <Crown size={30} className={styles.nameCrown} />
+          </h1>
+          <div className={styles.pills}>
+            <span className={styles.tickerPill}>${token.ticker}</span>
+            {token.graduated && <span className={`${styles.tickerPill} ${styles.gradPill}`}>STON.fi</span>}
+          </div>
         </div>
-        <button type="button" className={styles.watch} aria-label="Watchlist">
-          <IconStar size={16} />
-          <span>Watchlist</span>
-        </button>
+        <Splatter className={styles.headSplatter} />
       </div>
 
       {!live && !checking && (
@@ -101,29 +86,29 @@ export function TokenDetail() {
 
       <div className={styles.stats}>
         <div className={`card ${styles.stat}`}>
-          <div className={`${styles.statIcon} ${styles.statIconFilled}`}>
+          <div className={styles.statIcon}>
             <IconTrend size={13} />
           </div>
           <span className={styles.statLabel}>Price</span>
           <strong>
-            {token.priceUsd > 0 ? `$${token.priceUsd.toFixed(4)}` : token.priceTon > 0 ? `${token.priceTon.toPrecision(3)} TON` : '—'}
+            {token.priceUsd > 0 ? formatUsdPrice(token.priceUsd) : formatTonPrice(token.priceTon)}
           </strong>
           <span className={styles.statDelta}>
             {change24h == null ? '—' : `${priceDelta >= 0 ? '+' : '-'}$${Math.abs(priceDelta).toFixed(2)} (${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%)`}
           </span>
         </div>
         <div className={`card ${styles.stat}`}>
-          <div className={`${styles.statIcon} ${styles.statIconOutline}`}>
+          <div className={styles.statIcon}>
             <IconChart size={13} />
           </div>
           <span className={styles.statLabel}>Market Cap</span>
           <strong>{token.marketCapTon > 0 ? `${Math.round(token.marketCapTon).toLocaleString()} TON` : '—'}</strong>
           <span className={styles.statSub}>
-            {`Graduation: ${CONFIG.graduationTarget} TON`}
+            {`Graduation: ${CONFIG.graduationTarget.toLocaleString('en-US')} TON`}
           </span>
         </div>
         <div className={`card ${styles.stat}`}>
-          <div className={`${styles.statIcon} ${styles.statIconOutline}`}>
+          <div className={styles.statIcon}>
             <IconPeople size={13} />
           </div>
           <span className={styles.statLabel}>Trades</span>
@@ -132,21 +117,37 @@ export function TokenDetail() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <a href={tonviewerUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost" style={{ fontSize: 12 }}>
-          Tonviewer
-        </a>
-        <a href={dexscreenerUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost" style={{ fontSize: 12 }}>
-          DexScreener
-        </a>
-        {token.graduated && (
-          <a href={stonfiUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost" style={{ fontSize: 12 }}>
-            STON.fi Swap
+      <section className={styles.about}>
+        <h2 className="section-title">About</h2>
+        {token.description && <p>{token.description}</p>}
+        <div className={styles.links}>
+          <a href={tonviewerUrl} target="_blank" rel="noopener noreferrer" className={styles.linkPill}>
+            Tonviewer <IconExternal size={14} />
           </a>
-        )}
-      </div>
+          <a href={dexscreenerUrl} target="_blank" rel="noopener noreferrer" className={styles.linkPill}>
+            DexScreener <IconExternal size={14} />
+          </a>
+          {token.graduated && (
+            <a href={stonfiUrl} target="_blank" rel="noopener noreferrer" className={styles.linkPill}>
+              STON.fi Swap <IconExternal size={14} />
+            </a>
+          )}
+        </div>
+      </section>
 
-      {token.description && <p className="muted" style={{ fontSize: 13 }}>{token.description}</p>}
+      {token.links && token.links.length > 0 && (
+        <section aria-label="Project links" className={styles.about}>
+          <h2 className="section-title">Links</h2>
+          <div className={styles.links}>
+            {token.links.map(({ key, url }) => (
+              <a key={key} href={url} target="_blank" rel="noopener noreferrer nofollow ugc" className={styles.linkPill}>
+                {LINK_LABELS[key].label} <IconExternal size={14} />
+              </a>
+            ))}
+          </div>
+          <span className={styles.linksNote}>Links are added by the creator and are not checked by TON Launchpad.</span>
+        </section>
+      )}
 
       <div className={styles.actions}>
         {onCurve ? (
@@ -155,7 +156,7 @@ export function TokenDetail() {
               <IconWallet size={18} />
               Buy ${token.ticker}
             </Link>
-            <Link to={`/sell/${token.id}`} className={`btn-secondary ${styles.actionBtn} ${styles.sellBtn}`}>
+            <Link to={`/sell/${token.id}`} className={`btn-secondary ${styles.actionBtn}`}>
               <IconArrowDown size={18} />
               Sell ${token.ticker}
             </Link>

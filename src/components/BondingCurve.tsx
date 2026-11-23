@@ -1,3 +1,5 @@
+import { Crown } from './Brand';
+import { IconInfo } from './Icons';
 import styles from './BondingCurve.module.css';
 
 type Props = {
@@ -6,6 +8,7 @@ type Props = {
   target: number;
 };
 
+/** The curve's real progress: filled and bright up to `progress`, dim after it. */
 export function BondingCurve({ progress, raised, target }: Props) {
   const clamped = Math.min(100, Math.max(0, progress));
   const fraction = clamped / 100;
@@ -14,17 +17,19 @@ export function BondingCurve({ progress, raised, target }: Props) {
   const points = Array.from({ length: 51 }, (_, i) => {
     const px = (i / 50) * 200;
     const t = px / 200;
-    const py = 80 - 76 * t * t;
+    const py = 96 - 88 * t * t;
     return `${px.toFixed(1)},${py.toFixed(1)}`;
   });
   const linePath = `M${points.join(' L')}`;
-  const areaPath = `${linePath} L200,80 L0,80 Z`;
+  const areaPath = `${linePath} L200,100 L0,100 Z`;
 
   return (
     <div className={`card ${styles.wrap}`}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <span className={styles.title}>Bonding curve</span>
+          <span className={styles.title}>
+            Bonding Curve <IconInfo size={15} className={styles.info} />
+          </span>
           <span className={styles.progress}>{clamped.toFixed(0)}% completed</span>
         </div>
         <span className={styles.raised}>
@@ -32,31 +37,42 @@ export function BondingCurve({ progress, raised, target }: Props) {
         </span>
       </div>
       <div className={styles.chartWrap}>
-        <svg className={styles.svg} viewBox="0 0 200 80" preserveAspectRatio="none">
+        <Crown size={40} className={styles.tag} />
+        <svg className={styles.svg} viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden>
           <defs>
             <linearGradient id="bcFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--ton-blue)" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="var(--ton-blue)" stopOpacity="0" />
+              <stop offset="0%" stopColor="#1f9bff" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#1f9bff" stopOpacity="0" />
             </linearGradient>
             <clipPath id="bcClip">
-              <rect x="0" y="0" width={x} height="80" />
+              <rect x="0" y="0" width={x} height="100" />
             </clipPath>
           </defs>
+          <g className={styles.grid}>
+            {[20, 40, 60, 80].map((g) => (
+              <line key={`h${g}`} x1="0" y1={g} x2="200" y2={g} />
+            ))}
+            {[40, 80, 120, 160].map((g) => (
+              <line key={`v${g}`} x1={g} y1="0" x2={g} y2="100" />
+            ))}
+          </g>
+          <path d={areaPath} fill="url(#bcFill)" opacity="0.28" />
           <path d={areaPath} fill="url(#bcFill)" clipPath="url(#bcClip)" />
-          <path d={linePath} fill="none" stroke="var(--border)" strokeWidth="1.5" />
-          <path d={linePath} fill="none" stroke="var(--ton-blue)" strokeWidth="2" clipPath="url(#bcClip)" />
-          {fraction > 0 && (
-            <circle cx={x} cy={80 - 76 * fraction * fraction} r="3.5" fill="var(--ton-blue)" />
-          )}
+          <path d={linePath} fill="none" stroke="rgba(63,178,255,0.6)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          <path d={linePath} fill="none" stroke="#7fd0ff" strokeWidth="3.5" clipPath="url(#bcClip)" vectorEffect="non-scaling-stroke" className={styles.line} />
         </svg>
+        {fraction > 0 && (
+          <span
+            className={styles.dot}
+            style={{ left: `${clamped}%`, top: `${96 - 88 * fraction * fraction}%` }}
+            aria-hidden
+          />
+        )}
       </div>
       <div className={styles.axis}>
-        <span className={styles.axisEdge}>0</span>
+        <span className={styles.axisEdge}>0%</span>
         <span className={styles.axisMid}>Supply</span>
         <span className={styles.axisEdgeRight}>100%</span>
-        <span className={styles.axisActive} style={{ left: `${clamped}%` }}>
-          {clamped.toFixed(0)}%
-        </span>
       </div>
     </div>
   );
