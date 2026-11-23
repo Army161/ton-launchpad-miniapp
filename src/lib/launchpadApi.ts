@@ -7,7 +7,10 @@ export type TokenView = {
   symbol: string;
   description: string;
   image: string;
+  /** Creator's project links; each is '' or a link the API checked (ADR-013). */
   telegram: string;
+  website: string;
+  twitter: string;
   virtualTon: string;
   virtualTokens: string;
   realTonRaised: string;

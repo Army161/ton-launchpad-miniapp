@@ -25,6 +25,8 @@ const view = (address: string, tradeCount = 0): TokenView => ({
   description: '',
   image: '',
   telegram: '',
+  website: '',
+  twitter: '',
   virtualTon: String(30_000_000_000 + tradeCount * 1_000_000_000),
   virtualTokens: '1000000000000000000',
   realTonRaised: String(tradeCount * 1_000_000_000),
@@ -268,5 +270,17 @@ describe('useToken', () => {
     expect(page.latest()).toMatchObject({ status: 'not-found', token: undefined });
     expect(lookups).toHaveLength(1);
     await page.unmount();
+  });
+});
+
+describe('launchpadToToken links', () => {
+  it('keeps checked project links in a fixed order and drops empty or bad ones (an older API may send none)', () => {
+    const v = { ...view('links'), telegram: 'https://t.me/doge', website: 'https://doge.io', twitter: 'javascript:alert(1)' };
+    expect(launchpadToToken(v).links).toEqual([
+      { key: 'website', url: 'https://doge.io' },
+      { key: 'telegram', url: 'https://t.me/doge' },
+    ]);
+    const { website: _w, twitter: _t, ...older } = view('older');
+    expect(launchpadToToken(older as TokenView).links).toEqual([]);
   });
 });

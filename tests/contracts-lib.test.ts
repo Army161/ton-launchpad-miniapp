@@ -19,7 +19,7 @@ import {
   SELL_PAYLOAD_OP,
   withSlippage,
 } from '../src/lib/contracts';
-import { buildOnchainContent, parseOnchainContent, validateMetadata } from '../src/lib/metadata';
+import { buildOnchainContent, isValidLink, LINK_KEYS, parseOnchainContent, validateMetadata } from '../src/lib/metadata';
 
 const A = Address.parse('EQD__________________________________________0vo');
 const B = Address.parse('UQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqEBI');
@@ -151,6 +151,53 @@ describe('metadata', () => {
     expect(validateMetadata({ ...good, image: 'http://insecure/a.png' })).toContain('Image must be an https URL');
     expect(validateMetadata({ ...good, image: 'data:image/png;base64,AAAA' })).toContain('Image must be an https URL');
     expect(validateMetadata({ ...good, telegram: 'https://evil.example/t.me' })).toContain('Telegram link must start with https://t.me/');
+  });
+
+  const links = {
+    website: 'https://www.qrecon.org',
+    twitter: 'https://x.com/qrecon',
+    telegram: 'https://t.me/qreconorg',
+  };
+
+  it('round-trips every project link, and leaves out empty ones', () => {
+    expect(parseOnchainContent(buildOnchainContent({ ...good, ...links }))).toMatchObject(links);
+    const some = parseOnchainContent(buildOnchainContent({ ...good, telegram: undefined, website: 'https://qrecon.org', twitter: '  ' }));
+    expect(some?.website).toBe('https://qrecon.org');
+    expect(some?.telegram).toBeUndefined();
+    expect(some?.twitter).toBeUndefined();
+    expect(validateMetadata({ ...good, ...links })).toEqual([]);
+  });
+
+  it('keeps the on-chain key names: tokens already launched store links under these hashes', () => {
+    expect([...LINK_KEYS]).toEqual(['website', 'twitter', 'telegram']);
+  });
+
+  it.each([
+    ['twitter', 'https://twitter.com/qrecon', true],
+    ['twitter', 'https://mobile.x.com/qrecon', false],
+    ['twitter', 'https://x.com.evil.io/qrecon', false],
+    ['twitter', 'https://evil.io/x.com', false],
+    ['twitter', 'https://x.com/qrecon', true],
+    ['twitter', 'https://www.x.com/qrecon', true],
+    ['twitter', 'https://m.twitter.com/qrecon', true],
+    ['twitter', 'https://x.evil/qrecon', false],
+    ['twitter', 'http://x.com/qrecon', false],
+    ['telegram', 'https://www.t.me/qrecon', false],
+    ['website', 'https://qrecon.org/path?x=1', true],
+    ['website', 'http://qrecon.org', false],
+    ['website', 'javascript:alert(1)', false],
+    ['website', 'https://user:pass@qrecon.org', false],
+    ['website', 'https://localhost', false],
+    ['website', 'https://127.0.0.1', false],
+    ['website', 'not a url', false],
+    ['website', `https://qrecon.org/${'a'.repeat(300)}`, false],
+  ] as const)('isValidLink(%s, %s) is %s', (key, value, ok) => {
+    expect(isValidLink(key, value)).toBe(ok);
+  });
+
+  it('names the link that does not pass', () => {
+    expect(validateMetadata({ ...good, twitter: 'https://evil.io/x' })).toContain('X link must start with https://x.com/');
+    expect(validateMetadata({ ...good, website: 'http://qrecon.org' })).toContain('Website must be an https link');
   });
 
   it('parseOnchainContent tolerates junk', () => {

@@ -2,7 +2,7 @@ import { Address } from '@ton/core';
 import { TonClient } from '@ton/ton';
 import { LaunchpadJetton } from '../../src/contracts/LaunchpadJetton.js';
 import { JettonWallet } from '../../src/contracts/JettonWallet.js';
-import { METADATA_LIMITS, parseOnchainContent } from '../../src/lib/metadata.js';
+import { isValidLink, LINK_KEYS, METADATA_LIMITS, parseOnchainContent, type LinkKey } from '../../src/lib/metadata.js';
 import { callPolicy, getterExitCode, toncenterSession, type ToncenterSession } from './toncenter.js';
 
 const OP_JETTON_SETUP = 0x4c500002;
@@ -49,7 +49,10 @@ export type TokenView = {
   symbol: string;
   description: string;
   image: string;
+  /** Creator's project links (ADR-013); each is '' or a link that passed isValidLink. */
   telegram: string;
+  website: string;
+  twitter: string;
   virtualTon: string;
   virtualTokens: string;
   realTonRaised: string;
@@ -65,7 +68,7 @@ export type TokenView = {
 
 const friendly = (a: Address) => a.toString({ bounceable: true, testOnly: serverNetwork() === 'testnet' });
 
-type TokenMetadata = Pick<TokenView, 'name' | 'symbol' | 'description' | 'image' | 'telegram'>;
+type TokenMetadata = Pick<TokenView, 'name' | 'symbol' | 'description' | 'image' | LinkKey>;
 
 /**
  * Jetton content of each token this instance has read, by raw address. The factory's JettonSetup writes it once,
@@ -83,6 +86,11 @@ const METADATA_CACHE_LIMIT = 1000;
  */
 const cut = (text: string | undefined, max: number) => Array.from(text ?? '').slice(0, max).join('');
 const url = (text: string | undefined) => (text !== undefined && text.length <= METADATA_LIMITS.url ? text : '');
+/** A link is shown only when it passes the Create page's check, so a launch made outside the app cannot list a
+ *  javascript: or look-alike link (SECURITY #31). */
+const link = (key: LinkKey, text: string | undefined) => (text !== undefined && isValidLink(key, text) ? text : '');
+const links = (content: Partial<Record<LinkKey, string>>) =>
+  Object.fromEntries(LINK_KEYS.map((key) => [key, link(key, content[key])])) as Record<LinkKey, string>;
 
 /**
  * Reads a jetton and proves it came from our factory: the curve must name our
@@ -114,7 +122,7 @@ export async function readLaunchpadToken(address: Address, factory: Address, cha
       symbol: cut(content.symbol, METADATA_LIMITS.symbol),
       description: cut(content.description, METADATA_LIMITS.description),
       image: url(content.image),
-      telegram: url(content.telegram),
+      ...links(content),
     };
     if (metadataCache.size >= METADATA_CACHE_LIMIT) metadataCache.delete(metadataCache.keys().next().value as string);
     metadataCache.set(key, meta);

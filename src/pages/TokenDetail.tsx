@@ -15,6 +15,7 @@ import {
 import { useToken } from '../data/tokens';
 import { CONFIG, explorerUrl } from '../lib/config';
 import { formatTonPrice, formatUsdPrice } from '../lib/format';
+import { LINK_LABELS } from '../lib/metadata';
 import styles from './TokenDetail.module.css';
 
 export function TokenDetail() {
@@ -133,6 +134,20 @@ export function TokenDetail() {
           )}
         </div>
       </section>
+
+      {token.links && token.links.length > 0 && (
+        <section aria-label="Project links" className={styles.about}>
+          <h2 className="section-title">Links</h2>
+          <div className={styles.links}>
+            {token.links.map(({ key, url }) => (
+              <a key={key} href={url} target="_blank" rel="noopener noreferrer nofollow ugc" className={styles.linkPill}>
+                {LINK_LABELS[key].label} <IconExternal size={14} />
+              </a>
+            ))}
+          </div>
+          <span className={styles.linksNote}>Links are added by the creator and are not checked by TON Launchpad.</span>
+        </section>
+      )}
 
       <div className={styles.actions}>
         {onCurve ? (

@@ -225,3 +225,8 @@
 .actionBtn svg {
   flex-shrink: 0;
 }
+
+.linksNote {
+  font-size: 11px;
+  color: var(--text-muted);
+}
