@@ -2,8 +2,8 @@ import type { FormEvent, ChangeEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Address } from '@ton/core';
-import { Crown, Drips } from '../components/Brand';
-import { IconBack, IconBolt, IconLink, IconRocket, IconSparkle, IconTelegram, IconUpload } from '../components/Icons';
+import { Cloth, Drips, Splatter, SprayCan } from '../components/Brand';
+import { IconBack, IconLink, IconRocket, IconSparkle, IconTelegram, IconUpload } from '../components/Icons';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useWallet } from '../context/WalletContext';
@@ -205,7 +205,7 @@ export function Create() {
 
   return (
     <div className={`page page--no-nav ${styles.page}`}>
-      <span className={styles.bandanna} aria-hidden />
+      <Cloth corner="right" />
       <Link to="/" className={styles.back} aria-label="Back">
         <IconBack size={22} />
       </Link>
@@ -216,13 +216,14 @@ export function Create() {
             Studio
             <Drips className={styles.titleDrips} />
           </span>
-          <IconBolt size={26} className={styles.bolt} />
         </h1>
-        <Crown size={44} className={styles.crown} />
+        <Splatter className={styles.splatter} />
+        <SprayCan size={58} className={styles.can} />
       </header>
       <p className={styles.subtitle}>Launch a new meme-coin on the TON bonding curve.</p>
 
       <form onSubmit={submit} className={styles.form}>
+        <div className={styles.pair}>
         <label>
           <span className="field-label">Name</span>
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Super Doge" maxLength={METADATA_LIMITS.name} />
@@ -231,6 +232,7 @@ export function Create() {
           <span className="field-label">Ticker</span>
           <input className="input" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} placeholder="e.g. SDOGE" maxLength={METADATA_LIMITS.symbol} />
         </label>
+        </div>
         <label>
           <span className="field-label">Description</span>
           <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What's the meme?" maxLength={METADATA_LIMITS.description} />

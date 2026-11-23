@@ -4,28 +4,13 @@
   isolation: isolate;
 }
 
-/* Brand header: graffiti "Creator Studio", crown, drips and a bandanna corner. */
-.bandanna {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 170px;
-  background-image: url('../assets/brand/bandanna.svg');
-  background-size: 54px 54px;
-  opacity: 0.35;
-  z-index: -1;
-  pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 100%), radial-gradient(90% 120% at 100% 0%, #000 0%, transparent 70%);
-  -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(180deg, #000 0%, transparent 100%), radial-gradient(90% 120% at 100% 0%, #000 0%, transparent 70%);
-  mask-composite: intersect;
-}
-
 .back {
-  width: 32px;
-  height: 32px;
-  margin-left: -6px;
+  width: 36px;
+  height: 36px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: rgba(2, 4, 9, 0.75);
+  border: 1.5px solid rgba(108, 196, 255, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,35 +18,54 @@
 }
 
 .head {
+  position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 8px;
+  margin-top: 6px;
+}
+
+.splatter {
+  right: 50px;
+  top: -6px;
+  width: 110px;
+}
+
+.can {
+  margin: -26px 6px 0 0;
+}
+
+/* Name and Ticker side by side, as in the mockup. */
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 10px;
 }
 
 .title {
   position: relative;
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0 10px;
+  flex-direction: column;
+  align-items: flex-start;
   font-family: var(--brand-font);
   font-weight: 400;
-  font-size: 34px;
-  line-height: 1.05;
-  transform: rotate(-2deg);
+  font-size: 42px;
+  line-height: 0.98;
+  transform: rotate(-4deg);
   transform-origin: left bottom;
 }
 
 .titleWhite {
   color: #fff;
-  text-shadow: 2px 2px 0 #0a3a8a, 0 0 14px rgba(255, 255, 255, 0.18);
+  text-shadow: 2px 3px 0 #5b2bd6, 0 0 2px #000, 0 0 16px rgba(0, 0, 0, 0.9);
 }
 
 .titleBlue {
   position: relative;
   display: inline-block;
-  background: linear-gradient(180deg, #8fdcff 0%, #36aaff 45%, #1677ff 100%);
+  margin-left: 14px;
+  background: linear-gradient(180deg, #b0e8ff 0%, #36aaff 45%, #1677ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -77,20 +81,11 @@
   opacity: 0.85;
 }
 
-.bolt {
-  color: var(--ton-blue-light);
-  filter: drop-shadow(0 0 6px rgba(31, 155, 255, 0.8));
-}
-
-.crown {
-  transform: rotate(8deg);
-  margin-top: -4px;
-}
-
 .subtitle {
-  margin-top: 8px;
-  color: #c9d6e8;
+  margin-top: 18px;
+  color: #e3ecf8;
   font-size: 14px;
+  text-shadow: 0 1px 2px #000;
 }
 
 .form {
@@ -130,7 +125,7 @@
   gap: 12px;
   margin-top: 6px;
   padding: 16px 14px;
-  border: 1.5px dashed rgba(108, 160, 220, 0.5);
+  border: 1.5px dashed rgba(108, 196, 255, 0.7);
   border-radius: 14px;
   background: rgba(4, 7, 13, 0.6);
   color: var(--text);
@@ -157,9 +152,11 @@
 }
 
 .dropText strong {
-  font-size: 14px;
+  font-family: var(--brand-font);
+  font-size: 16px;
+  letter-spacing: 0.02em;
   color: var(--text);
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .aiCard {
@@ -171,7 +168,7 @@
 
 .aiLabel {
   font-size: 13px;
-  color: var(--text-muted);
+  color: #dbe6f5;
   font-weight: 600;
 }
 
@@ -184,9 +181,19 @@
 .genBtn {
   flex: 1;
   margin-top: 6px;
-  padding: 10px 12px;
-  font-size: 14px;
-  border-radius: 12px;
+  padding: 11px 12px;
+  font-size: 15px;
+}
+
+/* Generate is the mockup's blue-to-violet stroke. */
+.genBtn::before {
+  background:
+    radial-gradient(60% 90% at 22% 0%, rgba(255, 255, 255, 0.4), transparent 60%),
+    linear-gradient(100deg, #52c8ff 0%, #1f8cff 50%, #7a4dff 100%);
+}
+
+.genBtn::after {
+  display: none;
 }
 
 .preview {
@@ -223,8 +230,7 @@
 }
 
 .launch {
-  margin-top: 4px;
-  font-size: 18px;
+  margin: 6px 0 14px;
+  font-size: 24px;
   padding: 16px 20px;
-  border-radius: 16px;
 }

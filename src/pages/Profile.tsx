@@ -41,7 +41,7 @@ export function Profile() {
 
       <div className={styles.infoRow}>
         <span className={styles.infoIcon}>
-          <IconWallet size={16} />
+          <IconWallet size={24} />
         </span>
         <div className={styles.infoText}>
           <span className={styles.infoLabel}>Wallet</span>
@@ -51,7 +51,7 @@ export function Profile() {
 
       <div className={styles.infoRow}>
         <span className={styles.infoIcon}>
-          <IconTon size={16} />
+          <IconTon size={24} />
         </span>
         <div className={styles.infoText}>
           <span className={styles.infoLabel}>Network</span>
@@ -61,7 +61,7 @@ export function Profile() {
 
       <div className={styles.infoRow}>
         <span className={styles.infoIcon}>
-          <IconChart size={16} />
+          <IconChart size={24} />
         </span>
         <div className={styles.infoText}>
           <span className={styles.infoLabel}>Trading fee</span>

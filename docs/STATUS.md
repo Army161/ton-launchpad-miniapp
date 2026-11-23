@@ -75,7 +75,7 @@ until its pull request is merged on the founder's ask.
 | Bundle size (1.05 MB, mostly TON libraries) | P2 | code-split the trading pages |
 | Independent contract audit | P1 before real volume | SECURITY #12 |
 | Prove on-chain STON.fi graduation on testnet | P0 | ADR-009 built and sandbox-tested; needs a real pool with LP at the zero address |
-| Mini app visual redesign (founder mockups, 2026-11-23) | P2 | paint only: clean trading screens with bandanna/graffiti brand headers (hero, Creator Studio, crowns, drips, bandanna corners); no logic, API or contract change. Mockup features the app does not have (search, filters, working watchlist, candle chart, mascot art) are deliberately not built. Waits on the founder's review of the preview and his go to merge |
+| Mini app visual redesign (founder mockups, 2026-11-23) | P2 | paint only, full bandanna (the founder's choice over the earlier mix): torn bandanna cloth in the top corners, graffiti headings, spray-paint buttons with drips and the paisley wall on every screen (Home, Token, Create, Buy, Sell, My Tokens, Profile, Explore), Home tokens in a two-column grid; prices, amounts and form text stay in the plain font. No logic, API or contract change. Mockup features the app does not have (search, filters, watchlist, candle chart) are deliberately not built, and the earlier non-working Watchlist button is removed; mascot art waits on the founder's choice. Waits on the founder's review of the preview and his go to merge |
 | Short referral deep links (`startapp`, 64-char limit) | P1 | contract side done (ADR-008); needs launch id + referral code mapping in the API and the Buy page reading `start_param` |
 
 ## Verified at

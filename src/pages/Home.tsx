@@ -210,7 +210,7 @@ export function Home() {
           </button>
         </div>
       ) : cards.length === 0 ? (
-        <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>
+        <p className={styles.empty}>
           {tab === 'launchpad' ? 'No launchpad tokens yet. Be the first to launch!' : 'No graduated tokens found.'}
         </p>
       ) : (

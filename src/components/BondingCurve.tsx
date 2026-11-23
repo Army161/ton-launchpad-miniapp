@@ -1,3 +1,4 @@
+import { Crown } from './Brand';
 import { IconInfo } from './Icons';
 import styles from './BondingCurve.module.css';
 
@@ -27,7 +28,7 @@ export function BondingCurve({ progress, raised, target }: Props) {
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <span className={styles.title}>
-            Bonding curve <IconInfo size={15} className={styles.info} />
+            Bonding Curve <IconInfo size={15} className={styles.info} />
           </span>
           <span className={styles.progress}>{clamped.toFixed(0)}% completed</span>
         </div>
@@ -36,6 +37,7 @@ export function BondingCurve({ progress, raised, target }: Props) {
         </span>
       </div>
       <div className={styles.chartWrap}>
+        <Crown size={40} className={styles.tag} />
         <svg className={styles.svg} viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden>
           <defs>
             <linearGradient id="bcFill" x1="0" y1="0" x2="0" y2="1">
@@ -54,9 +56,10 @@ export function BondingCurve({ progress, raised, target }: Props) {
               <line key={`v${g}`} x1={g} y1="0" x2={g} y2="100" />
             ))}
           </g>
+          <path d={areaPath} fill="url(#bcFill)" opacity="0.28" />
           <path d={areaPath} fill="url(#bcFill)" clipPath="url(#bcClip)" />
-          <path d={linePath} fill="none" stroke="rgba(31,155,255,0.35)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-          <path d={linePath} fill="none" stroke="#3fb2ff" strokeWidth="2.5" clipPath="url(#bcClip)" vectorEffect="non-scaling-stroke" className={styles.line} />
+          <path d={linePath} fill="none" stroke="rgba(63,178,255,0.6)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          <path d={linePath} fill="none" stroke="#7fd0ff" strokeWidth="3.5" clipPath="url(#bcClip)" vectorEffect="non-scaling-stroke" className={styles.line} />
         </svg>
         {fraction > 0 && (
           <span

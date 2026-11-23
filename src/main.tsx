@@ -9,8 +9,8 @@ const tg = window.Telegram?.WebApp;
 if (tg) {
   tg.ready();
   tg.expand();
-  tg.setHeaderColor?.('#0B0E11');
-  tg.setBackgroundColor?.('#0B0E11');
+  tg.setHeaderColor?.('#04070D');
+  tg.setBackgroundColor?.('#04070D');
 }
 
 createRoot(document.getElementById('root')!).render(

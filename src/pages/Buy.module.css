@@ -1,22 +1,26 @@
-.page { padding-bottom: 24px; }
-.header { display: flex; align-items: center; justify-content: space-between; padding: 0 0 12px; }
-.headerLeft { display: flex; align-items: center; gap: 10px; }
-.headerLeft h1 { font-size: 18px; font-weight: 700; }
+/* Buy and Sell share this sheet. */
+.page { position: relative; isolation: isolate; padding-bottom: 24px; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 0 0 22px; }
+.headerLeft { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; min-width: 0; }
+.headerLeft h1 { font-family: var(--brand-font); font-weight: 400; font-size: 36px; line-height: 1.05; letter-spacing: 0.01em; transform: rotate(-3deg); transform-origin: left bottom; max-width: 100%; }
+.titleWhite { color: #fff; text-shadow: 2px 3px 0 #0a3a8a, 0 0 2px #000, 0 0 16px rgba(0, 0, 0, 0.9); }
+.titleBlue { position: relative; display: inline-block; background: linear-gradient(180deg, #b0e8ff 0%, #36aaff 45%, #1677ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(2px 3px 0 #041c4d) drop-shadow(0 0 10px rgba(31, 155, 255, 0.6)); overflow-wrap: anywhere; }
+.titleDrips { position: absolute; left: 4%; bottom: -15px; width: 90%; height: 16px; opacity: 0.9; }
 .headerRight { display: flex; gap: 8px; }
-.back { display: flex; align-items: center; color: var(--text-muted); }
+.back { width: 36px; height: 36px; margin-left: -4px; display: flex; align-items: center; justify-content: center; color: #fff; border-radius: 50%; background: rgba(2, 4, 9, 0.75); border: 1.5px solid rgba(108, 196, 255, 0.55); }
 .iconBtn { background: none; border: none; padding: 6px; color: var(--text-muted); cursor: pointer; border-radius: 8px; }
 .iconBtn:hover { background: var(--surface); }
 .card { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
-.label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
-.amountRow { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
-.amountInput { flex: 1; background: transparent; border: none; outline: none; font-size: 24px; font-weight: 700; color: var(--text); min-width: 0; }
-.tonSide { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
-.row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
-.rowLabel { display: flex; align-items: center; gap: 4px; color: var(--text-muted); }
-.est { display: flex; align-items: center; gap: 4px; }
+.label { font-family: var(--brand-font); font-size: 16px; letter-spacing: 0.02em; color: #fff; }
+.amountRow { display: flex; align-items: center; gap: 10px; background: rgba(2, 4, 9, 0.85); border: 1.5px solid rgba(108, 196, 255, 0.6); border-radius: 12px; padding: 10px 14px; box-shadow: 0 0 12px rgba(31, 120, 255, 0.25); }
+.amountInput { flex: 1; background: transparent; border: none; outline: none; font-size: 26px; font-weight: 800; color: #fff; min-width: 0; }
+.tonSide { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #dbe6f5; white-space: nowrap; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.rowLabel { display: flex; align-items: center; gap: 4px; color: #b9c7da; }
+.est { display: flex; align-items: center; gap: 4px; font-size: 15px; color: #fff; white-space: nowrap; }
 .estTicker { color: var(--text-muted); font-size: 12px; }
-.sep { border: none; border-top: 1px solid var(--border); margin: 0; }
-.fee { display: flex; align-items: center; gap: 4px; color: var(--ton-blue); font-weight: 600; }
-.secure { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); text-align: center; justify-content: center; margin: 8px 0 4px; }
-.confirm { width: 100%; margin-top: 8px; }
-.notice { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--negative); border-radius: 12px; font-size: 13px; }
+.sep { border: none; border-top: 1px dashed rgba(108, 196, 255, 0.35); margin: 0; }
+.fee { display: flex; align-items: center; gap: 4px; color: var(--ton-blue-light); font-weight: 700; white-space: nowrap; }
+.secure { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); text-align: center; justify-content: center; margin: 8px 0 4px; }
+.confirm { width: 100%; margin-top: 8px; font-size: 20px; padding: 16px 20px; }
+.notice { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--negative); border-radius: 12px; font-size: 13px; background: rgba(2, 4, 9, 0.8); }

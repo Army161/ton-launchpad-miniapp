@@ -2,14 +2,13 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { BondingCurve } from '../components/BondingCurve';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { TokenUnavailable } from '../components/TokenUnavailable';
-import { Crown } from '../components/Brand';
+import { Cloth, Crown, Splatter } from '../components/Brand';
 import {
   IconArrowDown,
   IconBack,
   IconChart,
   IconExternal,
   IconPeople,
-  IconStar,
   IconTrend,
   IconWallet,
 } from '../components/Icons';
@@ -45,8 +44,7 @@ export function TokenDetail() {
 
   return (
     <div className={`page page--no-nav ${styles.page}`}>
-      <span className={styles.bandanna} aria-hidden />
-      <Crown size={46} className={styles.headCrown} />
+      <Cloth corner="right" />
       <Link to="/" className={styles.backBtn} aria-label="Back">
         <IconBack size={22} />
       </Link>
@@ -56,16 +54,16 @@ export function TokenDetail() {
           <TokenAvatar emoji={token.emoji} color={token.color} imageUrl={token.imageUrl} size={60} />
         </span>
         <div className={styles.tokenNames}>
-          <h1>{token.name}</h1>
+          <h1>
+            <span className={styles.nameText}>{token.name}</span>
+            <Crown size={30} className={styles.nameCrown} />
+          </h1>
           <div className={styles.pills}>
             <span className={styles.tickerPill}>${token.ticker}</span>
             {token.graduated && <span className={`${styles.tickerPill} ${styles.gradPill}`}>STON.fi</span>}
           </div>
         </div>
-        <button type="button" className={styles.watch} aria-label="Watchlist">
-          <IconStar size={16} />
-          <span>Watchlist</span>
-        </button>
+        <Splatter className={styles.headSplatter} />
       </div>
 
       {!live && !checking && (
@@ -119,7 +117,7 @@ export function TokenDetail() {
       </div>
 
       <section className={styles.about}>
-        <h2>About</h2>
+        <h2 className="section-title">About</h2>
         {token.description && <p>{token.description}</p>}
         <div className={styles.links}>
           <a href={tonviewerUrl} target="_blank" rel="noopener noreferrer" className={styles.linkPill}>
@@ -143,7 +141,7 @@ export function TokenDetail() {
               <IconWallet size={18} />
               Buy ${token.ticker}
             </Link>
-            <Link to={`/sell/${token.id}`} className={`btn-secondary ${styles.actionBtn} ${styles.sellBtn}`}>
+            <Link to={`/sell/${token.id}`} className={`btn-secondary ${styles.actionBtn}`}>
               <IconArrowDown size={18} />
               Sell ${token.ticker}
             </Link>

@@ -1,5 +1,4 @@
-import { Link } from 'react-router-dom';
-import { IconBack } from '../components/Icons';
+import { BrandHero } from '../components/Brand';
 import styles from './Placeholder.module.css';
 
 type Props = {
@@ -9,13 +8,8 @@ type Props = {
 
 export function Placeholder({ title, blurb }: Props) {
   return (
-    <div className={`page ${styles.wrap}`}>
-      <Link to="/" className="btn-ghost" style={{ marginBottom: 16, alignSelf: 'flex-start' }}>
-        <IconBack size={14} />
-        Home
-      </Link>
-      <h1>{title}</h1>
-      <p className="muted">{blurb}</p>
+    <div className="page">
+      <BrandHero title={title} subtitle={blurb} />
       <p className={styles.demo}>Coming in a later build — V1 shell only.</p>
     </div>
   );

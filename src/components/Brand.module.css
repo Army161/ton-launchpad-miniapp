@@ -9,47 +9,89 @@
   display: block;
 }
 
+/* Torn bandanna cloth. The weave (blue cloth, white paisley) sits in an inner layer so the torn edge filter and the
+   fold shading do not blur each other. */
+.cloth {
+  position: absolute;
+  top: 0;
+  z-index: -1;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.75));
+}
+
+.clothWeave {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(118deg, rgba(0, 0, 0, 0.45) 0%, transparent 26%, rgba(255, 255, 255, 0.14) 44%, transparent 56%, rgba(0, 0, 0, 0.5) 100%),
+    url('../assets/brand/bandanna-cloth.svg') 0 0 / 66px 66px;
+  filter: url(#torn-edge);
+}
+
+.clothLeft {
+  left: 0;
+  width: 220px;
+  height: 104px;
+  transform: translate(-22px, -22px) rotate(-7deg);
+}
+
+.clothLeft .clothWeave {
+  clip-path: polygon(0 0, 100% 0, 92% 22%, 97% 40%, 78% 52%, 70% 74%, 48% 70%, 36% 92%, 20% 84%, 8% 100%, 0 96%);
+}
+
+.clothRight {
+  right: 0;
+  width: 170px;
+  height: 128px;
+  transform: translate(26px, -26px) rotate(9deg);
+}
+
+.clothRight .clothWeave {
+  background-position: 0 0, 30px 18px;
+  clip-path: polygon(0 0, 100% 0, 100% 96%, 84% 100%, 76% 78%, 58% 82%, 50% 58%, 30% 54%, 26% 30%, 8% 26%);
+}
+
+.splatter {
+  position: absolute;
+  color: var(--ton-blue-light);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.can {
+  flex-shrink: 0;
+  transform: rotate(14deg);
+  filter: drop-shadow(0 0 10px rgba(31, 155, 255, 0.6));
+}
+
+/* A main screen's header. It bleeds to the edges of the page (16px padding) so the cloth hangs from the corners. */
 .hero {
   position: relative;
-  padding: 18px 16px 16px;
-  border-radius: 20px;
-  border: 1px solid var(--border-subtle);
-  background:
-    radial-gradient(120% 90% at 0% 0%, rgba(31, 155, 255, 0.22), transparent 55%),
-    radial-gradient(90% 80% at 100% 0%, rgba(10, 92, 216, 0.22), transparent 60%),
-    linear-gradient(180deg, #0b1628, #060b15);
-  box-shadow: var(--glow);
-  overflow: hidden;
+  margin: -16px -16px 0;
+  padding: 62px 16px 6px;
   isolation: isolate;
 }
 
-.bandanna {
+/* Darkens the wall under the title so it stays readable over the cloth. */
+.hero::before {
+  content: '';
   position: absolute;
-  top: -8px;
-  width: 150px;
-  height: 110px;
-  background-image: url('../assets/brand/bandanna.svg');
-  background-size: 54px 54px;
-  opacity: 0.55;
+  inset: 40px 0 0;
   z-index: -1;
+  background: linear-gradient(180deg, transparent 0%, rgba(4, 7, 13, 0.82) 38%, rgba(4, 7, 13, 0) 100%);
   pointer-events: none;
 }
 
-.bandannaLeft {
-  left: -8px;
-  -webkit-mask-image: radial-gradient(130% 120% at 0% 0%, #000 20%, transparent 62%);
-  mask-image: radial-gradient(130% 120% at 0% 0%, #000 20%, transparent 62%);
-}
-
-.bandannaRight {
-  right: -8px;
-  -webkit-mask-image: radial-gradient(130% 120% at 100% 0%, #000 15%, transparent 55%);
-  mask-image: radial-gradient(130% 120% at 100% 0%, #000 15%, transparent 55%);
+.heroSplatter {
+  right: 8px;
+  bottom: 0;
+  width: 150px;
 }
 
 .heroTop {
   display: flex;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 10px;
 }
@@ -58,57 +100,63 @@
   position: relative;
   font-family: var(--brand-font);
   font-weight: 400;
-  font-size: 27px;
+  font-size: 34px;
   white-space: nowrap;
   line-height: 1.05;
   letter-spacing: 0.01em;
-  padding-top: 18px;
-  transform: rotate(-2deg);
+  padding-top: 22px;
+  transform: rotate(-3deg);
   transform-origin: left bottom;
   min-width: 0;
 }
 
 .titleCrown {
   position: absolute;
-  top: -2px;
-  left: 4px;
-  transform: rotate(-10deg);
+  top: -6px;
+  left: 30%;
+  width: 46px;
+  height: 33px;
+  color: #fff;
+  transform: rotate(-8deg);
 }
 
 .titleWhite {
   color: #fff;
-  text-shadow: 2px 2px 0 #0a3a8a, 0 0 14px rgba(255, 255, 255, 0.18);
+  text-shadow: 2px 3px 0 #0a3a8a, 0 0 2px #000, 0 0 16px rgba(0, 0, 0, 0.9);
 }
 
 .titleBlue {
   position: relative;
   display: inline-block;
-  background: linear-gradient(180deg, #8fdcff 0%, #36aaff 45%, #1677ff 100%);
+  background: linear-gradient(180deg, #b0e8ff 0%, #36aaff 45%, #1677ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(2px 2px 0 #062a66) drop-shadow(0 0 10px rgba(31, 155, 255, 0.55));
+  filter: drop-shadow(2px 3px 0 #041c4d) drop-shadow(0 0 10px rgba(31, 155, 255, 0.6));
 }
 
 .titleDrips {
   position: absolute;
   left: 4%;
   right: 6%;
-  bottom: -14px;
+  bottom: -15px;
   width: 90%;
-  height: 14px;
-  opacity: 0.85;
+  height: 16px;
+  opacity: 0.9;
 }
 
 .aside {
   flex-shrink: 0;
-  padding-top: 4px;
+  position: absolute;
+  top: 14px;
+  right: 14px;
 }
 
 .subtitle {
-  margin-top: 16px;
-  color: #c9d6e8;
-  font-size: 14px;
+  margin-top: 20px;
+  color: #e3ecf8;
+  font-size: 15px;
   line-height: 1.4;
-  max-width: 300px;
+  max-width: 310px;
+  text-shadow: 0 1px 2px #000;
 }
