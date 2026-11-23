@@ -127,7 +127,8 @@ export function Sell() {
 
       <div className={`card ${styles.card}`}>
         <label className={styles.label} htmlFor="sell-amount">
-          Amount ({token.ticker}){connected && balance !== null ? ` · you hold ${formatTokens(held)}` : ''}
+          Amount ({token.ticker})
+          {connected && balance !== null ? <> · you hold <span className={styles.labelNum}>{formatTokens(held)}</span></> : null}
         </label>
         <div className={styles.amountRow}>
           <input id="sell-amount" className={styles.amountInput} value={amount} placeholder="0" onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1'))} inputMode="decimal" />

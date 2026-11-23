@@ -181,15 +181,17 @@ Telegram; YouTube, Instagram and Facebook were removed from the form, the token 
 - Where they show: on the token page of this app, with a note that the creator added them and the app did not check
   them. Wallets (Tonkeeper) and explorers (Tonviewer) skip unknown keys, so they do not show them; Tonkeeper shows
   socials only for jettons in its curated `ton-assets` list, which is a separate request a project makes to Tonkeeper.
-- Each link must be https, at most 256 characters, without a user:password part, and, except the website, on that
+- Each link must be https, at most 256 characters, without a user:password part, with no empty label in a website's
+  domain (`project..com`), and, except the website, on that
   platform's own domain (or its `www.`/`m.` form; Telegram stays exactly `t.me`). The API applies the same check when
   it reads a token, because a launch made outside the app can store anything (SECURITY #31).
 - Contracts unchanged: the factory and the token store the content cell as given. The sandbox test "launches with
   metadata larger than the Create page allows" launches a token whose content is a byte-level upper bound for anything
-  Create accepts (emoji name and description, every link at 256 characters; about 1.8 KB in 33 cells,
+  Create accepts (emoji name and description, the image and every link at 256 characters padded with three-byte characters,
+  which the link check accepts; about 4.2 KB in 51 cells,
   against about 0.2 KB before), checks the content, the initial buy, a later buy and solvency, and that the creator's
   cost stays within the existing gas. Cost: bigger forward fees at launch (inside `CREATE_GAS`) and storage rent on the
-  token contract of under 0.02 TON a year at the maximum size (about 0.005 before), from the contract's own
+  token contract of up to about 0.03 TON a year at the maximum size (about 0.005 before), from the contract's own
   balance.
 - Rejected: an off-chain JSON file (`uri`) with `social`/`websites` arrays, which some indexers read. It needs a host
   that stays up forever, and the token would then depend on that host; on-chain keys keep the token self-contained.

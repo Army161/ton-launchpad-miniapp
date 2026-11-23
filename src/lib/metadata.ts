@@ -65,7 +65,7 @@ export function isValidLink(key: LinkKey, value: string): boolean {
   const host = u.hostname.toLowerCase();
   const hosts = LINK_HOSTS[key];
   if (key === 'telegram') return host === 't.me';
-  if (!hosts) return host.includes('.') && !host.endsWith('.') && !/^[\d.]+$/.test(host) && !host.startsWith('[');
+  if (!hosts) return host.includes('.') && host.split('.').every((label) => label.length > 0) && !/^[\d.]+$/.test(host) && !host.startsWith('[');
   return hosts.some((h) => host === h || host === `www.${h}` || host === `m.${h}`);
 }
 

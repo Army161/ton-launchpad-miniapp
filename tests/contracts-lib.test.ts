@@ -188,6 +188,8 @@ describe('metadata', () => {
     ['website', 'javascript:alert(1)', false],
     ['website', 'https://user:pass@qrecon.org', false],
     ['website', 'https://localhost', false],
+    ['website', 'https://project..com/', false],
+    ['website', 'https://.project.com/', false],
     ['website', 'https://127.0.0.1', false],
     ['website', 'not a url', false],
     ['website', `https://qrecon.org/${'a'.repeat(300)}`, false],

@@ -231,8 +231,9 @@ describe('Launchpad', () => {
 
         it('launches with metadata larger than the Create page allows (every project link at full length)', async () => {
             // Upper bound in bytes: 32 and 200 four-byte emoji (128 B and 800 B) exceed the most Create accepts
-            // (32 and 200 UTF-16 units, at most 96 B and 600 B); every link at the 256-character limit (ADR-013).
-            const link = (base: string) => base + 'a'.repeat(256 - base.length);
+            // (32 and 200 UTF-16 units, at most 96 B and 600 B); every link at the 256-character limit and padded with
+            // three-byte characters, which the link check accepts (about 740 B each, ADR-013).
+            const link = (base: string) => base + '中'.repeat(256 - base.length);
             const big = buildOnchainContent({
                 name: '🚀'.repeat(32),
                 symbol: 'ABCDEFGHIJ',
