@@ -1,6 +1,6 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  /* Theme: clean, readable trading screens (lists, numbers, forms) with bandanna/graffiti on brand parts only. */
+  /* Theme: full bandanna. Graffiti headings and spray-paint buttons on every screen; prices and form text stay in the clean font. */
   --bg: #04070d; --bg-raise: #070c16; --surface: #0a1220; --surface-2: #0e1a2e;
   --border: #1a2a44; --border-subtle: #22385a; --border-glow: rgba(56, 152, 255, 0.45);
   --text: #eef3fa; --text-muted: #8fa0b8; --text-dim: #56657c;
@@ -76,3 +76,69 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
   text-align: center;
   padding: 48px 0;
 }
+
+/* ---- Full bandanna layer ---- */
+/* Bandanna paisley across every screen, faded so text stays readable. */
+.app-shell { position: relative; isolation: isolate; }
+.app-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background-image: url('./assets/brand/bandanna.svg');
+  background-size: 64px 64px;
+  opacity: 0.11;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.35) 45%, #000 100%);
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.35) 45%, #000 100%);
+}
+
+/* Graffiti text: headings, buttons, section titles. */
+.graffiti {
+  font-family: var(--brand-font);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.graffiti-blue {
+  font-family: var(--brand-font);
+  font-weight: 400;
+  background: linear-gradient(180deg, #8fdcff 0%, #36aaff 45%, #1677ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(2px 2px 0 #062a66) drop-shadow(0 0 8px rgba(31, 155, 255, 0.5));
+}
+
+/* Spray-paint buttons: marker lettering, hand-painted edges, paint drips. */
+.btn-primary,
+.btn-secondary {
+  position: relative;
+  font-family: var(--brand-font);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  border-radius: 20px 8px 22px 10px / 12px 20px 10px 18px;
+}
+.btn-primary {
+  background:
+    radial-gradient(120% 80% at 30% 0%, rgba(255, 255, 255, 0.28), transparent 50%),
+    linear-gradient(100deg, #46c0ff 0%, #1f8cff 50%, #0d66e0 100%);
+  text-shadow: 1px 2px 0 rgba(0, 40, 110, 0.55);
+}
+.btn-primary:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  left: 12%;
+  right: 18%;
+  bottom: -9px;
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 10' preserveAspectRatio='none'%3E%3Cpath d='M0 0H120V1H96c-1 0-1.4 1-1.4 2v4c0 2.4-3.6 2.4-3.6 0V3c0-1-.5-2-1.5-2H52c-1 0-1.4 1-1.4 2v1.5c0 1.6-2.6 1.6-2.6 0V3c0-1-.5-2-1.5-2H20c-1 0-1.4 1-1.4 2v5.5c0 2.6-4 2.6-4 0V3c0-1-.6-2-1.6-2H0z' fill='%231f8cff'/%3E%3C/svg%3E") no-repeat center / 100% 100%;
+  pointer-events: none;
+}
+.btn-secondary {
+  border: 2px solid rgba(238, 243, 250, 0.85);
+  background: rgba(4, 7, 13, 0.8);
+  box-shadow: 0 0 12px rgba(31, 155, 255, 0.25);
+}
+.home-title { font-family: var(--brand-font); font-weight: 400; letter-spacing: 0.02em; }

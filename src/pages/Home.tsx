@@ -231,18 +231,20 @@ export function Home() {
                       : 'Bonding curve';
               return (
                 <Link key={card.id} to={`/token/${card.id}`} className={styles.row}>
-                  <span className={styles.avatarRing}>
-                    <TokenAvatar emoji={card.source === 'launchpad' ? '🚀' : '🪙'} color={card.color} size={52} imageUrl={card.imageUrl || undefined} />
-                  </span>
-                  <div className={styles.rowMain}>
-                    <strong className={styles.rowName}>{card.name}</strong>
-                    <span className={styles.rowTicker}>${card.ticker}</span>
-                    <div className={styles.rowPrice}>
-                      <span>{price}</span>
-                      {card.change24h != null && (
-                        <span className={card.change24h >= 0 ? 'positive' : 'negative'}>{formatChange(card.change24h)}</span>
-                      )}
+                  <div className={styles.rowTop}>
+                    <span className={styles.avatarRing}>
+                      <TokenAvatar emoji={card.source === 'launchpad' ? '🚀' : '🪙'} color={card.color} size={44} imageUrl={card.imageUrl || undefined} />
+                    </span>
+                    <div className={styles.rowMain}>
+                      <strong className={styles.rowName}>{card.name}</strong>
+                      <span className={styles.rowTicker}>${card.ticker}</span>
                     </div>
+                  </div>
+                  <div className={styles.rowPrice}>
+                    <span>{price}</span>
+                    {card.change24h != null && (
+                      <span className={card.change24h >= 0 ? 'positive' : 'negative'}>{formatChange(card.change24h)}</span>
+                    )}
                   </div>
                   {onCurve ? (
                     <MiniCurve progress={card.curveProgress ?? 0} />
@@ -259,25 +261,15 @@ export function Home() {
   );
 }
 
-/** The token's real bonding-curve progress as a small curve, in the spot where the mockup shows a price line. */
+/** The token's real bonding-curve progress as a painted bar. */
 function MiniCurve({ progress }: { progress: number }) {
-  const f = Math.min(100, Math.max(0, progress)) / 100;
-  const pts = Array.from({ length: 21 }, (_, i) => {
-    const t = i / 20;
-    return `${(t * 64).toFixed(1)},${(30 - 26 * t * t).toFixed(1)}`;
-  }).join(' L');
-  const x = f * 64;
+  const pct = Math.min(100, Math.max(0, progress));
   return (
-    <div className={styles.mini} aria-label={`Bonding curve ${progress.toFixed(0)}% complete`}>
-      <svg width="64" height="32" viewBox="0 0 64 32" aria-hidden>
-        <path d={`M${pts}`} fill="none" stroke="var(--border-subtle)" strokeWidth="1.5" />
-        <clipPath id={`mc${Math.round(f * 1000)}`}>
-          <rect x="0" y="0" width={x} height="32" />
-        </clipPath>
-        <path d={`M${pts}`} fill="none" stroke="var(--ton-blue)" strokeWidth="2" clipPath={`url(#mc${Math.round(f * 1000)})`} />
-        {f > 0 && <circle cx={x} cy={30 - 26 * f * f} r="2.6" fill="var(--ton-blue-light)" />}
-      </svg>
-      <span className={styles.miniPct}>{progress.toFixed(0)}%</span>
+    <div className={styles.mini} aria-label={`Bonding curve ${pct.toFixed(0)}% complete`}>
+      <span className={styles.miniTrack}>
+        <span className={styles.miniFill} style={{ width: `${Math.max(pct, 2)}%` }} />
+      </span>
+      <span className={styles.miniPct}>{pct.toFixed(0)}%</span>
     </div>
   );
 }

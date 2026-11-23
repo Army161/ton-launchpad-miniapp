@@ -24,57 +24,86 @@
   border: none;
   background: transparent;
   color: var(--text);
-  font-size: 15px;
-  font-weight: 700;
-  padding: 11px 8px;
+  font-family: var(--brand-font);
+  font-size: 17px;
+  letter-spacing: 0.03em;
+  padding: 10px 8px;
   border-radius: 12px;
   transition: background 0.15s, box-shadow 0.15s;
 }
 
 .segActive {
-  background: linear-gradient(180deg, #38b0ff 0%, #1f8cff 60%, #0f6ee8 100%);
+  background: linear-gradient(100deg, #46c0ff 0%, #1f8cff 50%, #0d66e0 100%);
   box-shadow: 0 0 16px rgba(31, 155, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   color: #fff;
+  text-shadow: 1px 2px 0 rgba(0, 40, 110, 0.55);
 }
 
 .launchBtn {
-  font-size: 17px;
-  padding: 16px 20px;
-  border-radius: 18px;
+  font-size: 20px;
+  padding: 15px 20px;
 }
 
+/* Token cards in a two-column grid, as in the bandanna mockup. */
 .list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .row {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 14px;
-  border-radius: 18px;
-  border: 1px solid var(--border-subtle);
-  background: linear-gradient(180deg, rgba(20, 34, 58, 0.85), rgba(9, 15, 27, 0.95));
-  box-shadow: inset 0 1px 0 rgba(108, 196, 255, 0.08), 0 6px 24px rgba(0, 0, 0, 0.35);
-  transition: transform 0.12s, border-color 0.15s;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(70, 140, 255, 0.5);
+  background:
+    radial-gradient(120% 70% at 100% 0%, rgba(31, 155, 255, 0.16), transparent 60%),
+    linear-gradient(180deg, rgba(16, 28, 50, 0.92), rgba(7, 12, 22, 0.96));
+  box-shadow: 0 0 14px rgba(31, 155, 255, 0.18), inset 0 1px 0 rgba(108, 196, 255, 0.1);
+  overflow: hidden;
+  transition: transform 0.12s;
+}
+
+/* A bandanna corner on each card. */
+.row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 70px;
+  height: 60px;
+  background-image: url('../assets/brand/bandanna.svg');
+  background-size: 40px 40px;
+  opacity: 0.3;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(100% 100% at 100% 0%, #000 10%, transparent 70%);
+  mask-image: radial-gradient(100% 100% at 100% 0%, #000 10%, transparent 70%);
 }
 
 .row:first-child {
-  border-color: rgba(138, 120, 255, 0.65);
-  box-shadow: 0 0 18px rgba(110, 90, 255, 0.35), inset 0 1px 0 rgba(180, 170, 255, 0.12);
+  border-color: rgba(138, 120, 255, 0.75);
+  box-shadow: 0 0 16px rgba(110, 90, 255, 0.4), inset 0 1px 0 rgba(180, 170, 255, 0.12);
 }
 
 .row:active {
-  transform: scale(0.985);
+  transform: scale(0.98);
+}
+
+.rowTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .avatarRing {
   border-radius: 50%;
   padding: 2px;
-  background: linear-gradient(135deg, rgba(108, 196, 255, 0.8), rgba(10, 92, 216, 0.4));
-  box-shadow: 0 0 14px rgba(31, 155, 255, 0.35);
+  background: linear-gradient(135deg, rgba(108, 196, 255, 0.85), rgba(10, 92, 216, 0.45));
+  box-shadow: 0 0 12px rgba(31, 155, 255, 0.4);
   flex-shrink: 0;
   display: flex;
 }
@@ -84,47 +113,56 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
 }
 
 .rowName {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 800;
-  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .rowTicker {
-  font-size: 14px;
+  font-size: 12px;
   color: var(--text-muted);
 }
 
 .rowPrice {
   display: flex;
   align-items: baseline;
-  gap: 14px;
-  margin-top: 4px;
-  font-size: 16px;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 15px;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .rowPrice > span:last-child:not(:first-child) {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .mini {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
 }
 
-.mini svg {
-  filter: drop-shadow(0 0 4px rgba(31, 155, 255, 0.6));
+.miniTrack {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(108, 160, 220, 0.15);
+  overflow: hidden;
+}
+
+.miniFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1677ff, #6cc4ff);
+  box-shadow: 0 0 8px rgba(31, 155, 255, 0.8);
 }
 
 .miniPct {
@@ -134,10 +172,10 @@
 }
 
 .gradTag {
-  flex-shrink: 0;
+  align-self: flex-start;
   font-size: 11px;
   font-weight: 700;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid rgba(46, 229, 138, 0.5);
   color: var(--positive);
