@@ -1,8 +1,11 @@
+import { BrandHero } from '../components/Brand';
 import { ConnectButton } from '../components/ConnectButton';
+import { IconTon, IconWallet, IconChart } from '../components/Icons';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { useAuth } from '../context/AuthContext';
 import { useWallet } from '../context/WalletContext';
 import { CONFIG, walletDisplayAddress } from '../lib/config';
+import styles from './Profile.module.css';
 
 export function Profile() {
   const { user, isTelegram, loading } = useAuth();
@@ -11,64 +14,68 @@ export function Profile() {
   if (loading) {
     return (
       <div className="page">
-        <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>Loading profile...</p>
+        <p className="muted loading-pulse">Loading profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="page">
-      <header className="home-header">
-        <h1 className="home-title">Profile</h1>
-        <ConnectButton compact />
-      </header>
+    <div className={`page ${styles.page}`}>
+      <BrandHero
+        title="My"
+        accent="Profile"
+        aside={<ConnectButton compact />}
+        subtitle="Your Telegram account and TON wallet."
+      />
 
-      <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
-        <TokenAvatar
-          emoji={user?.firstName?.[0] ?? '👤'}
-          color="#30A1F5"
-          size={64}
-          imageUrl={user?.photoUrl}
-        />
-        <div style={{ textAlign: 'center' }}>
-          <strong style={{ fontSize: 18 }}>
-            {user?.firstName ?? 'Guest'}
-            {user?.username ? ` @${user.username}` : ''}
-          </strong>
-          {isTelegram && (
-            <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>Telegram Mini App</p>
-          )}
+      <div className={styles.userRow}>
+        <span className={styles.avatarRing}>
+          <TokenAvatar emoji={user?.firstName?.[0] ?? '👤'} color="#30A1F5" size={60} imageUrl={user?.photoUrl} />
+        </span>
+        <div className={styles.userNames}>
+          <strong>{user?.firstName ?? 'Guest'}</strong>
+          {user?.username && <span className={styles.handle}>@{user.username}</span>}
+          {isTelegram && <span className={styles.tag}>Telegram Mini App</span>}
         </div>
-
-        <hr style={{ width: '100%', border: 'none', borderTop: '1px solid var(--border)' }} />
-
-        <div style={{ width: '100%' }}>
-          <p className="muted" style={{ fontSize: 12 }}>Wallet</p>
-          <p style={{ fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all' }}>
-            {connected && address ? walletDisplayAddress(address) : 'Not connected'}
-          </p>
-        </div>
-
-        <div style={{ width: '100%' }}>
-          <p className="muted" style={{ fontSize: 12 }}>Network</p>
-          <p>{CONFIG.network === 'mainnet' ? 'TON Mainnet' : 'TON Testnet'}</p>
-        </div>
-
-        <div style={{ width: '100%' }}>
-          <p className="muted" style={{ fontSize: 12 }}>Trading fee</p>
-          <p>{CONFIG.tradeFeePercent}% ({CONFIG.creatorFeeShare}% creator / {CONFIG.platformFeeShare}% platform)</p>
-        </div>
-
-        <button
-          type="button"
-          className={connected ? 'btn-secondary' : 'btn-primary'}
-          style={{ width: '100%' }}
-          onClick={connected ? disconnect : connect}
-        >
-          {connected ? `Disconnect ${friendlyAddress}` : 'Connect Wallet'}
-        </button>
       </div>
+
+      <div className={styles.infoRow}>
+        <span className={styles.infoIcon}>
+          <IconWallet size={16} />
+        </span>
+        <div className={styles.infoText}>
+          <span className={styles.infoLabel}>Wallet</span>
+          <span className={styles.mono}>{connected && address ? walletDisplayAddress(address) : 'Not connected'}</span>
+        </div>
+      </div>
+
+      <div className={styles.infoRow}>
+        <span className={styles.infoIcon}>
+          <IconTon size={16} />
+        </span>
+        <div className={styles.infoText}>
+          <span className={styles.infoLabel}>Network</span>
+          <span>{CONFIG.network === 'mainnet' ? 'TON Mainnet' : 'TON Testnet'}</span>
+        </div>
+      </div>
+
+      <div className={styles.infoRow}>
+        <span className={styles.infoIcon}>
+          <IconChart size={16} />
+        </span>
+        <div className={styles.infoText}>
+          <span className={styles.infoLabel}>Trading fee</span>
+          <span>{CONFIG.tradeFeePercent}% ({CONFIG.creatorFeeShare}% creator / {CONFIG.platformFeeShare}% platform)</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className={`${connected ? 'btn-secondary' : 'btn-primary'} ${styles.walletBtn}`}
+        onClick={connected ? disconnect : connect}
+      >
+        {connected ? `Disconnect ${friendlyAddress}` : 'Connect Wallet'}
+      </button>
     </div>
   );
 }
-
