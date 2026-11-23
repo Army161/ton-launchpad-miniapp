@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BrandHero } from '../components/Brand';
 import { ConnectButton } from '../components/ConnectButton';
+import { IconRocket } from '../components/Icons';
 import { TokenAvatar } from '../components/TokenAvatar';
 import { liveTokenFromCard, registerLiveTokens, launchpadToToken } from '../data/tokens';
 import { fetchChange24hMap } from '../lib/dexscreener';
 import { fetchTonPrice } from '../lib/coingecko';
 import { fetchLaunchpadTokens } from '../lib/launchpadApi';
 import { CONFIG } from '../lib/config';
+import { spotPriceTon } from '../lib/contracts';
+import { formatChange, formatTonPrice, formatUsdPrice } from '../lib/format';
+import styles from './Home.module.css';
 
 const STON_ASSETS = 'https://api.ston.fi/v1/assets';
 
@@ -24,6 +29,8 @@ type Card = {
   name: string;
   ticker: string;
   priceUsd: number;
+  /** Spot price on the bonding curve, launchpad tokens only. */
+  priceTon?: number;
   change24h: number | null;
   imageUrl: string;
   color: string;
@@ -80,6 +87,7 @@ export function Home() {
         name: t.name || 'Unnamed',
         ticker: t.symbol || '???',
         priceUsd: 0,
+        priceTon: spotPriceTon({ virtualTon: BigInt(t.virtualTon), virtualTokens: BigInt(t.virtualTokens) }),
         change24h: null,
         imageUrl: t.image,
         color: pickColor(i),
@@ -144,37 +152,41 @@ export function Home() {
   }, [tab, lpAttempt]);
 
   return (
-    <div className="page">
-      <header className="home-header">
-        <div>
-          <h1 className="home-title">TON Launchpad</h1>
-          {tonPrice && (
-            <p className="muted" style={{ fontSize: 12, marginTop: 2 }}>
-              TON ${tonPrice.usd.toFixed(2)}
-              {tonPrice.change24h != null && (
-                <span className={tonPrice.change24h >= 0 ? ' positive' : ' negative'}>
-                  {' '}{tonPrice.change24h >= 0 ? '+' : ''}{tonPrice.change24h.toFixed(2)}%
-                </span>
-              )}
-            </p>
-          )}
-        </div>
-        <ConnectButton compact />
-      </header>
+    <div className={`page ${styles.page}`}>
+      <BrandHero
+        title="TON"
+        accent="Launchpad"
+        aside={<ConnectButton compact />}
+        subtitle={
+          <>
+            Launch and trade meme coins, from idea to liquidity on TON.
+            {tonPrice && (
+              <span className={styles.tonPrice}>
+                TON ${tonPrice.usd.toFixed(2)}
+                {tonPrice.change24h != null && (
+                  <span className={tonPrice.change24h >= 0 ? 'positive' : 'negative'}> {formatChange(tonPrice.change24h)}</span>
+                )}
+              </span>
+            )}
+          </>
+        }
+      />
 
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div className={styles.segment} role="tablist" aria-label="Token lists">
         <button
           type="button"
-          className={tab === 'launchpad' ? 'btn-primary' : 'btn-secondary'}
-          style={{ flex: 1, padding: '10px 12px', fontSize: 13 }}
+          role="tab"
+          aria-selected={tab === 'launchpad'}
+          className={`${styles.segBtn}${tab === 'launchpad' ? ` ${styles.segActive}` : ''}`}
           onClick={() => setTab('launchpad')}
         >
           Launchpad
         </button>
         <button
           type="button"
-          className={tab === 'graduated' ? 'btn-primary' : 'btn-secondary'}
-          style={{ flex: 1, padding: '10px 12px', fontSize: 13 }}
+          role="tab"
+          aria-selected={tab === 'graduated'}
+          className={`${styles.segBtn}${tab === 'graduated' ? ` ${styles.segActive}` : ''}`}
           onClick={() => setTab('graduated')}
         >
           Graduated
@@ -182,13 +194,14 @@ export function Home() {
       </div>
 
       {tab === 'launchpad' && (
-        <Link to="/create" className="btn-primary" style={{ textAlign: 'center', fontSize: 14 }}>
-          + Launch Token ({CONFIG.launchFee} TON)
+        <Link to="/create" className={`btn-primary ${styles.launchBtn}`}>
+          <IconRocket size={20} />
+          Launch Token ({CONFIG.launchFee} TON)
         </Link>
       )}
 
       {loading ? (
-        <p className="muted" style={{ textAlign: 'center', marginTop: 48 }}>Loading tokens...</p>
+        <p className="muted loading-pulse">Loading tokens...</p>
       ) : tab === 'launchpad' && lpState === 'error' ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 48 }}>
           <p className="muted" style={{ textAlign: 'center' }}>Could not load tokens. Try again shortly.</p>
@@ -205,40 +218,66 @@ export function Home() {
           {tab === 'launchpad' && lpState === 'partial' && (
             <p className="muted" style={{ fontSize: 12 }}>Some tokens could not be loaded right now.</p>
           )}
-          <div className="token-grid">
-            {cards.map((card) => (
-              <Link key={card.id} to={`/token/${card.id}`} className="token-card card">
-                <div className="token-card-top">
-                  <TokenAvatar emoji={card.source === 'launchpad' ? '🚀' : '🪙'} color={card.color} size={36} imageUrl={card.imageUrl || undefined} />
-                  <div className="token-card-names">
-                    <strong>{card.name}</strong>
-                    <span className="muted">${card.ticker}</span>
-                  </div>
-                </div>
-                {card.source === 'launchpad' && card.curveProgress != null && !card.graduated && (
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Curve {card.curveProgress.toFixed(0)}% · {CONFIG.graduationTarget} TON
-                  </div>
-                )}
-                <div className="token-card-bottom">
-                  <span className="token-card-price">
-                    {card.priceUsd > 0
-                      ? card.priceUsd < 0.01
-                        ? `$${card.priceUsd.toExponential(2)}`
-                        : `$${card.priceUsd.toFixed(4)}`
-                      : card.graduated
-                        ? 'Graduated'
-                        : 'Bonding curve'}
+          <div className={styles.list}>
+            {cards.map((card) => {
+              const onCurve = card.source === 'launchpad' && !card.graduated && card.curveProgress != null;
+              const price =
+                card.priceUsd > 0
+                  ? formatUsdPrice(card.priceUsd)
+                  : card.priceTon
+                    ? formatTonPrice(card.priceTon)
+                    : card.graduated
+                      ? 'Graduated'
+                      : 'Bonding curve';
+              return (
+                <Link key={card.id} to={`/token/${card.id}`} className={styles.row}>
+                  <span className={styles.avatarRing}>
+                    <TokenAvatar emoji={card.source === 'launchpad' ? '🚀' : '🪙'} color={card.color} size={52} imageUrl={card.imageUrl || undefined} />
                   </span>
-                  <span className={`token-card-change${card.change24h == null ? '' : card.change24h >= 0 ? ' positive' : ' negative'}`}>
-                    {card.change24h == null ? '\u2014' : `${card.change24h >= 0 ? '+' : ''}${card.change24h.toFixed(2)}%`}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  <div className={styles.rowMain}>
+                    <strong className={styles.rowName}>{card.name}</strong>
+                    <span className={styles.rowTicker}>${card.ticker}</span>
+                    <div className={styles.rowPrice}>
+                      <span>{price}</span>
+                      {card.change24h != null && (
+                        <span className={card.change24h >= 0 ? 'positive' : 'negative'}>{formatChange(card.change24h)}</span>
+                      )}
+                    </div>
+                  </div>
+                  {onCurve ? (
+                    <MiniCurve progress={card.curveProgress ?? 0} />
+                  ) : card.graduated ? (
+                    <span className={styles.gradTag}>STON.fi</span>
+                  ) : null}
+                </Link>
+              );
+            })}
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** The token's real bonding-curve progress as a small curve, in the spot where the mockup shows a price line. */
+function MiniCurve({ progress }: { progress: number }) {
+  const f = Math.min(100, Math.max(0, progress)) / 100;
+  const pts = Array.from({ length: 21 }, (_, i) => {
+    const t = i / 20;
+    return `${(t * 64).toFixed(1)},${(30 - 26 * t * t).toFixed(1)}`;
+  }).join(' L');
+  const x = f * 64;
+  return (
+    <div className={styles.mini} aria-label={`Bonding curve ${progress.toFixed(0)}% complete`}>
+      <svg width="64" height="32" viewBox="0 0 64 32" aria-hidden>
+        <path d={`M${pts}`} fill="none" stroke="var(--border-subtle)" strokeWidth="1.5" />
+        <clipPath id={`mc${Math.round(f * 1000)}`}>
+          <rect x="0" y="0" width={x} height="32" />
+        </clipPath>
+        <path d={`M${pts}`} fill="none" stroke="var(--ton-blue)" strokeWidth="2" clipPath={`url(#mc${Math.round(f * 1000)})`} />
+        {f > 0 && <circle cx={x} cy={30 - 26 * f * f} r="2.6" fill="var(--ton-blue-light)" />}
+      </svg>
+      <span className={styles.miniPct}>{progress.toFixed(0)}%</span>
     </div>
   );
 }

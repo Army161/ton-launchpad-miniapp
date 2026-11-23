@@ -1,0 +1,114 @@
+.crown {
+  color: var(--ton-blue-light);
+  filter: drop-shadow(0 0 6px rgba(31, 155, 255, 0.7));
+  flex-shrink: 0;
+}
+
+.drips {
+  color: var(--ton-blue);
+  display: block;
+}
+
+.hero {
+  position: relative;
+  padding: 18px 16px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(31, 155, 255, 0.22), transparent 55%),
+    radial-gradient(90% 80% at 100% 0%, rgba(10, 92, 216, 0.22), transparent 60%),
+    linear-gradient(180deg, #0b1628, #060b15);
+  box-shadow: var(--glow);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.bandanna {
+  position: absolute;
+  top: -8px;
+  width: 150px;
+  height: 110px;
+  background-image: url('../assets/brand/bandanna.svg');
+  background-size: 54px 54px;
+  opacity: 0.55;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.bandannaLeft {
+  left: -8px;
+  -webkit-mask-image: radial-gradient(130% 120% at 0% 0%, #000 20%, transparent 62%);
+  mask-image: radial-gradient(130% 120% at 0% 0%, #000 20%, transparent 62%);
+}
+
+.bandannaRight {
+  right: -8px;
+  -webkit-mask-image: radial-gradient(130% 120% at 100% 0%, #000 15%, transparent 55%);
+  mask-image: radial-gradient(130% 120% at 100% 0%, #000 15%, transparent 55%);
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.title {
+  position: relative;
+  font-family: var(--brand-font);
+  font-weight: 400;
+  font-size: 27px;
+  white-space: nowrap;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  padding-top: 18px;
+  transform: rotate(-2deg);
+  transform-origin: left bottom;
+  min-width: 0;
+}
+
+.titleCrown {
+  position: absolute;
+  top: -2px;
+  left: 4px;
+  transform: rotate(-10deg);
+}
+
+.titleWhite {
+  color: #fff;
+  text-shadow: 2px 2px 0 #0a3a8a, 0 0 14px rgba(255, 255, 255, 0.18);
+}
+
+.titleBlue {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(180deg, #8fdcff 0%, #36aaff 45%, #1677ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(2px 2px 0 #062a66) drop-shadow(0 0 10px rgba(31, 155, 255, 0.55));
+}
+
+.titleDrips {
+  position: absolute;
+  left: 4%;
+  right: 6%;
+  bottom: -14px;
+  width: 90%;
+  height: 14px;
+  opacity: 0.85;
+}
+
+.aside {
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.subtitle {
+  margin-top: 16px;
+  color: #c9d6e8;
+  font-size: 14px;
+  line-height: 1.4;
+  max-width: 300px;
+}

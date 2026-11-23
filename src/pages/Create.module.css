@@ -1,0 +1,231 @@
+.page {
+  position: relative;
+  gap: 10px;
+  isolation: isolate;
+}
+
+/* Brand header: graffiti "Creator Studio", crown, drips and a bandanna corner. */
+.bandanna {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 170px;
+  background-image: url('../assets/brand/bandanna.svg');
+  background-size: 54px 54px;
+  opacity: 0.35;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 100%), radial-gradient(90% 120% at 100% 0%, #000 0%, transparent 70%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(180deg, #000 0%, transparent 100%), radial-gradient(90% 120% at 100% 0%, #000 0%, transparent 70%);
+  mask-composite: intersect;
+}
+
+.back {
+  width: 32px;
+  height: 32px;
+  margin-left: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  font-family: var(--brand-font);
+  font-weight: 400;
+  font-size: 34px;
+  line-height: 1.05;
+  transform: rotate(-2deg);
+  transform-origin: left bottom;
+}
+
+.titleWhite {
+  color: #fff;
+  text-shadow: 2px 2px 0 #0a3a8a, 0 0 14px rgba(255, 255, 255, 0.18);
+}
+
+.titleBlue {
+  position: relative;
+  display: inline-block;
+  background: linear-gradient(180deg, #8fdcff 0%, #36aaff 45%, #1677ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(2px 2px 0 #062a66) drop-shadow(0 0 10px rgba(31, 155, 255, 0.55));
+}
+
+.titleDrips {
+  position: absolute;
+  left: 6%;
+  bottom: -14px;
+  width: 86%;
+  height: 14px;
+  opacity: 0.85;
+}
+
+.bolt {
+  color: var(--ton-blue-light);
+  filter: drop-shadow(0 0 6px rgba(31, 155, 255, 0.8));
+}
+
+.crown {
+  transform: rotate(8deg);
+  margin-top: -4px;
+}
+
+.subtitle {
+  margin-top: 8px;
+  color: #c9d6e8;
+  font-size: 14px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.form label {
+  display: block;
+}
+
+.iconInput {
+  position: relative;
+  display: block;
+}
+
+.iconInput svg {
+  position: absolute;
+  left: 13px;
+  top: calc(50% + 3px);
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.iconInput :global(.input) {
+  padding-left: 40px;
+}
+
+.form .drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 16px 14px;
+  border: 1.5px dashed rgba(108, 160, 220, 0.5);
+  border-radius: 14px;
+  background: rgba(4, 7, 13, 0.6);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop:focus-within,
+.drop:hover {
+  border-color: var(--ton-blue);
+  background: rgba(31, 155, 255, 0.06);
+}
+
+.dropBusy {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.dropText {
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.dropText strong {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.aiCard {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aiLabel {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.aiRow {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.genBtn {
+  white-space: nowrap;
+  flex: 1;
+  margin-top: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-radius: 12px;
+}
+
+.preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  align-self: center;
+  border: 2px solid var(--ton-blue);
+  box-shadow: 0 0 16px rgba(31, 155, 255, 0.45);
+}
+
+.fees {
+  padding: 14px;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fees > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.fees > div > span:first-child {
+  color: var(--text-muted);
+}
+
+.fees > div > span:last-child {
+  font-weight: 600;
+  text-align: right;
+}
+
+.launch {
+  margin-top: 4px;
+  font-size: 18px;
+  padding: 16px 20px;
+  border-radius: 16px;
+}
